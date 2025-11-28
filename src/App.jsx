@@ -1,13 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone, Edit2, Lock, LogOut, EyeOff, Crown, FileText, Users, GraduationCap, ListFilter, Save } from 'lucide-react';
+import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone, Edit2, Lock, LogOut, EyeOff, Crown, FileText, Users, GraduationCap, ListFilter, Save, ShieldAlert, CreditCard, Hash } from 'lucide-react';
 
 // --- CONFIGURACIÓN DE SUPABASE ---
-// ¡¡¡ PEGA AQUÍ TUS CLAVES !!!
 const SUPABASE_URL = 'https://fgzegoflnkwkcztivila.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnemVnb2Zsbmt3a2N6dGl2aWxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzMzQyOTYsImV4cCI6MjA3OTkxMDI5Nn0.-u-NUiR5Eqitf4-zqvAAZhTKHc1_Cj3OKHAhGRHl8Xs';
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // --- LISTA OFICIAL COMPLETA (NO BORRAR NADA) ---
 const OFFICIAL_LIST = [
@@ -97,12 +93,40 @@ const App = () => {
     setLoginError('');
   };
 
-  // --- LÓGICA DE DATOS CON SUPABASE ---
+  // --- LÓGICA DE DATOS CON SUPABASE (Script Injection) ---
+  const [supabase, setSupabase] = useState(null);
   const [passengers, setPassengers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
 
+  // 1. Cargar el script de Supabase
   useEffect(() => {
+    if (window.supabase) {
+      const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      setSupabase(client);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+    script.async = true;
+    script.onload = () => {
+      if (window.supabase) {
+        const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        setSupabase(client);
+      }
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      // Cleanup opcional
+    };
+  }, []);
+
+  // 2. Usar Supabase cuando esté listo
+  useEffect(() => {
+    if (!supabase) return;
+
     fetchPassengers();
     const channel = supabase
       .channel('table-db-changes')
@@ -124,9 +148,10 @@ const App = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [supabase]);
 
   const fetchPassengers = async () => {
+    if (!supabase) return;
     setLoading(true);
     const { data, error } = await supabase
       .from('passengers')
@@ -148,6 +173,8 @@ const App = () => {
         triggerLogin();
         return;
     }
+    if (!supabase) return alert("Supabase aún no carga");
+
     if(!window.confirm("¿ESTÁS SEGURO? Esto subirá la lista oficial de 43 estudiantes a la base de datos. Solo hazlo si la lista está vacía.")) return;
 
     setUploading(true);
@@ -200,6 +227,7 @@ const App = () => {
   const addPassenger = async (e) => {
     e.preventDefault();
     if (!isCoordinator) { triggerLogin(); return; }
+    if (!supabase) return;
     if (!newName.trim()) return;
 
     const newPassenger = {
@@ -221,6 +249,7 @@ const App = () => {
 
   const removePassenger = async (id) => {
     if (!isCoordinator) { triggerLogin(); return; }
+    if (!supabase) return;
     if (window.confirm('¿Seguro que quieres eliminar a esta persona?')) {
       await supabase.from('passengers').delete().eq('id', id);
     }
@@ -245,6 +274,7 @@ const App = () => {
   };
 
   const handleSaveEdit = async () => {
+    if (!supabase) return;
     const { id, showDetails, ...dataToUpdate } = editFormData;
     await supabase.from('passengers').update(dataToUpdate).eq('id', id);
     setEditingId(null);
@@ -254,6 +284,7 @@ const App = () => {
 
   const toggleCheck = async (id, legIndex) => {
     if (!isCoordinator) { triggerLogin(); return; }
+    if (!supabase) return;
     
     const passenger = passengers.find(p => p.id === id);
     if (!passenger) return;
@@ -344,61 +375,63 @@ const App = () => {
       
       {/* HEADER */}
       <div className="bg-gradient-to-br from-orange-700 via-orange-600 to-yellow-500 text-white p-6 pb-12 shadow-xl rounded-b-[2.5rem] relative z-20 transition-all">
-        <div className="flex justify-between items-start mb-4">
-          <div className="flex flex-col">
-            <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-orange-100/80 mb-1">Planilla</span>
+        <div className="max-w-7xl mx-auto">
+            <div className="flex justify-between items-start mb-4">
             <div className="flex flex-col">
-                <h1 className="text-2xl font-black flex items-center gap-2 drop-shadow-sm">Unión Estudiantil</h1>
-                <span className="text-sm font-bold text-orange-100 opacity-90 -mt-1">FIL 2025 (Supabase)</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-orange-50 font-medium mt-2">
-                <div className="bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-md flex items-center gap-1">
-                    <Bus size={12} className="text-yellow-300"/> Camión 1
+                <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-orange-100/80 mb-1">Planilla</span>
+                <div className="flex flex-col">
+                    <h1 className="text-2xl md:text-3xl font-black flex items-center gap-2 drop-shadow-sm">Unión Estudiantil</h1>
+                    <span className="text-sm font-bold text-orange-100 opacity-90 -mt-1">FIL 2025 (Supabase)</span>
                 </div>
-                {isCoordinator && (
-                    <div className="bg-green-500/80 backdrop-blur-sm px-2 py-0.5 rounded-md flex items-center gap-1 text-white">
-                        <Lock size={10} /> Coord. Activo
+                <div className="flex items-center gap-2 text-xs text-orange-50 font-medium mt-2">
+                    <div className="bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-md flex items-center gap-1">
+                        <Bus size={12} className="text-yellow-300"/> Camión 1
                     </div>
-                )}
+                    {isCoordinator && (
+                        <div className="bg-green-500/80 backdrop-blur-sm px-2 py-0.5 rounded-md flex items-center gap-1 text-white">
+                            <Lock size={10} /> Coord. Activo
+                        </div>
+                    )}
+                </div>
             </div>
-          </div>
-          
-          <div className="flex gap-2">
-            <button onClick={isCoordinator ? handleLogout : triggerLogin} className={`p-2 rounded-2xl backdrop-blur-md border border-white/10 shadow-sm transition-all ${isCoordinator ? 'bg-red-500/80 hover:bg-red-600' : 'bg-white/20 hover:bg-white/30'}`}>
-                {isCoordinator ? <LogOut size={20} /> : <Lock size={20} />}
-            </button>
-            <span className="text-sm bg-white/20 backdrop-blur-md px-4 py-2 rounded-2xl text-white font-bold border border-white/10 shadow-sm flex items-center">
-                {passengers.length} Pax
-            </span>
-          </div>
-        </div>
+            
+            <div className="flex gap-2">
+                <button onClick={isCoordinator ? handleLogout : triggerLogin} className={`p-2 rounded-2xl backdrop-blur-md border border-white/10 shadow-sm transition-all ${isCoordinator ? 'bg-red-500/80 hover:bg-red-600' : 'bg-white/20 hover:bg-white/30'}`}>
+                    {isCoordinator ? <LogOut size={20} /> : <Lock size={20} />}
+                </button>
+                <span className="text-sm bg-white/20 backdrop-blur-md px-4 py-2 rounded-2xl text-white font-bold border border-white/10 shadow-sm flex items-center">
+                    {passengers.length} Pax
+                </span>
+            </div>
+            </div>
 
-        {/* Resumen Asistencia */}
-        <div className="grid grid-cols-3 gap-3 mt-4 text-center text-xs">
-          {legs.map((leg, idx) => {
-            const stats = getStats(idx);
-            return (
-              <div key={idx} className="bg-black/10 backdrop-blur-sm rounded-2xl p-2.5 flex flex-col items-center border border-white/10 shadow-inner group transition-all hover:bg-black/20">
-                <span className="text-[10px] uppercase tracking-wider font-bold text-orange-200/80 mb-0.5">{leg.sub.replace('→ ', '')}</span>
-                <div className="flex items-baseline justify-center gap-0.5 mb-1">
-                    <span className={`text-3xl font-black tracking-tighter leading-none ${stats.count === stats.total && stats.total > 0 ? 'text-green-300 drop-shadow-[0_0_8px_rgba(134,239,172,0.5)]' : 'text-white drop-shadow-md'}`}>
-                        {stats.count}
-                    </span>
-                    <span className="text-xs font-bold text-white/50">/{stats.total}</span>
+            {/* Resumen Asistencia */}
+            <div className="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-6 gap-3 mt-4 text-center text-xs">
+            {legs.map((leg, idx) => {
+                const stats = getStats(idx);
+                return (
+                <div key={idx} className="bg-black/10 backdrop-blur-sm rounded-2xl p-2.5 flex flex-col items-center border border-white/10 shadow-inner group transition-all hover:bg-black/20 col-span-1 md:col-span-2">
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-orange-200/80 mb-0.5">{leg.sub.replace('→ ', '')}</span>
+                    <div className="flex items-baseline justify-center gap-0.5 mb-1">
+                        <span className={`text-3xl font-black tracking-tighter leading-none ${stats.count === stats.total && stats.total > 0 ? 'text-green-300 drop-shadow-[0_0_8px_rgba(134,239,172,0.5)]' : 'text-white drop-shadow-md'}`}>
+                            {stats.count}
+                        </span>
+                        <span className="text-xs font-bold text-white/50">/{stats.total}</span>
+                    </div>
+                    <div className="w-full bg-black/20 h-1.5 rounded-full overflow-hidden">
+                    <div className={`h-full shadow-[0_0_10px_rgba(255,255,255,0.5)] transition-all duration-700 ease-out ${stats.count === stats.total ? 'bg-green-400' : 'bg-white'}`} style={{ width: `${stats.percent}%` }}></div>
+                    </div>
                 </div>
-                <div className="w-full bg-black/20 h-1.5 rounded-full overflow-hidden">
-                  <div className={`h-full shadow-[0_0_10px_rgba(255,255,255,0.5)] transition-all duration-700 ease-out ${stats.count === stats.total ? 'bg-green-400' : 'bg-white'}`} style={{ width: `${stats.percent}%` }}></div>
-                </div>
-              </div>
-            )
-          })}
+                )
+            })}
+            </div>
         </div>
       </div>
 
-      <div className="max-w-md mx-auto px-4 -mt-6 relative z-30">
+      <div className="max-w-7xl mx-auto px-4 -mt-6 relative z-30">
         
         {/* STATS CARDS */}
-        <div className={`grid gap-3 mb-6 ${isCoordinator ? 'grid-cols-2' : 'grid-cols-3'}`}>
+        <div className={`grid gap-3 mb-6 grid-cols-3 md:grid-cols-4 lg:grid-cols-4`}>
           <div className="bg-white p-3 rounded-2xl shadow-lg border-b-4 border-green-500 flex flex-col items-center text-center transform hover:-translate-y-1 transition-transform">
              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Pagados</span>
              <span className="text-xl font-black text-gray-800">{totalPaidFull}</span>
@@ -412,7 +445,7 @@ const App = () => {
              <span className="text-xl font-black text-gray-800">{totalPending}</span>
           </div>
           {isCoordinator && (
-            <div className="bg-white p-3 rounded-2xl shadow-lg border-b-4 border-orange-500 flex flex-col items-center text-center transform hover:-translate-y-1 transition-transform">
+            <div className="bg-white p-3 rounded-2xl shadow-lg border-b-4 border-orange-500 flex flex-col items-center text-center transform hover:-translate-y-1 transition-transform col-span-3 md:col-span-1">
                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Total MXN</span>
                <span className="text-lg font-black text-orange-600 tracking-tight">${totalMoney.toLocaleString()}</span>
             </div>
@@ -420,7 +453,7 @@ const App = () => {
         </div>
 
         {/* COORDINADOR */}
-        <div className="mb-6 bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl shadow-xl overflow-hidden border border-gray-700">
+        <div className="mb-6 bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl shadow-xl overflow-hidden border border-gray-700 max-w-2xl mx-auto">
             <div className="p-4 flex items-center justify-between">
                 <div>
                     <div className="flex items-center gap-2 mb-1">
@@ -439,18 +472,18 @@ const App = () => {
         </div>
 
         {/* SEARCH & ACTIONS */}
-        <div className="flex gap-3 mb-4">
+        <div className="flex flex-col md:flex-row gap-3 mb-4 max-w-4xl mx-auto">
           <div className="relative flex-1 group">
             <Search className="absolute left-4 top-3.5 text-orange-300 transition-colors group-focus-within:text-orange-500" size={18} />
-            <input type="text" placeholder="Buscar estudiante..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-11 pr-4 py-3 bg-white border-none rounded-2xl shadow-md text-sm font-medium focus:ring-4 focus:ring-orange-500/20 transition-all outline-none" />
+            <input type="text" placeholder="Buscar estudiante (nombre o código)..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-11 pr-4 py-3 bg-white border-none rounded-2xl shadow-md text-sm font-medium focus:ring-4 focus:ring-orange-500/20 transition-all outline-none" />
           </div>
-          <button onClick={exportToCSV} className="p-3 bg-white text-green-600 rounded-2xl shadow-md hover:bg-green-50 hover:text-green-700 transition-colors">
-            <Download size={20} strokeWidth={2.5} />
+          <button onClick={exportToCSV} className="p-3 bg-white text-green-600 rounded-2xl shadow-md hover:bg-green-50 hover:text-green-700 transition-colors flex items-center justify-center gap-2">
+            <Download size={20} strokeWidth={2.5} /> <span className="md:hidden font-bold text-sm">Descargar Excel</span>
           </button>
         </div>
 
         {/* FILTERS */}
-        <div className="flex items-center gap-3 mb-6 overflow-x-auto pb-2 px-1 no-scrollbar">
+        <div className="flex items-center gap-3 mb-6 overflow-x-auto pb-2 px-1 no-scrollbar justify-start md:justify-center">
            <div className="bg-white p-2 rounded-full shadow-sm"><ListFilter size={16} className="text-orange-500"/></div>
            <button onClick={() => setFilterLeg(null)} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-sm ${filterLeg === null ? 'bg-gray-800 text-white scale-105 shadow-md' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>Todos</button>
            {legs.map((leg) => (
@@ -462,7 +495,7 @@ const App = () => {
 
         {/* FORMULARIO AGREGAR */}
         {showAddForm && isCoordinator && (
-          <div className="mb-6 bg-white p-5 rounded-3xl shadow-xl border border-orange-100 animate-in fade-in slide-in-from-top-4">
+          <div className="mb-6 bg-white p-5 rounded-3xl shadow-xl border border-orange-100 animate-in fade-in slide-in-from-top-4 max-w-2xl mx-auto">
             <h3 className="font-bold text-gray-800 mb-4 text-sm uppercase tracking-wide flex items-center gap-2"><span className="w-1 h-4 bg-orange-500 rounded-full"></span> Nuevo Pasajero</h3>
             <form onSubmit={addPassenger} className="space-y-3">
               <input type="text" placeholder="Nombre completo" value={newName} onChange={(e) => setNewName(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-orange-500/20 outline-none font-medium"/>
@@ -471,10 +504,10 @@ const App = () => {
           </div>
         )}
 
-        {/* LISTA DE PASAJEROS */}
-        <div className="space-y-4 pb-10">
+        {/* LISTA DE PASAJEROS (LISTA SIMPLE) */}
+        <div className="grid grid-cols-1 gap-4 pb-10 max-w-lg mx-auto">
           {filteredPassengers.length === 0 ? (
-            <div className="text-center py-12 px-6 bg-white/50 rounded-3xl border border-dashed border-gray-300 mt-4">
+            <div className="col-span-full text-center py-12 px-6 bg-white/50 rounded-3xl border border-dashed border-gray-300 mt-4">
                {filterLeg !== null ? (
                  <>
                    <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 shadow-inner"><Check size={32} className="text-green-600" strokeWidth={3} /></div>
@@ -486,42 +519,66 @@ const App = () => {
             </div>
           ) : (
             filteredPassengers.map((p) => (
-              <div key={p.id} className="bg-white rounded-2xl shadow-sm hover:shadow-xl border border-orange-50/50 overflow-hidden transition-all duration-300 group relative">
+              <div key={p.id} className="bg-white rounded-2xl shadow-sm hover:shadow-xl border border-orange-50/50 overflow-hidden transition-all duration-300 group relative flex flex-col">
                 <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-orange-400 to-yellow-400"></div>
                 
-                <div className="p-3 relative z-10 pl-5">
+                <div className="p-4 relative z-10 pl-5 flex-1">
                   <div className={`absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-sm ${p.amount >= 480 ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
                       ${p.amount}
                   </div>
 
                   {editingId === p.id && isCoordinator ? (
-                    <div className="space-y-3 pt-1">
-                      <div className="flex items-center gap-2 text-orange-600 font-bold text-xs uppercase tracking-wider mb-2"><Edit2 size={12}/> Editando</div>
-                      <input name="name" value={editFormData.name} onChange={handleEditChange} className="w-full p-2 bg-gray-50 rounded-lg text-sm font-bold text-gray-800 border-none focus:ring-2 focus:ring-orange-200"/>
-                      <div className="grid grid-cols-2 gap-2">
-                          <input name="phone" placeholder="Tel" value={editFormData.phone} onChange={handleEditChange} className="p-2 bg-gray-50 rounded-lg text-xs"/>
-                          <input name="amount" placeholder="$" type="number" value={editFormData.amount} onChange={handleEditChange} className="p-2 bg-gray-50 rounded-lg text-xs"/>
+                    <div className="space-y-3 pt-1 animate-in fade-in">
+                      <div className="flex items-center gap-2 text-orange-600 font-bold text-xs uppercase tracking-wider mb-2 border-b pb-1"><Edit2 size={12}/> Editando Información</div>
+                      
+                      {/* Campos Generales */}
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase">Estudiante</label>
+                        <input name="name" value={editFormData.name} onChange={handleEditChange} className="w-full p-2 bg-orange-50/50 rounded-lg text-sm font-bold text-gray-800 border-none focus:ring-2 focus:ring-orange-200 placeholder:text-gray-300" placeholder="Nombre completo"/>
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="relative">
+                                <Phone size={12} className="absolute left-2 top-2.5 text-gray-400"/>
+                                <input name="phone" placeholder="Teléfono" value={editFormData.phone} onChange={handleEditChange} className="w-full pl-6 p-2 bg-gray-50 rounded-lg text-xs font-medium"/>
+                            </div>
+                            <div className="relative">
+                                <CreditCard size={12} className="absolute left-2 top-2.5 text-gray-400"/>
+                                <input name="amount" placeholder="Monto $" type="number" value={editFormData.amount} onChange={handleEditChange} className="w-full pl-6 p-2 bg-gray-50 rounded-lg text-xs font-medium"/>
+                            </div>
+                            <div className="relative">
+                                <Hash size={12} className="absolute left-2 top-2.5 text-gray-400"/>
+                                <input name="code" placeholder="Código UDG" value={editFormData.code} onChange={handleEditChange} className="w-full pl-6 p-2 bg-gray-50 rounded-lg text-xs font-medium"/>
+                            </div>
+                        </div>
                       </div>
-                      <div className="flex gap-2 mt-2">
-                        <button onClick={handleSaveEdit} className="flex-1 bg-green-500 text-white py-2 rounded-lg text-xs font-bold shadow-md">Guardar</button>
-                        <button onClick={handleCancelEdit} className="flex-1 bg-gray-200 text-gray-600 py-2 rounded-lg text-xs font-bold">Cancelar</button>
+
+                      {/* Campos Confidenciales */}
+                      <div className="space-y-2 pt-1 border-t border-dashed">
+                        <label className="text-[10px] font-bold text-red-400 uppercase flex items-center gap-1"><ShieldAlert size={10}/> Datos Confidenciales</label>
+                        <input name="nss" placeholder="NSS (Seguro Social)" value={editFormData.nss} onChange={handleEditChange} className="w-full p-2 bg-red-50/50 border border-red-100 rounded-lg text-xs text-gray-700"/>
+                        <input name="parent" placeholder="Nombre del Tutor" value={editFormData.parent} onChange={handleEditChange} className="w-full p-2 bg-red-50/50 border border-red-100 rounded-lg text-xs text-gray-700"/>
+                        <input name="parent_phone" placeholder="Teléfono Tutor" value={editFormData.parent_phone} onChange={handleEditChange} className="w-full p-2 bg-red-50/50 border border-red-100 rounded-lg text-xs text-gray-700"/>
+                      </div>
+
+                      <div className="flex gap-2 mt-4">
+                        <button onClick={handleSaveEdit} className="flex-1 bg-green-500 text-white py-2 rounded-lg text-xs font-bold shadow-md hover:bg-green-600 transition-colors flex items-center justify-center gap-1"><Save size={14}/> Guardar</button>
+                        <button onClick={handleCancelEdit} className="flex-1 bg-gray-100 text-gray-600 py-2 rounded-lg text-xs font-bold hover:bg-gray-200 transition-colors">Cancelar</button>
                       </div>
                     </div>
                   ) : (
-                    <div className="pr-16">
-                        <h3 onClick={() => isCoordinator && toggleDetails(p.id)} className={`font-bold text-sm leading-tight mb-1.5 transition-colors ${isCoordinator ? 'cursor-pointer hover:text-orange-600 text-gray-800' : 'text-gray-800'}`}>
+                    <div className="pr-2">
+                        <h3 onClick={() => isCoordinator && toggleDetails(p.id)} className={`font-bold text-sm leading-tight mb-2 transition-colors ${isCoordinator ? 'cursor-pointer hover:text-orange-600 text-gray-800' : 'text-gray-800'}`}>
                             {p.name}
                         </h3>
-                        <div className="flex flex-wrap gap-y-1 gap-x-3 text-[10px] text-gray-500">
-                            <div className="flex items-center gap-1.5 bg-orange-50 px-2 py-0.5 rounded-md border border-orange-100/50"><Phone size={10} className="text-orange-500" /><span className="font-medium">{p.phone}</span></div>
-                            <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100/50"><GraduationCap size={12} className="text-gray-400" /><span>{p.code}</span></div>
+                        <div className="flex flex-wrap gap-2 text-[10px] text-gray-500 mb-3">
+                            <div className="flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-md border border-orange-100/50"><Phone size={10} className="text-orange-500" /><span className="font-medium">{p.phone}</span></div>
+                            <div className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-md border border-gray-100/50"><GraduationCap size={12} className="text-gray-400" /><span>{p.code}</span></div>
                         </div>
 
-                        <div className="flex gap-3 mt-2 pt-2 border-t border-gray-100/50 min-h-[24px] items-center">
+                        <div className="flex gap-3 pt-2 border-t border-gray-100/50 min-h-[24px] items-center justify-between">
                              {isCoordinator ? (
                                  <>
-                                    <button onClick={() => handleEditClick(p)} className="flex items-center gap-1 text-[10px] font-bold uppercase text-gray-400 hover:text-indigo-500 transition-colors"><Edit2 size={14} /> Editar</button>
-                                    <button onClick={() => removePassenger(p.id)} className="flex items-center gap-1 text-[10px] font-bold uppercase text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-md transition-colors ml-auto"><Trash2 size={14} /> Eliminar</button>
+                                    <button onClick={() => handleEditClick(p)} className="flex items-center gap-1 text-[10px] font-bold uppercase text-blue-500 hover:text-blue-700 hover:bg-blue-50 px-2 py-1 rounded-md transition-colors"><Edit2 size={12} /> Editar</button>
+                                    <button onClick={() => removePassenger(p.id)} className="flex items-center gap-1 text-[10px] font-bold uppercase text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded-md transition-colors"><Trash2 size={12} /> Eliminar</button>
                                  </>
                              ) : (
                                  <span className="text-[10px] text-gray-300 font-medium italic flex items-center gap-1"><EyeOff size={12}/> Info privada</span>
@@ -529,19 +586,20 @@ const App = () => {
                         </div>
 
                         {p.showDetails && isCoordinator && (
-                            <div className="mt-3 bg-white/80 p-3 rounded-xl border border-orange-100 text-xs animate-in fade-in zoom-in-95 shadow-inner">
-                                <div className="space-y-2">
+                            <div className="mt-3 bg-white p-3 rounded-xl border border-orange-200 text-xs animate-in fade-in zoom-in-95 shadow-[0_0_15px_rgba(251,146,60,0.1)] relative overflow-hidden">
+                                <div className="absolute top-0 right-0 p-1 bg-orange-100 rounded-bl-lg"><Lock size={10} className="text-orange-400"/></div>
+                                <div className="space-y-2 relative z-10">
                                     <div className="flex items-center gap-2">
                                         <div className="bg-orange-50 p-1 rounded-full shadow-sm"><FileText size={10} className="text-orange-500"/></div>
-                                        <span className="text-gray-500 font-medium">NSS:</span> <span className="text-gray-800 font-bold">{p.nss}</span>
+                                        <span className="text-gray-500 font-medium">NSS:</span> <span className="text-gray-800 font-bold select-all">{p.nss}</span>
                                     </div>
                                     <div className="flex items-start gap-2">
                                         <div className="bg-orange-50 p-1 rounded-full shadow-sm mt-0.5"><Users size={10} className="text-orange-500"/></div>
                                         <div><span className="text-gray-500 font-medium block">Tutor:</span> <span className="text-gray-800 font-bold">{p.parent}</span></div>
                                     </div>
                                     <div className="flex items-center gap-2 pt-1">
-                                         <a href={`tel:${p.parent_phone}`} className="flex-1 bg-gradient-to-r from-green-50 to-white border border-green-200 text-green-700 py-1.5 rounded-lg flex items-center justify-center gap-2 font-bold shadow-sm hover:from-green-100 transition-all">
-                                             <Phone size={12} fill="currentColor" /> Llamar Tutor: {p.parent_phone}
+                                         <a href={`tel:${p.parent_phone}`} className="w-full bg-gradient-to-r from-green-50 to-white border border-green-200 text-green-700 py-1.5 rounded-lg flex items-center justify-center gap-2 font-bold shadow-sm hover:from-green-100 transition-all active:scale-95">
+                                             <Phone size={12} fill="currentColor" /> {p.parent_phone}
                                          </a>
                                     </div>
                                 </div>
@@ -552,9 +610,9 @@ const App = () => {
                 </div>
 
                 {editingId !== p.id && (
-                  <div className="grid grid-cols-3 divide-x divide-gray-100 bg-gray-50/30 relative z-10">
+                  <div className="grid grid-cols-3 divide-x divide-gray-100 bg-gray-50/30 relative z-10 border-t border-gray-100 mt-auto">
                     {legs.map((leg, idx) => (
-                      <button key={idx} onClick={() => toggleCheck(p.id, idx)} className={`relative flex flex-col items-center justify-center py-2 transition-all duration-300 group/btn ${p.checks && p.checks[idx] ? 'bg-green-500/5 text-green-700' : 'hover:bg-gray-100 text-gray-400'}`}>
+                      <button key={idx} onClick={() => toggleCheck(p.id, idx)} className={`relative flex flex-col items-center justify-center py-3 transition-all duration-300 group/btn hover:bg-white ${p.checks && p.checks[idx] ? 'bg-green-500/5 text-green-700' : 'text-gray-400'}`}>
                         <div className={`mb-1 p-1.5 rounded-full transition-all duration-300 shadow-sm ${p.checks && p.checks[idx] ? 'bg-green-500 text-white scale-110 shadow-green-500/40' : 'bg-white text-gray-300 group-hover/btn:text-orange-400 shadow-sm border border-gray-100'}`}>
                            {p.checks && p.checks[idx] ? <Check size={14} strokeWidth={4} /> : leg.icon}
                         </div>
