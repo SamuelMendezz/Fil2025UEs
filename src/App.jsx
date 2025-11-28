@@ -66,7 +66,6 @@ const App = () => {
     document.title = "Unión Estudiantil - FIL 2025";
   }, []);
 
-const App = () => {
   // --- AUTENTICACIÓN COORDINADOR ---
   const [isCoordinator, setIsCoordinator] = useState(() => {
     return localStorage.getItem('fil2025_auth') === 'true';
@@ -662,6 +661,10 @@ const App = () => {
 
       </div>
     </div>
+  );
+};
+
+export default App;
   );
 };
 
