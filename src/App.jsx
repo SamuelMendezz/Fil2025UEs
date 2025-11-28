@@ -61,6 +61,12 @@ const COORDINATOR = {
 };
 
 const App = () => {
+  // --- TÍTULO DE LA PESTAÑA ---
+  useEffect(() => {
+    document.title = "Unión Estudiantil - FIL 2025";
+  }, []);
+
+const App = () => {
   // --- AUTENTICACIÓN COORDINADOR ---
   const [isCoordinator, setIsCoordinator] = useState(() => {
     return localStorage.getItem('fil2025_auth') === 'true';
