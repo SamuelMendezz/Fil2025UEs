@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone, Edit2, Lock, LogOut, EyeOff, Crown, FileText, Users, GraduationCap, ListFilter, Save, ShieldAlert, CreditCard, Hash, User, Bell, ArrowUpDown, ArrowDownAZ, Armchair, LayoutGrid, UserPlus } from 'lucide-react';
+import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone, Edit2, Lock, LogOut, EyeOff, Crown, FileText, Users, GraduationCap, ListFilter, Save, ShieldAlert, CreditCard, Hash, User, Bell, ArrowUpDown, ArrowDownAZ, Armchair, LayoutGrid, UserPlus, Bath } from 'lucide-react';
 
 // --- CONFIGURACIÓN DE SUPABASE ---
 const SUPABASE_URL = 'https://fgzegoflnkwkcztivila.supabase.co';
@@ -410,17 +410,24 @@ const App = () => {
 
   // --- SEAT MAP ACTIONS ---
   const handleSeatClick = (seatNum) => {
-    if (!isCoordinator) {
+    const occupant = passengers.find(p => p.seat_number === seatNum);
+
+    // If seat is free and user is NOT coordinator -> Block and login
+    if (!occupant && !isCoordinator) {
         showNotification("Solo coordinadores pueden asignar asientos", "error");
+        triggerLogin();
         return;
     }
+
+    // If seat is occupied OR user is coordinator -> Allow selection to view details/assign
     setSelectedSeat(seatNum);
     setSeatSearchTerm(''); 
   };
 
   const assignSeat = async (passengerId, seatNum) => {
     if (!supabase) return;
-    
+    if (!isCoordinator) return; // Safety check
+
     const previousPassengers = [...passengers]; // Backup
 
     // 1. Optimistic Update (Immediate Feedback)
@@ -466,7 +473,8 @@ const App = () => {
 
   const releaseSeat = async (passengerId) => {
     if (!supabase) return;
-    
+    if (!isCoordinator) return; // Safety check
+
     // Optimistic
     setPassengers(prev => prev.map(p => p.id === passengerId ? { ...p, seat_number: null } : p));
     
@@ -660,10 +668,11 @@ const App = () => {
                                             })}
                                         </div>
                                         
-                                        {/* WC Area - Right aligned */}
+                                        {/* Aisle & Right Side WC */}
                                         <div className="flex gap-2 items-center justify-end flex-1">
+                                           {/* WC Area (Takes space of seats 43-44 effectively or right side) */}
                                             <div className="w-[104px] h-12 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400">
-                                                <span className="text-xl font-black tracking-widest">WC</span>
+                                                <span className="text-xl font-black">WC</span>
                                             </div>
                                         </div>
                                     </div>
@@ -718,7 +727,11 @@ const App = () => {
                                             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3 text-red-500"><User size={32}/></div>
                                             <p className="text-sm font-bold text-gray-500 uppercase mb-1">Ocupado por</p>
                                             <p className="text-lg font-bold text-gray-800 mb-4">{passengers.find(p => p.seat_number == selectedSeat).name}</p>
-                                            <button onClick={() => releaseSeat(passengers.find(p => p.seat_number == selectedSeat).id)} className="bg-red-50 text-red-600 px-6 py-2 rounded-xl font-bold border border-red-200 hover:bg-red-100 w-full">Liberar Asiento</button>
+                                            
+                                            {/* Only show Release button if Coordinator */}
+                                            {isCoordinator && (
+                                                <button onClick={() => releaseSeat(passengers.find(p => p.seat_number == selectedSeat).id)} className="bg-red-50 text-red-600 px-6 py-2 rounded-xl font-bold border border-red-200 hover:bg-red-100 w-full">Liberar Asiento</button>
+                                            )}
                                         </div>
                                     ) : (
                                         <div className="space-y-2">
