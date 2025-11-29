@@ -5,7 +5,7 @@ import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone
 const SUPABASE_URL = 'https://fgzegoflnkwkcztivila.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnemVnb2Zsbmt3a2N6dGl2aWxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzMzQyOTYsImV4cCI6MjA3OTkxMDI5Nn0.-u-NUiR5Eqitf4-zqvAAZhTKHc1_Cj3OKHAhGRHl8Xs';
 
-// --- LISTA OFICIAL COMPLETA (Misma lista original) ---
+// --- LISTA OFICIAL COMPLETA ---
 const OFFICIAL_LIST = [
   { name: "Joseph Yancarlo Avalos Canales", phone: "3171325247", code: "225519213", amount: 480, nss: "5251056577", parent: "Lenis Alejandra Canales Castro", parentPhone: "3171048798" },
   { name: "Daira Athziri Saldaña Dávila", phone: "3171284644", code: "225521072", amount: 480, nss: "4927321887", parent: "María Luisa Dávila Muñoz", parentPhone: "3171146753" },
@@ -1124,7 +1124,7 @@ const App = () => {
       <div className="max-w-7xl mx-auto px-4 -mt-6 relative z-30">
         
         {/* STATS CARDS */}
-        <div className={`grid gap-3 mb-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-4`}>
+        <div className={`grid gap-3 mb-6 grid-cols-2 sm:grid-cols-4`}>
           <div className="bg-white p-3 rounded-2xl shadow-lg border-b-4 border-green-500 flex flex-col items-center text-center transform hover:-translate-y-1 transition-transform">
              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Pagados</span>
              <span className="text-xl font-black text-gray-800">{totalPaidFull}</span>
@@ -1257,7 +1257,7 @@ const App = () => {
             </div>
           ) : (
             filteredPassengers.map((p) => (
-              <div key={p.id} className="bg-white rounded-2xl shadow-sm hover:shadow-xl border border-orange-50/50 overflow-hidden transition-all duration-300 group relative flex flex-col">
+              <div key={p.id} className="bg-white rounded-2xl shadow-sm hover:shadow-xl border border-orange-50/50 overflow-hidden transition-all duration-300 group relative flex flex-col w-full max-w-md mx-auto">
                 <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-orange-400 to-yellow-400"></div>
                 
                 <div className="p-3 relative z-10 pl-4 flex-1 flex justify-between items-start">
