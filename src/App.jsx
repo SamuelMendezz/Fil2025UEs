@@ -1092,7 +1092,7 @@ const App = () => {
                 <button onClick={isCoordinator ? handleLogout : triggerLogin} className={`p-2 rounded-2xl backdrop-blur-md border border-white/20 shadow-lg transition-all ${isCoordinator ? 'bg-red-500/80 hover:bg-red-600 shadow-red-900/20' : 'bg-white/20 hover:bg-white/30 shadow-black/10'}`}>
                     {isCoordinator ? <LogOut size={20} className="drop-shadow-sm" /> : <Lock size={20} className="drop-shadow-sm" />}
                 </button>
-                <span className="text-sm bg-white/20 backdrop-blur-md px-4 py-2 rounded-2xl text-white font-bold border border-white/20 shadow-lg shadow-black/10 flex items-center drop-shadow-sm">
+                <span className="text-sm bg-white/20 backdrop-blur-md px-4 py-2 rounded-2xl text-white font-bold border border-white/20 shadow-lg shadow-black/10 flex items-center drop-shadow-sm whitespace-nowrap">
                     {passengers.length} Pax
                 </span>
             </div>
@@ -1266,19 +1266,19 @@ const App = () => {
                         {/* EDICIÓN RÁPIDA DE DINERO (Posicionamiento absoluto) */}
                         <div className="absolute top-3 right-3 z-20">
                             {isCoordinator ? (
-                                <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full border shadow-sm transition-colors ${p.amount >= 480 ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
-                                    <span className={`text-[10px] font-bold ${p.amount >= 480 ? 'text-green-700' : 'text-yellow-700'}`}>$</span>
+                                <div className={`flex items-center gap-1 px-3 py-1 rounded-full border shadow-sm transition-colors ${p.amount >= 480 ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
+                                    <span className={`text-xs font-extrabold ${p.amount >= 480 ? 'text-green-700' : 'text-yellow-700'}`}>$</span>
                                     <input 
                                         type="number" 
                                         value={p.amount}
                                         onChange={(e) => handleLocalAmountChange(p.id, e.target.value)}
                                         onBlur={(e) => handleAmountBlur(p.id, e.target.value)}
                                         onKeyDown={(e) => { if(e.key === 'Enter') e.target.blur(); }}
-                                        className={`w-12 text-[10px] font-bold bg-transparent outline-none text-right ${p.amount >= 480 ? 'text-green-700 placeholder-green-300' : 'text-yellow-700 placeholder-yellow-300'}`}
+                                        className={`w-14 text-xs font-extrabold bg-transparent outline-none text-right ${p.amount >= 480 ? 'text-green-700 placeholder-green-300' : 'text-yellow-700 placeholder-yellow-300'}`}
                                     />
                                 </div>
                             ) : (
-                                <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-sm ${p.amount >= 480 ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
+                                <div className={`text-xs font-extrabold px-3 py-1 rounded-full border shadow-sm ${p.amount >= 480 ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
                                     ${p.amount}
                                 </div>
                             )}
