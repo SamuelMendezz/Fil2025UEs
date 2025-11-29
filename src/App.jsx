@@ -181,7 +181,7 @@ const BUSES = [
         color: "from-red-500 to-pink-600", 
         text: "text-red-700", 
         bg: "bg-red-100",
-        coordinator: { name: "Iker S Soltero Rodríguez", phone: "3171041444" },
+        coordinator: { name: "Iker S. Soltero Rodríguez", phone: "3171041444" },
         list: OFFICIAL_LIST_C3
     }
 ];
