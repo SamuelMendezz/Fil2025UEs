@@ -712,47 +712,52 @@ const App = () => {
       {/* TICKET MODAL */}
       {showTicketModal && ticketData && (
           <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[70] flex items-center justify-center p-4 animate-in zoom-in duration-300">
-              <div className="bg-white w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl relative">
-                  <div className="bg-gradient-to-br from-yellow-500 to-orange-600 p-6 text-white text-center relative overflow-hidden">
-                      <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-                      <Ticket size={48} className="mx-auto mb-2 drop-shadow-lg"/>
-                      <h2 className="text-2xl font-black uppercase tracking-widest drop-shadow-md">Boleto FIL 2025</h2>
-                      <p className="text-xs font-bold opacity-80 uppercase tracking-wide">Pase de Abordar Oficial</p>
-                      <button onClick={() => setShowTicketModal(false)} className="absolute top-4 right-4 bg-black/20 hover:bg-black/30 p-2 rounded-full transition-colors"><X size={20}/></button>
-                  </div>
-                  
-                  <div className="p-8 flex flex-col items-center gap-6 relative">
-                      {/* Perforaciones decorativas */}
-                      <div className="absolute -left-3 top-0 bottom-0 my-auto w-6 h-6 bg-black rounded-full"></div>
-                      <div className="absolute -right-3 top-0 bottom-0 my-auto w-6 h-6 bg-black rounded-full"></div>
+              {(() => {
+                  const p = passengers.find(p => p.id === ticketData.id) || ticketData;
+                  return (
+                    <div className="bg-white w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl relative">
+                        <div className="bg-gradient-to-br from-yellow-500 to-orange-600 p-6 text-white text-center relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                            <Ticket size={48} className="mx-auto mb-2 drop-shadow-lg"/>
+                            <h2 className="text-2xl font-black uppercase tracking-widest drop-shadow-md">Boleto FIL 2025</h2>
+                            <p className="text-xs font-bold opacity-80 uppercase tracking-wide">Pase de Abordar Oficial</p>
+                            <button onClick={() => setShowTicketModal(false)} className="absolute top-4 right-4 bg-black/20 hover:bg-black/30 p-2 rounded-full transition-colors"><X size={20}/></button>
+                        </div>
+                        
+                        <div className="p-8 flex flex-col items-center gap-6 relative">
+                            {/* Perforaciones decorativas */}
+                            <div className="absolute -left-3 top-0 bottom-0 my-auto w-6 h-6 bg-black rounded-full"></div>
+                            <div className="absolute -right-3 top-0 bottom-0 my-auto w-6 h-6 bg-black rounded-full"></div>
 
-                      <div className="text-center w-full">
-                          <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">Pasajero</p>
-                          <h3 className="text-xl font-bold text-gray-800 leading-tight">{ticketData.name}</h3>
-                          <div className="flex justify-center gap-2 mt-2">
-                              <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-lg text-xs font-bold">{ticketData.code}</span>
-                              {ticketData.seat_number && <span className="bg-orange-100 text-orange-600 px-3 py-1 rounded-lg text-xs font-bold">Asiento {ticketData.seat_number}</span>}
-                          </div>
-                      </div>
+                            <div className="text-center w-full">
+                                <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">Pasajero</p>
+                                <h3 className="text-xl font-bold text-gray-800 leading-tight">{p.name}</h3>
+                                <div className="flex justify-center gap-2 mt-2">
+                                    <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-lg text-xs font-bold">{p.code}</span>
+                                    <span className="bg-orange-100 text-orange-600 px-3 py-1 rounded-lg text-xs font-bold">Asiento: {p.seat_number || 'N/A'}</span>
+                                </div>
+                            </div>
 
-                      <div className="w-full border-t border-dashed border-gray-300"></div>
+                            <div className="w-full border-t border-dashed border-gray-300"></div>
 
-                      <div className="text-center w-full">
-                           <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">Tutor Responsable</p>
-                           <h4 className="font-bold text-gray-700">{ticketData.parent}</h4>
-                           <a href={`tel:${ticketData.parent_phone}`} className="inline-flex items-center gap-1 text-xs font-bold text-green-600 mt-1 bg-green-50 px-2 py-1 rounded-md">
-                               <Phone size={12}/> {ticketData.parent_phone}
-                           </a>
-                      </div>
-                      
-                      <div className="bg-gray-50 p-4 rounded-xl w-full text-center">
-                          <p className="text-[10px] text-gray-400 uppercase font-bold mb-2">Estado</p>
-                          <div className="flex items-center justify-center gap-2 text-green-600 font-black text-lg uppercase tracking-wider">
-                              <Check size={24} strokeWidth={3} /> Liberado
-                          </div>
-                      </div>
-                  </div>
-              </div>
+                            <div className="text-center w-full">
+                                <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">Tutor Responsable</p>
+                                <h4 className="font-bold text-gray-700">{p.parent}</h4>
+                                <a href={`tel:${p.parent_phone}`} className="inline-flex items-center gap-1 text-xs font-bold text-green-600 mt-1 bg-green-50 px-2 py-1 rounded-md">
+                                    <Phone size={12}/> {p.parent_phone}
+                                </a>
+                            </div>
+                            
+                            <div className="bg-gray-50 p-4 rounded-xl w-full text-center">
+                                <p className="text-[10px] text-gray-400 uppercase font-bold mb-2">Estado</p>
+                                <div className="flex items-center justify-center gap-2 text-green-600 font-black text-lg uppercase tracking-wider">
+                                    <Check size={24} strokeWidth={3} /> Liberado
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                  );
+              })()}
           </div>
       )}
 
