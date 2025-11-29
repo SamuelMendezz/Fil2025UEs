@@ -636,7 +636,15 @@ const App = () => {
   // --- RENDER ---
   const filteredPassengers = passengers.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || (p.code && p.code.includes(searchTerm));
-    const matchesFilter = filterLeg === null || !p.checks[filterLeg]; 
+    
+    // NEW FILTER LOGIC: 'pending' vs leg index vs null
+    let matchesFilter = true;
+    if (filterLeg === 'pending') {
+        matchesFilter = p.letter_url && !p.ticket_released;
+    } else if (filterLeg !== null) {
+        matchesFilter = !p.checks[filterLeg];
+    }
+
     return matchesSearch && matchesFilter;
   }).sort((a, b) => {
     if (sortMode === 'original') return a.id - b.id;
@@ -737,6 +745,8 @@ const App = () => {
                                     <span className="bg-orange-100 text-orange-600 px-3 py-1 rounded-lg text-xs font-bold">Asiento: {p.seat_number || 'N/A'}</span>
                                 </div>
                             </div>
+
+                            <div className="w-full border-t border-dashed border-gray-300"></div>
 
                             {/* SECCIÓN TUTOR ELIMINADA POR PRIVACIDAD */}
                             
@@ -1183,14 +1193,30 @@ const App = () => {
               {getSortLabel()}
            </button>
 
-           <div className="w-px h-6 bg-gray-200 mx-1"></div>
+           {/* SEPARADORES Y FILTROS SOLO PARA COORDINADOR */}
+           {isCoordinator && (
+             <>
+               <div className="w-px h-6 bg-gray-200 mx-1"></div>
 
-           <button onClick={() => setFilterLeg(null)} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-sm ${filterLeg === null ? 'bg-gray-800 text-white scale-105 shadow-md' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>Todos</button>
-           {legs.map((leg) => (
-             <button key={leg.id} onClick={() => setFilterLeg(leg.id)} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 shadow-sm ${filterLeg === leg.id ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white scale-105 shadow-orange-500/30' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>
-                <span className={filterLeg === leg.id ? 'text-white' : 'text-orange-400'}>{leg.icon}</span> {filterLeg === leg.id ? `Faltan ${leg.short}` : leg.short}
-             </button>
-           ))}
+               {/* FILTER: CARTAS PENDIENTES */}
+               <button 
+                  onClick={() => setFilterLeg('pending')} 
+                  className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 shadow-sm ${filterLeg === 'pending' ? 'bg-yellow-500 text-white scale-105 shadow-yellow-500/30' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+               >
+                  <FileText size={14} /> Cartas Pendientes
+                  <span className="bg-white/20 px-1.5 py-0.5 rounded-md text-[10px]">{passengers.filter(p => p.letter_url && !p.ticket_released).length}</span>
+               </button>
+
+               <div className="w-px h-6 bg-gray-200 mx-1"></div>
+
+               <button onClick={() => setFilterLeg(null)} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-sm ${filterLeg === null ? 'bg-gray-800 text-white scale-105 shadow-md' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>Todos</button>
+               {legs.map((leg) => (
+                 <button key={leg.id} onClick={() => setFilterLeg(leg.id)} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 shadow-sm ${filterLeg === leg.id ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white scale-105 shadow-orange-500/30' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>
+                    <span className={filterLeg === leg.id ? 'text-white' : 'text-orange-400'}>{leg.icon}</span> {filterLeg === leg.id ? `Faltan ${leg.short}` : leg.short}
+                 </button>
+               ))}
+             </>
+           )}
         </div>
 
         {/* ADD SAMUEL BUTTON (IF MISSING) */}
@@ -1220,13 +1246,13 @@ const App = () => {
         <div className="grid grid-cols-1 gap-4 pb-10 max-w-7xl mx-auto">
           {filteredPassengers.length === 0 ? (
             <div className="col-span-full text-center py-12 px-6 bg-white/50 rounded-3xl border border-dashed border-gray-300 mt-4">
-               {filterLeg !== null ? (
+               {filterLeg !== null && filterLeg !== 'pending' ? (
                  <>
                    <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 shadow-inner"><Check size={32} className="text-green-600" strokeWidth={3} /></div>
                    <h3 className="text-lg font-bold text-gray-800">¡Zona Completada!</h3>
                  </>
                ) : (
-                 <><Search size={40} className="mx-auto mb-3 text-gray-300" /><p className="text-gray-400 font-medium">No se encontraron resultados</p></>
+                 <><Search size={40} className="mx-auto mb-3 text-gray-300" /><p className="text-gray-400 font-medium">{filterLeg === 'pending' ? 'No hay cartas pendientes de revisión' : 'No se encontraron resultados'}</p></>
                )}
             </div>
           ) : (
