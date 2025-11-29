@@ -1124,7 +1124,7 @@ const App = () => {
       <div className="max-w-7xl mx-auto px-4 -mt-6 relative z-30">
         
         {/* STATS CARDS */}
-        <div className={`grid gap-3 mb-6 grid-cols-3 md:grid-cols-4 lg:grid-cols-4`}>
+        <div className={`grid gap-3 mb-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-4`}>
           <div className="bg-white p-3 rounded-2xl shadow-lg border-b-4 border-green-500 flex flex-col items-center text-center transform hover:-translate-y-1 transition-transform">
              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Pagados</span>
              <span className="text-xl font-black text-gray-800">{totalPaidFull}</span>
@@ -1138,7 +1138,7 @@ const App = () => {
              <span className="text-xl font-black text-gray-800">{totalPending}</span>
           </div>
           {isCoordinator && (
-            <div className="bg-white p-3 rounded-2xl shadow-lg border-b-4 border-orange-500 flex flex-col items-center text-center transform hover:-translate-y-1 transition-transform col-span-3 md:col-span-1">
+            <div className="bg-white p-3 rounded-2xl shadow-lg border-b-4 border-orange-500 flex flex-col items-center text-center transform hover:-translate-y-1 transition-transform">
                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Total MXN</span>
                <span className="text-lg font-black text-orange-600 tracking-tight">${totalMoney.toLocaleString()}</span>
             </div>
@@ -1243,7 +1243,7 @@ const App = () => {
         )}
 
         {/* LISTA DE PASAJEROS (LISTA SIMPLE) */}
-        <div className="grid grid-cols-1 gap-4 pb-10 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-20 max-w-7xl mx-auto">
           {filteredPassengers.length === 0 ? (
             <div className="col-span-full text-center py-12 px-6 bg-white/50 rounded-3xl border border-dashed border-gray-300 mt-4">
                {filterLeg !== null && filterLeg !== 'pending' ? (
@@ -1260,7 +1260,7 @@ const App = () => {
               <div key={p.id} className="bg-white rounded-2xl shadow-sm hover:shadow-xl border border-orange-50/50 overflow-hidden transition-all duration-300 group relative flex flex-col">
                 <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-orange-400 to-yellow-400"></div>
                 
-                <div className="p-4 relative z-10 pl-5 flex-1 flex justify-between items-start">
+                <div className="p-3 relative z-10 pl-4 flex-1 flex justify-between items-start">
                   <div className="flex-1 pr-14"> {/* Aumentado el padding derecho para evitar solapamiento con el dinero */}
                         
                         {/* EDICIÓN RÁPIDA DE DINERO (Posicionamiento absoluto) */}
@@ -1375,7 +1375,7 @@ const App = () => {
                 {/* ... existing leg buttons ... */}
                 <div className="grid grid-cols-3 divide-x divide-gray-100 bg-gray-50/30 relative z-10 border-t border-gray-100 mt-auto">
                     {legs.map((leg, idx) => (
-                      <button key={idx} onClick={() => toggleCheck(p.id, idx)} className={`relative flex flex-col items-center justify-center py-3 transition-all duration-300 group/btn hover:bg-white ${p.checks && p.checks[idx] ? 'bg-green-500/5 text-green-700' : 'text-gray-400'}`}>
+                      <button key={idx} onClick={() => toggleCheck(p.id, idx)} className={`relative flex flex-col items-center justify-center py-2 transition-all duration-300 group/btn hover:bg-white ${p.checks && p.checks[idx] ? 'bg-green-500/5 text-green-700' : 'text-gray-400'}`}>
                         <div className={`mb-1 p-1.5 rounded-full transition-all duration-300 shadow-sm ${p.checks && p.checks[idx] ? 'bg-green-500 text-white scale-110 shadow-green-500/40' : 'bg-white text-gray-300 group-hover/btn:text-orange-400 shadow-sm border border-gray-100'}`}>
                            {p.checks && p.checks[idx] ? <Check size={14} strokeWidth={4} /> : leg.icon}
                         </div>
