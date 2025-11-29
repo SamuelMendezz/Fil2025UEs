@@ -690,7 +690,7 @@ const App = () => {
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-orange-50 text-orange-600 font-bold">Cargando datos...</div>;
 
   return (
-    <div className="min-h-screen bg-white font-sans pb-24 text-gray-800 overflow-x-hidden">
+    <div className="min-h-screen bg-white font-sans pb-24 text-gray-800 overflow-x-hidden w-full max-w-[100vw]">
       
       {/* NOTIFICATION TOAST */}
       <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[60] transition-all duration-500 ease-in-out ${notification.visible ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0 pointer-events-none'}`}>
@@ -1176,19 +1176,19 @@ const App = () => {
         </div>
 
         {/* FILTERS & SORT */}
-        <div className="flex items-center gap-3 mb-6 overflow-x-auto pb-2 px-1 no-scrollbar justify-start md:justify-center">
-           <div className="bg-white p-2 rounded-full shadow-sm"><ListFilter size={16} className="text-orange-500"/></div>
+        <div className="flex items-center gap-3 mb-6 w-full max-w-full overflow-x-auto pb-2 px-1 no-scrollbar justify-start">
+           <div className="flex-shrink-0 bg-white p-2 rounded-full shadow-sm"><ListFilter size={16} className="text-orange-500"/></div>
            
            {/* MAP BUTTON */}
-           <button onClick={() => setShowBusMap(true)} className="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-sm bg-white text-gray-600 hover:bg-orange-50 flex items-center gap-2 border border-gray-100 hover:border-orange-200 group">
+           <button onClick={() => setShowBusMap(true)} className="flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-sm bg-white text-gray-600 hover:bg-orange-50 flex items-center gap-2 border border-gray-100 hover:border-orange-200 group">
               <Armchair size={14} className="text-orange-500 group-hover:scale-110 transition-transform"/>
               <span className="group-hover:text-orange-600">Mapa</span>
            </button>
 
-           <div className="w-px h-6 bg-gray-200 mx-1"></div>
+           <div className="flex-shrink-0 w-px h-6 bg-gray-200 mx-1"></div>
            
            {/* SORT BUTTON */}
-           <button onClick={cycleSortMode} className="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-sm bg-white text-gray-600 hover:bg-gray-50 flex items-center gap-2 border border-gray-100">
+           <button onClick={cycleSortMode} className="flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-sm bg-white text-gray-600 hover:bg-gray-50 flex items-center gap-2 border border-gray-100">
               {sortMode === 'original' ? <ArrowUpDown size={14} className="text-gray-400"/> : <ArrowDownAZ size={14} className="text-orange-500"/>}
               {getSortLabel()}
            </button>
@@ -1196,22 +1196,22 @@ const App = () => {
            {/* SEPARADORES Y FILTROS SOLO PARA COORDINADOR */}
            {isCoordinator && (
              <>
-               <div className="w-px h-6 bg-gray-200 mx-1"></div>
+               <div className="flex-shrink-0 w-px h-6 bg-gray-200 mx-1"></div>
 
                {/* FILTER: CARTAS PENDIENTES */}
                <button 
                   onClick={() => setFilterLeg('pending')} 
-                  className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 shadow-sm ${filterLeg === 'pending' ? 'bg-yellow-500 text-white scale-105 shadow-yellow-500/30' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                  className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 shadow-sm ${filterLeg === 'pending' ? 'bg-yellow-500 text-white scale-105 shadow-yellow-500/30' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
                >
                   <FileText size={14} /> Cartas Pendientes
                   <span className="bg-white/20 px-1.5 py-0.5 rounded-md text-[10px]">{passengers.filter(p => p.letter_url && !p.ticket_released).length}</span>
                </button>
 
-               <div className="w-px h-6 bg-gray-200 mx-1"></div>
+               <div className="flex-shrink-0 w-px h-6 bg-gray-200 mx-1"></div>
 
-               <button onClick={() => setFilterLeg(null)} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-sm ${filterLeg === null ? 'bg-gray-800 text-white scale-105 shadow-md' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>Todos</button>
+               <button onClick={() => setFilterLeg(null)} className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-sm ${filterLeg === null ? 'bg-gray-800 text-white scale-105 shadow-md' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>Todos</button>
                {legs.map((leg) => (
-                 <button key={leg.id} onClick={() => setFilterLeg(leg.id)} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 shadow-sm ${filterLeg === leg.id ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white scale-105 shadow-orange-500/30' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>
+                 <button key={leg.id} onClick={() => setFilterLeg(leg.id)} className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 shadow-sm ${filterLeg === leg.id ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white scale-105 shadow-orange-500/30' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>
                     <span className={filterLeg === leg.id ? 'text-white' : 'text-orange-400'}>{leg.icon}</span> {filterLeg === leg.id ? `Faltan ${leg.short}` : leg.short}
                  </button>
                ))}
@@ -1261,7 +1261,7 @@ const App = () => {
                 <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-orange-400 to-yellow-400"></div>
                 
                 <div className="p-3 relative z-10 pl-4 flex-1 flex justify-between items-start">
-                  <div className="flex-1 pr-14"> {/* Aumentado el padding derecho para evitar solapamiento con el dinero */}
+                  <div className="flex-1 pr-14 min-w-0"> {/* Aumentado el padding derecho para evitar solapamiento con el dinero */}
                         
                         {/* EDICIÓN RÁPIDA DE DINERO (Posicionamiento absoluto) */}
                         <div className="absolute top-3 right-3 z-20">
@@ -1285,12 +1285,12 @@ const App = () => {
                         </div>
 
                         {/* NOMBRE CLICKABLE (Abre modal o Login) */}
-                        <h3 onClick={() => handleEditClick(p)} className={`font-bold text-sm leading-tight mb-2 transition-colors cursor-pointer hover:text-orange-600 text-gray-800 flex items-center gap-2 group-hover:underline select-none`}>
+                        <h3 onClick={() => handleEditClick(p)} className={`font-bold text-sm leading-tight mb-2 transition-colors cursor-pointer hover:text-orange-600 text-gray-800 flex items-center gap-2 group-hover:underline select-none truncate pr-2`}>
                             {formatDisplayName(p.name)} 
                             {isCoordinator ? (
-                                <Edit2 size={12} className="text-gray-300 group-hover:text-orange-500 opacity-0 group-hover:opacity-100 transition-all"/>
+                                <Edit2 size={12} className="text-gray-300 group-hover:text-orange-500 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0"/>
                             ) : (
-                                <Lock size={12} className="text-gray-300 group-hover:text-orange-500 opacity-0 group-hover:opacity-100 transition-all"/>
+                                <Lock size={12} className="text-gray-300 group-hover:text-orange-500 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0"/>
                             )}
                         </h3>
                         
@@ -1300,7 +1300,7 @@ const App = () => {
                         </div>
 
                         {/* --- CARTA PERMISO AREA --- */}
-                        <div className="mt-3 flex items-center gap-2">
+                        <div className="mt-3 flex items-center gap-2 flex-wrap">
                             {p.letter_url ? (
                                 <>
                                    {/* Link Ver Carta (SOLO COORDINADORES) o Etiqueta de Estado (PUBLICO) */}
