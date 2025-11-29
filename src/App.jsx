@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone, Edit2, Lock, LogOut, EyeOff, Crown, FileText, Users, GraduationCap, ListFilter, Save, ShieldAlert, CreditCard, Hash } from 'lucide-react';
+import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone, Edit2, Lock, LogOut, EyeOff, Crown, FileText, Users, GraduationCap, ListFilter, Save, ShieldAlert, CreditCard, Hash, User, Bell, ArrowUpDown, ArrowDownAZ } from 'lucide-react';
 
 // --- CONFIGURACIÓN DE SUPABASE ---
 const SUPABASE_URL = 'https://fgzegoflnkwkcztivila.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnemVnb2Zsbmt3a2N6dGl2aWxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzMzQyOTYsImV4cCI6MjA3OTkxMDI5Nn0.-u-NUiR5Eqitf4-zqvAAZhTKHc1_Cj3OKHAhGRHl8Xs';
 
-// --- LISTA OFICIAL COMPLETA (NO BORRAR NADA) ---
+// --- LISTA OFICIAL COMPLETA ---
 const OFFICIAL_LIST = [
   { name: "Joseph Yancarlo Avalos Canales", phone: "3171325247", code: "225519213", amount: 480, nss: "5251056577", parent: "Lenis Alejandra Canales Castro", parentPhone: "3171048798" },
   { name: "Daira Athziri Saldaña Dávila", phone: "3171284644", code: "225521072", amount: 480, nss: "4927321887", parent: "María Luisa Dávila Muñoz", parentPhone: "3171146753" },
@@ -66,10 +66,14 @@ const App = () => {
     document.title = "Unión Estudiantil - FIL 2025";
   }, []);
 
-  // --- AUTENTICACIÓN COORDINADOR ---
-  const [isCoordinator, setIsCoordinator] = useState(() => {
-    return localStorage.getItem('fil2025_auth') === 'true';
+  // --- AUTENTICACIÓN COORDINADOR Y USUARIO ---
+  const [currentUser, setCurrentUser] = useState(() => {
+    return localStorage.getItem('fil2025_user') || null;
   });
+  
+  // Si hay un usuario, es coordinador
+  const isCoordinator = !!currentUser;
+
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginUser, setLoginUser] = useState('');
   const [loginPass, setLoginPass] = useState('');
@@ -77,10 +81,24 @@ const App = () => {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (loginUser === '223440784' && loginPass === 'samumv367') {
-      setIsCoordinator(true);
+    
+    // Credenciales
+    const isSamuel = loginUser === '223440784' && loginPass === 'samumv367';
+    // Permitir "Francisco" o "francisco" (case insensitive para el nombre)
+    const isFrancisco = (loginUser.toLowerCase() === 'francisco') && loginPass === 'fil2025';
+
+    if (isSamuel) {
+      const name = "Samuel M.";
+      setCurrentUser(name);
+      localStorage.setItem('fil2025_user', name);
       setShowLoginModal(false);
-      localStorage.setItem('fil2025_auth', 'true');
+      setLoginError('');
+      setLoginUser(''); setLoginPass('');
+    } else if (isFrancisco) {
+      const name = "Francisco P.";
+      setCurrentUser(name);
+      localStorage.setItem('fil2025_user', name);
+      setShowLoginModal(false);
       setLoginError('');
       setLoginUser(''); setLoginPass('');
     } else {
@@ -89,8 +107,8 @@ const App = () => {
   };
 
   const handleLogout = () => {
-    setIsCoordinator(false);
-    localStorage.removeItem('fil2025_auth');
+    setCurrentUser(null);
+    localStorage.removeItem('fil2025_user');
   };
 
   const triggerLogin = () => {
@@ -200,7 +218,7 @@ const App = () => {
     if (error) {
         alert("Error al subir: " + error.message + ". ¿Seguro que desactivaste RLS?");
     } else {
-        alert("¡Lista restaurada con éxito!");
+        showNotification("¡Lista restaurada con éxito!", 'success');
         fetchPassengers();
     }
     setUploading(false);
@@ -218,8 +236,23 @@ const App = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
-  const [editingId, setEditingId] = useState(null);
+  
+  // Sorting State
+  const [sortMode, setSortMode] = useState('original'); // 'original', 'alpha', 'lastname'
+
+  // MODAL EDIT STATE
+  const [showEditModal, setShowEditModal] = useState(false);
   const [editFormData, setEditFormData] = useState({});
+
+  // NOTIFICATION SYSTEM
+  const [notification, setNotification] = useState({ message: '', type: '', visible: false });
+
+  const showNotification = (message, type = 'success') => {
+    setNotification({ message, type, visible: true });
+    setTimeout(() => {
+      setNotification(prev => ({ ...prev, visible: false }));
+    }, 3000);
+  };
 
   const legs = [
     { id: 0, label: "Salida Autlán", sub: "→ FIL", icon: <Bus size={14} />, short: "Ida" },
@@ -247,7 +280,9 @@ const App = () => {
       times: [null, null, null]
     };
 
-    await supabase.from('passengers').insert([newPassenger]);
+    const { error } = await supabase.from('passengers').insert([newPassenger]);
+    if (!error) showNotification("Pasajero agregado correctamente");
+    
     setNewName(''); setNewPhone(''); setNewCode(''); setNewAmount(''); setNewNss(''); setNewParent(''); setNewParentPhone('');
     setShowAddForm(false);
   };
@@ -257,20 +292,15 @@ const App = () => {
     if (!supabase) return;
     if (window.confirm('¿Seguro que quieres eliminar a esta persona?')) {
       await supabase.from('passengers').delete().eq('id', id);
+      showNotification("Pasajero eliminado", "error");
+      setShowEditModal(false); // Close modal if open
     }
-  };
-
-  const toggleDetails = (id) => {
-    if (!isCoordinator) { triggerLogin(); return; }
-    setPassengers(passengers.map(p => 
-      p.id === id ? { ...p, showDetails: !p.showDetails } : p
-    ));
   };
 
   const handleEditClick = (passenger) => {
     if (!isCoordinator) { triggerLogin(); return; }
-    setEditingId(passenger.id);
     setEditFormData({ ...passenger });
+    setShowEditModal(true);
   };
 
   const handleEditChange = (e) => {
@@ -280,13 +310,25 @@ const App = () => {
 
   const handleSaveEdit = async () => {
     if (!supabase) return;
-    const { id, showDetails, ...dataToUpdate } = editFormData;
+    const { id, ...dataToUpdate } = editFormData;
     await supabase.from('passengers').update(dataToUpdate).eq('id', id);
-    setEditingId(null);
+    showNotification("Información actualizada");
+    setShowEditModal(false);
+  };
+
+  const handleLocalAmountChange = (id, newVal) => {
+    // Update local state immediately for input responsiveness
+    setPassengers(prev => prev.map(p => p.id === id ? { ...p, amount: newVal } : p));
+  };
+
+  const handleAmountBlur = async (id, newVal) => {
+    if (!supabase) return;
+    const amount = parseFloat(newVal) || 0;
+    // Ensure the saved value is a number
+    await supabase.from('passengers').update({ amount }).eq('id', id);
+    showNotification(`Pago actualizado: $${amount}`);
   };
    
-  const handleCancelEdit = () => setEditingId(null);
-
   const toggleCheck = async (id, legIndex) => {
     if (!isCoordinator) { triggerLogin(); return; }
     if (!supabase) return;
@@ -309,11 +351,64 @@ const App = () => {
     await supabase.from('passengers').update({ checks: newChecks, times: newTimes }).eq('id', id);
   };
 
+  // --- SORTING LOGIC ---
+  const getSurname = (fullName) => {
+    const parts = fullName.trim().split(/\s+/);
+    // Simple heuristic: if 4 names, surname is usually index 2. If 3, index 1.
+    // Example: "Juan Carlos Perez Lopez" -> Perez (index 2)
+    // Example: "Juan Perez Lopez" -> Perez (index 1)
+    if (parts.length >= 4) return parts[2];
+    if (parts.length === 3) return parts[1];
+    return parts[0]; // Fallback to first name if short
+  };
+
+  // Función para reformatear el nombre en pantalla cuando se ordena por apellido
+  const formatDisplayName = (name) => {
+    if (sortMode !== 'lastname') return name;
+    
+    const parts = name.trim().split(/\s+/);
+    
+    if (parts.length >= 4) {
+       // [0]Juan [1]Carlos [2]Perez [3]Lopez -> Perez Lopez Juan Carlos
+       return `${parts.slice(2).join(' ')} ${parts.slice(0, 2).join(' ')}`;
+    }
+    if (parts.length === 3) {
+       // [0]Juan [1]Perez [2]Lopez -> Perez Lopez Juan
+       return `${parts.slice(1).join(' ')} ${parts[0]}`;
+    }
+    if (parts.length === 2) {
+       // [0]Juan [1]Perez -> Perez Juan
+       return `${parts[1]} ${parts[0]}`;
+    }
+    return name;
+  };
+
+  const cycleSortMode = () => {
+    if (sortMode === 'original') setSortMode('alpha');
+    else if (sortMode === 'alpha') setSortMode('lastname');
+    else setSortMode('original');
+  };
+
+  const getSortLabel = () => {
+    if (sortMode === 'alpha') return 'A-Z (Nombre)';
+    if (sortMode === 'lastname') return 'A-Z (Apellido)';
+    return 'Original';
+  };
+
   // --- RENDER ---
   const filteredPassengers = passengers.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || (p.code && p.code.includes(searchTerm));
     const matchesFilter = filterLeg === null || !p.checks[filterLeg]; 
     return matchesSearch && matchesFilter;
+  }).sort((a, b) => {
+    if (sortMode === 'original') return a.id - b.id;
+    if (sortMode === 'alpha') return a.name.localeCompare(b.name);
+    if (sortMode === 'lastname') {
+        const surnameA = getSurname(a.name);
+        const surnameB = getSurname(b.name);
+        return surnameA.localeCompare(surnameB);
+    }
+    return 0;
   });
 
   const getStats = (legIndex) => {
@@ -351,6 +446,78 @@ const App = () => {
   return (
     <div className="min-h-screen bg-orange-50/40 font-sans pb-24 text-gray-800">
       
+      {/* NOTIFICATION TOAST */}
+      <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[60] transition-all duration-500 ease-in-out ${notification.visible ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0 pointer-events-none'}`}>
+        <div className={`flex items-center gap-3 px-6 py-3 rounded-full shadow-2xl border ${notification.type === 'error' ? 'bg-white border-red-200 text-red-600' : 'bg-white border-green-200 text-green-700'}`}>
+            {notification.type === 'error' ? <ShieldAlert size={20}/> : <Check size={20} className="bg-green-100 p-0.5 rounded-full"/>}
+            <span className="font-bold text-sm">{notification.message}</span>
+        </div>
+      </div>
+
+      {/* EDIT MODAL WINDOW */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-lg shadow-2xl border border-orange-200 relative max-h-[90vh] overflow-y-auto">
+             <div className="flex justify-between items-center mb-6 border-b pb-4">
+               <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                 <User className="text-orange-500" /> Ficha del Pasajero
+               </h3>
+               <button onClick={() => setShowEditModal(false)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"><X size={20}/></button>
+             </div>
+             
+             <div className="space-y-4">
+                {/* General Info Section */}
+                <div className="bg-gray-50 p-4 rounded-xl space-y-3">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Información General</label>
+                    <div>
+                        <label className="text-xs font-bold text-gray-500 ml-1">NOMBRE COMPLETO</label>
+                        <input name="name" value={editFormData.name} onChange={handleEditChange} className="w-full p-3 bg-white border border-gray-200 rounded-xl font-bold text-gray-800 focus:ring-2 focus:ring-orange-500 outline-none" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="text-xs font-bold text-gray-500 ml-1">TELÉFONO</label>
+                            <input name="phone" value={editFormData.phone} onChange={handleEditChange} className="w-full p-3 bg-white border border-gray-200 rounded-xl font-medium focus:ring-2 focus:ring-orange-500 outline-none" />
+                        </div>
+                        <div>
+                            <label className="text-xs font-bold text-gray-500 ml-1">CÓDIGO UDG</label>
+                            <input name="code" value={editFormData.code} onChange={handleEditChange} className="w-full p-3 bg-white border border-gray-200 rounded-xl font-medium focus:ring-2 focus:ring-orange-500 outline-none" />
+                        </div>
+                    </div>
+                    <div>
+                        <label className="text-xs font-bold text-gray-500 ml-1">MONTO PAGADO ($)</label>
+                        <input type="number" name="amount" value={editFormData.amount} onChange={handleEditChange} className="w-full p-3 bg-white border border-gray-200 rounded-xl font-medium focus:ring-2 focus:ring-orange-500 outline-none" />
+                    </div>
+                </div>
+
+                {/* Confidential Info Section */}
+                <div className="bg-red-50/50 p-4 rounded-xl space-y-3 border border-red-100">
+                    <label className="text-[10px] font-bold text-red-400 uppercase tracking-wider block mb-1 flex items-center gap-1"><ShieldAlert size={12}/> Información Confidencial</label>
+                    <div>
+                        <label className="text-xs font-bold text-gray-500 ml-1">NSS (SEGURO SOCIAL)</label>
+                        <input name="nss" value={editFormData.nss} onChange={handleEditChange} className="w-full p-3 bg-white border border-red-100 rounded-xl font-medium text-gray-700 focus:ring-2 focus:ring-red-200 outline-none" />
+                    </div>
+                    <div>
+                        <label className="text-xs font-bold text-gray-500 ml-1">NOMBRE DEL TUTOR</label>
+                        <input name="parent" value={editFormData.parent} onChange={handleEditChange} className="w-full p-3 bg-white border border-red-100 rounded-xl font-medium text-gray-700 focus:ring-2 focus:ring-red-200 outline-none" />
+                    </div>
+                    <div>
+                        <label className="text-xs font-bold text-gray-500 ml-1">TELÉFONO DEL TUTOR</label>
+                        <div className="flex gap-2">
+                            <input name="parent_phone" value={editFormData.parent_phone} onChange={handleEditChange} className="w-full p-3 bg-white border border-red-100 rounded-xl font-medium text-gray-700 focus:ring-2 focus:ring-red-200 outline-none" />
+                            <a href={`tel:${editFormData.parent_phone}`} className="bg-green-100 text-green-700 p-3 rounded-xl flex items-center justify-center hover:bg-green-200 transition-colors"><Phone size={20}/></a>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                    <button onClick={() => removePassenger(editFormData.id)} className="px-4 py-3 bg-red-100 text-red-600 rounded-xl font-bold hover:bg-red-200 transition-colors flex items-center justify-center"><Trash2 size={20}/></button>
+                    <button onClick={handleSaveEdit} className="flex-1 bg-green-500 text-white py-3 rounded-xl font-bold text-lg hover:bg-green-600 transition-colors shadow-lg shadow-green-500/30 flex items-center justify-center gap-2"><Save size={20}/> Guardar Cambios</button>
+                </div>
+             </div>
+          </div>
+        </div>
+      )}
+
       {/* LOGIN MODAL */}
       {showLoginModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
@@ -366,7 +533,7 @@ const App = () => {
                 {loginError && <div className="p-3 bg-red-100 text-red-700 rounded-xl text-sm font-bold text-center">{loginError}</div>}
                 <div>
                    <label className="text-xs font-bold text-gray-500 ml-1">USUARIO</label>
-                   <input type="number" value={loginUser} onChange={(e) => setLoginUser(e.target.value)} className="w-full p-3 bg-gray-50 rounded-xl font-medium focus:ring-2 focus:ring-orange-500 outline-none" placeholder="Código" />
+                   <input type="text" value={loginUser} onChange={(e) => setLoginUser(e.target.value)} className="w-full p-3 bg-gray-50 rounded-xl font-medium focus:ring-2 focus:ring-orange-500 outline-none" placeholder="Código o Nombre" />
                 </div>
                 <div>
                    <label className="text-xs font-bold text-gray-500 ml-1">CONTRASEÑA</label>
@@ -379,32 +546,44 @@ const App = () => {
       )}
       
       {/* HEADER */}
-      <div className="bg-gradient-to-br from-orange-700 via-orange-600 to-yellow-500 text-white p-6 pb-12 shadow-xl rounded-b-[2.5rem] relative z-20 transition-all">
-        <div className="max-w-7xl mx-auto">
+      <div className="bg-gradient-to-br from-orange-700 via-orange-600 to-yellow-500 text-white p-6 pb-12 shadow-2xl shadow-orange-900/50 rounded-b-[2.5rem] relative z-20 transition-all overflow-hidden">
+        {/* Decorative gloss/shadow for depth */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/5 pointer-events-none"></div>
+        <div className="absolute -top-20 -right-20 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div className="max-w-7xl mx-auto relative">
             <div className="flex justify-between items-start mb-4">
             <div className="flex flex-col">
-                <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-orange-100/80 mb-1">Planilla</span>
+                <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-orange-100/90 mb-1 drop-shadow-md">Planilla</span>
                 <div className="flex flex-col">
-                    <h1 className="text-2xl md:text-3xl font-black flex items-center gap-2 drop-shadow-sm">Unión Estudiantil</h1>
-                    <span className="text-sm font-bold text-orange-100 opacity-90 -mt-1">FIL 2025 (Supabase)</span>
+                    <h1 className="text-2xl md:text-3xl font-black flex items-center gap-2 drop-shadow-xl filter">Unión Estudiantil</h1>
+                    <span className="text-sm font-bold text-orange-100 opacity-90 -mt-1 drop-shadow-md">FIL 2025 (Supabase)</span>
                 </div>
+                
+                {/* GREETING OR DEFAULT TEXT */}
                 <div className="flex items-center gap-2 text-xs text-orange-50 font-medium mt-2">
-                    <div className="bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-md flex items-center gap-1">
-                        <Bus size={12} className="text-yellow-300"/> Camión 1
-                    </div>
+                    {currentUser ? (
+                        <div className="bg-yellow-400/90 text-yellow-900 px-3 py-1 rounded-full font-bold flex items-center gap-1 shadow-lg shadow-yellow-900/20 animate-in fade-in slide-in-from-left-2 backdrop-blur-sm border border-yellow-300/50">
+                            👋 Hola {currentUser}
+                        </div>
+                    ) : (
+                       <div className="bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm border border-white/10">
+                           <Bus size={12} className="text-yellow-300 drop-shadow-sm"/> Camión 1
+                       </div>
+                    )}
                     {isCoordinator && (
-                        <div className="bg-green-500/80 backdrop-blur-sm px-2 py-0.5 rounded-md flex items-center gap-1 text-white">
-                            <Lock size={10} /> Coord. Activo
+                        <div className="bg-green-500/80 backdrop-blur-sm px-2 py-0.5 rounded-md flex items-center gap-1 text-white shadow-sm border border-green-400/30">
+                            <Lock size={10} className="drop-shadow-sm" /> Coord. Activo
                         </div>
                     )}
                 </div>
             </div>
             
             <div className="flex gap-2">
-                <button onClick={isCoordinator ? handleLogout : triggerLogin} className={`p-2 rounded-2xl backdrop-blur-md border border-white/10 shadow-sm transition-all ${isCoordinator ? 'bg-red-500/80 hover:bg-red-600' : 'bg-white/20 hover:bg-white/30'}`}>
-                    {isCoordinator ? <LogOut size={20} /> : <Lock size={20} />}
+                <button onClick={isCoordinator ? handleLogout : triggerLogin} className={`p-2 rounded-2xl backdrop-blur-md border border-white/20 shadow-lg transition-all ${isCoordinator ? 'bg-red-500/80 hover:bg-red-600 shadow-red-900/20' : 'bg-white/20 hover:bg-white/30 shadow-black/10'}`}>
+                    {isCoordinator ? <LogOut size={20} className="drop-shadow-sm" /> : <Lock size={20} className="drop-shadow-sm" />}
                 </button>
-                <span className="text-sm bg-white/20 backdrop-blur-md px-4 py-2 rounded-2xl text-white font-bold border border-white/10 shadow-sm flex items-center">
+                <span className="text-sm bg-white/20 backdrop-blur-md px-4 py-2 rounded-2xl text-white font-bold border border-white/20 shadow-lg shadow-black/10 flex items-center drop-shadow-sm">
                     {passengers.length} Pax
                 </span>
             </div>
@@ -415,16 +594,16 @@ const App = () => {
             {legs.map((leg, idx) => {
                 const stats = getStats(idx);
                 return (
-                <div key={idx} className="bg-black/10 backdrop-blur-sm rounded-2xl p-2.5 flex flex-col items-center border border-white/10 shadow-inner group transition-all hover:bg-black/20 col-span-1 md:col-span-2">
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-orange-200/80 mb-0.5">{leg.sub.replace('→ ', '')}</span>
+                <div key={idx} className="bg-black/20 backdrop-blur-md rounded-2xl p-2.5 flex flex-col items-center border border-white/10 shadow-inner group transition-all hover:bg-black/30">
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-orange-100/90 mb-0.5 drop-shadow-sm">{leg.sub.replace('→ ', '')}</span>
                     <div className="flex items-baseline justify-center gap-0.5 mb-1">
-                        <span className={`text-3xl font-black tracking-tighter leading-none ${stats.count === stats.total && stats.total > 0 ? 'text-green-300 drop-shadow-[0_0_8px_rgba(134,239,172,0.5)]' : 'text-white drop-shadow-md'}`}>
+                        <span className={`text-3xl font-black tracking-tighter leading-none drop-shadow-md ${stats.count === stats.total && stats.total > 0 ? 'text-green-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]' : 'text-white'}`}>
                             {stats.count}
                         </span>
-                        <span className="text-xs font-bold text-white/50">/{stats.total}</span>
+                        <span className="text-xs font-bold text-white/60 drop-shadow-sm">/{stats.total}</span>
                     </div>
-                    <div className="w-full bg-black/20 h-1.5 rounded-full overflow-hidden">
-                    <div className={`h-full shadow-[0_0_10px_rgba(255,255,255,0.5)] transition-all duration-700 ease-out ${stats.count === stats.total ? 'bg-green-400' : 'bg-white'}`} style={{ width: `${stats.percent}%` }}></div>
+                    <div className="w-full bg-black/30 h-1.5 rounded-full overflow-hidden shadow-inner">
+                        <div className={`h-full shadow-[0_0_10px_rgba(255,255,255,0.5)] transition-all duration-700 ease-out ${stats.count === stats.total ? 'bg-green-400' : 'bg-white'}`} style={{ width: `${stats.percent}%` }}></div>
                     </div>
                 </div>
                 )
@@ -487,9 +666,18 @@ const App = () => {
           </button>
         </div>
 
-        {/* FILTERS */}
+        {/* FILTERS & SORT */}
         <div className="flex items-center gap-3 mb-6 overflow-x-auto pb-2 px-1 no-scrollbar justify-start md:justify-center">
            <div className="bg-white p-2 rounded-full shadow-sm"><ListFilter size={16} className="text-orange-500"/></div>
+           
+           {/* SORT BUTTON */}
+           <button onClick={cycleSortMode} className="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-sm bg-white text-gray-600 hover:bg-gray-50 flex items-center gap-2 border border-gray-100">
+              {sortMode === 'original' ? <ArrowUpDown size={14} className="text-gray-400"/> : <ArrowDownAZ size={14} className="text-orange-500"/>}
+              {getSortLabel()}
+           </button>
+
+           <div className="w-px h-6 bg-gray-200 mx-1"></div>
+
            <button onClick={() => setFilterLeg(null)} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-sm ${filterLeg === null ? 'bg-gray-800 text-white scale-105 shadow-md' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>Todos</button>
            {legs.map((leg) => (
              <button key={leg.id} onClick={() => setFilterLeg(leg.id)} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 shadow-sm ${filterLeg === leg.id ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white scale-105 shadow-orange-500/30' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>
@@ -510,7 +698,7 @@ const App = () => {
         )}
 
         {/* LISTA DE PASAJEROS (LISTA SIMPLE) */}
-        <div className="grid grid-cols-1 gap-4 pb-10 max-w-lg mx-auto">
+        <div className="grid grid-cols-1 gap-4 pb-10 max-w-7xl mx-auto">
           {filteredPassengers.length === 0 ? (
             <div className="col-span-full text-center py-12 px-6 bg-white/50 rounded-3xl border border-dashed border-gray-300 mt-4">
                {filterLeg !== null ? (
@@ -527,95 +715,49 @@ const App = () => {
               <div key={p.id} className="bg-white rounded-2xl shadow-sm hover:shadow-xl border border-orange-50/50 overflow-hidden transition-all duration-300 group relative flex flex-col">
                 <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-orange-400 to-yellow-400"></div>
                 
-                <div className="p-4 relative z-10 pl-5 flex-1">
-                  <div className={`absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-sm ${p.amount >= 480 ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
-                      ${p.amount}
-                  </div>
-
-                  {editingId === p.id && isCoordinator ? (
-                    <div className="space-y-3 pt-1 animate-in fade-in">
-                      <div className="flex items-center gap-2 text-orange-600 font-bold text-xs uppercase tracking-wider mb-2 border-b pb-1"><Edit2 size={12}/> Editando Información</div>
-                      
-                      {/* Campos Generales */}
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase">Estudiante</label>
-                        <input name="name" value={editFormData.name} onChange={handleEditChange} className="w-full p-2 bg-orange-50/50 rounded-lg text-sm font-bold text-gray-800 border-none focus:ring-2 focus:ring-orange-200 placeholder:text-gray-300" placeholder="Nombre completo"/>
-                        <div className="grid grid-cols-2 gap-2">
-                            <div className="relative">
-                                <Phone size={12} className="absolute left-2 top-2.5 text-gray-400"/>
-                                <input name="phone" placeholder="Teléfono" value={editFormData.phone} onChange={handleEditChange} className="w-full pl-6 p-2 bg-gray-50 rounded-lg text-xs font-medium"/>
-                            </div>
-                            <div className="relative">
-                                <CreditCard size={12} className="absolute left-2 top-2.5 text-gray-400"/>
-                                <input name="amount" placeholder="Monto $" type="number" value={editFormData.amount} onChange={handleEditChange} className="w-full pl-6 p-2 bg-gray-50 rounded-lg text-xs font-medium"/>
-                            </div>
-                            <div className="relative">
-                                <Hash size={12} className="absolute left-2 top-2.5 text-gray-400"/>
-                                <input name="code" placeholder="Código UDG" value={editFormData.code} onChange={handleEditChange} className="w-full pl-6 p-2 bg-gray-50 rounded-lg text-xs font-medium"/>
-                            </div>
+                <div className="p-4 relative z-10 pl-5 flex-1 flex justify-between items-start">
+                  <div className="flex-1 pr-14"> {/* Aumentado el padding derecho para evitar solapamiento con el dinero */}
+                        
+                        {/* EDICIÓN RÁPIDA DE DINERO (Posicionamiento absoluto) */}
+                        <div className="absolute top-3 right-3 z-20">
+                            {isCoordinator ? (
+                                <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full border shadow-sm transition-colors ${p.amount >= 480 ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
+                                    <span className={`text-[10px] font-bold ${p.amount >= 480 ? 'text-green-700' : 'text-yellow-700'}`}>$</span>
+                                    <input 
+                                        type="number" 
+                                        value={p.amount}
+                                        onChange={(e) => handleLocalAmountChange(p.id, e.target.value)}
+                                        onBlur={(e) => handleAmountBlur(p.id, e.target.value)}
+                                        onKeyDown={(e) => { if(e.key === 'Enter') e.target.blur(); }}
+                                        className={`w-12 text-[10px] font-bold bg-transparent outline-none text-right ${p.amount >= 480 ? 'text-green-700 placeholder-green-300' : 'text-yellow-700 placeholder-yellow-300'}`}
+                                    />
+                                </div>
+                            ) : (
+                                <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-sm ${p.amount >= 480 ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
+                                    ${p.amount}
+                                </div>
+                            )}
                         </div>
-                      </div>
 
-                      {/* Campos Confidenciales */}
-                      <div className="space-y-2 pt-1 border-t border-dashed">
-                        <label className="text-[10px] font-bold text-red-400 uppercase flex items-center gap-1"><ShieldAlert size={10}/> Datos Confidenciales</label>
-                        <input name="nss" placeholder="NSS (Seguro Social)" value={editFormData.nss} onChange={handleEditChange} className="w-full p-2 bg-red-50/50 border border-red-100 rounded-lg text-xs text-gray-700"/>
-                        <input name="parent" placeholder="Nombre del Tutor" value={editFormData.parent} onChange={handleEditChange} className="w-full p-2 bg-red-50/50 border border-red-100 rounded-lg text-xs text-gray-700"/>
-                        <input name="parent_phone" placeholder="Teléfono Tutor" value={editFormData.parent_phone} onChange={handleEditChange} className="w-full p-2 bg-red-50/50 border border-red-100 rounded-lg text-xs text-gray-700"/>
-                      </div>
-
-                      <div className="flex gap-2 mt-4">
-                        <button onClick={handleSaveEdit} className="flex-1 bg-green-500 text-white py-2 rounded-lg text-xs font-bold shadow-md hover:bg-green-600 transition-colors flex items-center justify-center gap-1"><Save size={14}/> Guardar</button>
-                        <button onClick={handleCancelEdit} className="flex-1 bg-gray-100 text-gray-600 py-2 rounded-lg text-xs font-bold hover:bg-gray-200 transition-colors">Cancelar</button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="pr-2">
-                        <h3 onClick={() => isCoordinator && toggleDetails(p.id)} className={`font-bold text-sm leading-tight mb-2 transition-colors ${isCoordinator ? 'cursor-pointer hover:text-orange-600 text-gray-800' : 'text-gray-800'}`}>
-                            {p.name}
+                        {/* NOMBRE CLICKABLE (Abre modal o Login) */}
+                        <h3 onClick={() => handleEditClick(p)} className={`font-bold text-sm leading-tight mb-2 transition-colors cursor-pointer hover:text-orange-600 text-gray-800 flex items-center gap-2 group-hover:underline select-none`}>
+                            {formatDisplayName(p.name)} 
+                            {isCoordinator ? (
+                                <Edit2 size={12} className="text-gray-300 group-hover:text-orange-500 opacity-0 group-hover:opacity-100 transition-all"/>
+                            ) : (
+                                <Lock size={12} className="text-gray-300 group-hover:text-orange-500 opacity-0 group-hover:opacity-100 transition-all"/>
+                            )}
                         </h3>
-                        <div className="flex flex-wrap gap-2 text-[10px] text-gray-500 mb-3">
+                        
+                        <div className="flex flex-wrap gap-2 text-[10px] text-gray-500 mb-2">
                             <div className="flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-md border border-orange-100/50"><Phone size={10} className="text-orange-500" /><span className="font-medium">{p.phone}</span></div>
                             <div className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-md border border-gray-100/50"><GraduationCap size={12} className="text-gray-400" /><span>{p.code}</span></div>
                         </div>
-
-                        <div className="flex gap-3 pt-2 border-t border-gray-100/50 min-h-[24px] items-center justify-between">
-                             {isCoordinator ? (
-                                 <>
-                                    <button onClick={() => handleEditClick(p)} className="flex items-center gap-1 text-[10px] font-bold uppercase text-blue-500 hover:text-blue-700 hover:bg-blue-50 px-2 py-1 rounded-md transition-colors"><Edit2 size={12} /> Editar</button>
-                                    <button onClick={() => removePassenger(p.id)} className="flex items-center gap-1 text-[10px] font-bold uppercase text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded-md transition-colors"><Trash2 size={12} /> Eliminar</button>
-                                 </>
-                             ) : (
-                                 <span className="text-[10px] text-gray-300 font-medium italic flex items-center gap-1"><EyeOff size={12}/> Info privada</span>
-                             )}
-                        </div>
-
-                        {p.showDetails && isCoordinator && (
-                            <div className="mt-3 bg-white p-3 rounded-xl border border-orange-200 text-xs animate-in fade-in zoom-in-95 shadow-[0_0_15px_rgba(251,146,60,0.1)] relative overflow-hidden">
-                                <div className="absolute top-0 right-0 p-1 bg-orange-100 rounded-bl-lg"><Lock size={10} className="text-orange-400"/></div>
-                                <div className="space-y-2 relative z-10">
-                                    <div className="flex items-center gap-2">
-                                        <div className="bg-orange-50 p-1 rounded-full shadow-sm"><FileText size={10} className="text-orange-500"/></div>
-                                        <span className="text-gray-500 font-medium">NSS:</span> <span className="text-gray-800 font-bold select-all">{p.nss}</span>
-                                    </div>
-                                    <div className="flex items-start gap-2">
-                                        <div className="bg-orange-50 p-1 rounded-full shadow-sm mt-0.5"><Users size={10} className="text-orange-500"/></div>
-                                        <div><span className="text-gray-500 font-medium block">Tutor:</span> <span className="text-gray-800 font-bold">{p.parent}</span></div>
-                                    </div>
-                                    <div className="flex items-center gap-2 pt-1">
-                                         <a href={`tel:${p.parent_phone}`} className="w-full bg-gradient-to-r from-green-50 to-white border border-green-200 text-green-700 py-1.5 rounded-lg flex items-center justify-center gap-2 font-bold shadow-sm hover:from-green-100 transition-all active:scale-95">
-                                             <Phone size={12} fill="currentColor" /> {p.parent_phone}
-                                         </a>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                  )}
+                  </div>
                 </div>
 
-                {editingId !== p.id && (
-                  <div className="grid grid-cols-3 divide-x divide-gray-100 bg-gray-50/30 relative z-10 border-t border-gray-100 mt-auto">
+                {/* ... existing leg buttons ... */}
+                <div className="grid grid-cols-3 divide-x divide-gray-100 bg-gray-50/30 relative z-10 border-t border-gray-100 mt-auto">
                     {legs.map((leg, idx) => (
                       <button key={idx} onClick={() => toggleCheck(p.id, idx)} className={`relative flex flex-col items-center justify-center py-3 transition-all duration-300 group/btn hover:bg-white ${p.checks && p.checks[idx] ? 'bg-green-500/5 text-green-700' : 'text-gray-400'}`}>
                         <div className={`mb-1 p-1.5 rounded-full transition-all duration-300 shadow-sm ${p.checks && p.checks[idx] ? 'bg-green-500 text-white scale-110 shadow-green-500/40' : 'bg-white text-gray-300 group-hover/btn:text-orange-400 shadow-sm border border-gray-100'}`}>
@@ -634,14 +776,13 @@ const App = () => {
                         {p.checks && p.checks[idx] && <div className="absolute bottom-0 left-0 right-0 h-1 bg-green-500 rounded-t-full"></div>}
                       </button>
                     ))}
-                  </div>
-                )}
+                </div>
               </div>
             ))
           )}
         </div>
         
-        {/* BOTONES FLOTANTES */}
+        {/* ... existing buttons ... */}
         <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3">
             {/* BOTÓN RESTAURAR LISTA (Visible si está vacío o si es Coord) */}
             {isCoordinator && passengers.length === 0 && (
