@@ -5,8 +5,10 @@ import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone
 const SUPABASE_URL = 'https://fgzegoflnkwkcztivila.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnemVnb2Zsbmt3a2N6dGl2aWxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzMzQyOTYsImV4cCI6MjA3OTkxMDI5Nn0.-u-NUiR5Eqitf4-zqvAAZhTKHc1_Cj3OKHAhGRHl8Xs';
 
-// --- LISTA OFICIAL COMPLETA ---
-const OFFICIAL_LIST = [
+// --- LISTAS OFICIALES POR CAMIÓN ---
+
+// CAMIÓN 1 (SAMUEL)
+const OFFICIAL_LIST_C1 = [
   { name: "Joseph Yancarlo Avalos Canales", phone: "3171325247", code: "225519213", amount: 480, nss: "5251056577", parent: "Lenis Alejandra Canales Castro", parentPhone: "3171048798" },
   { name: "Daira Athziri Saldaña Dávila", phone: "3171284644", code: "225521072", amount: 480, nss: "4927321887", parent: "María Luisa Dávila Muñoz", parentPhone: "3171146753" },
   { name: "Fernanda Saraly Garcia Lopez", phone: "3171066092", code: "225517318", amount: 480, nss: "4109019556", parent: "Rosario Guadalupe López Guerrero", parentPhone: "3171046130" },
@@ -29,7 +31,7 @@ const OFFICIAL_LIST = [
   { name: "Jonathan Victor Hugo Lopez Montaño", phone: "3171296534", code: "224080765", amount: 480, nss: "3230829370", parent: "Marisol Montaño Ortega", parentPhone: "3171075014" },
   { name: "Ariadna Martinez Martinez", phone: "3171318301", code: "223441926", amount: 300, nss: "58230869834", parent: "Karla Janeth Martinez Castillo", parentPhone: "3171035583" },
   { name: "Alfonso Hueso Vidrio", phone: "3171361187", code: "224082121", amount: 480, nss: "5823086794", parent: "Ofelia Vidrio Guzman", parentPhone: "3173884314" },
-  { name: "Kevin Nahir Zamora Martinez", phone: "3211134655", code: "224429776", amount: 480, nss: "17240998512", parent: "Silvestre Zamora Duran", parentPhone: "3173851523" },
+  { name: "Kevin Nahir Zamora Martinez", phone: "3171134655", code: "224429776", amount: 480, nss: "17240998512", parent: "Silvestre Zamora Duran", parentPhone: "3173851523" },
   { name: "Oscar Daniel Gomez Melendez", phone: "3344335726", code: "223441128", amount: 480, nss: "19230895609", parent: "Daniel Gomez Carreño", parentPhone: "3171160665" },
   { name: "Kenya Mariana Dominguez Ramos", phone: "3171115887", code: "223442884", amount: 480, nss: "8392771293-1", parent: "Jose Luis Dominguez Ruiz", parentPhone: "3173883215" },
   { name: "Brisa Guadalupe Guerrero Buenrostro", phone: "3171111049", code: "224429393", amount: 480, nss: "18240990004", parent: "Luis Octavio Guerrero Rodriguez", parentPhone: "3171111049" },
@@ -54,12 +56,133 @@ const OFFICIAL_LIST = [
   { name: "Samuel Méndez Vidrio", phone: "3125950081", code: "223440784", amount: 480, nss: "N/A", parent: "N/A", parentPhone: "N/A" }
 ];
 
-const COORDINATOR = {
-  name: "Samuel Méndez Vidrio",
-  phone: "3125950081",
-  code: "223440784",
-  role: "Encargado del Camión 1"
-};
+// CAMIÓN 2 (AYLIN)
+const OFFICIAL_LIST_C2 = [
+    { name: "Ian Raphael Aguilar Gonzales", phone: "3171281276", code: "1A matutino", amount: 480, nss: "4047901592", parent: "Antonia González franco", parentPhone: "3173836225" },
+    { name: "Joselin Liset Gómez Macías", phone: "3171292705", code: "2C matutino", amount: 480, nss: "19240969204", parent: "Jorge Armando Gómez Guzmán", parentPhone: "3411604229" },
+    { name: "Adrián Villafaña Navarro", phone: "3171079620", code: "5C matutino", amount: 480, nss: "5823086247", parent: "Blanca Raquel Navarro flores", parentPhone: "5587500515" },
+    { name: "Hermione Elizabeth Gonzalez Villaseñor", phone: "3171283727", code: "1C matutino", amount: 480, nss: "2181018496", parent: "Gustavo Gonzales García", parentPhone: "3412051551" },
+    { name: "Miguel Ángel Vázquez Rosales", phone: "3171067436", code: "1C matutino", amount: 480, nss: "3251052654", parent: "Miriam Consuelo rosales Tapia", parentPhone: "3171061412" },
+    { name: "Fatima Elizabet Rubio Galindo", phone: "3171003776", code: "1B vespertino", amount: 480, nss: "4977509597", parent: "María del Rosario Galindo Gonzales", parentPhone: "3173873442" },
+    { name: "Leonardo Rubio Galindo", phone: "3171127532", code: "3C matutino", amount: 480, nss: "56230952204", parent: "Mario del Rosario Galindo", parentPhone: "3173873442" },
+    { name: "Ángela Valeria Guerra Cruz", phone: "3171067907", code: "2D vespertino", amount: 480, nss: "54977910246", parent: "Alfredo Guerra Carrizales", parentPhone: "3173817075" },
+    { name: "Paulina Gómez Delgadillo", phone: "3171287000", code: "4D matutino", amount: 480, nss: "5230827221", parent: "Anabel Delgadillo", parentPhone: "3171049901" },
+    { name: "Karen Elizabeth Guitron Contreras", phone: "3171198085", code: "1B vespertino", amount: 480, nss: "2187056607", parent: "Miriam Yaritzha Guitron Contreras", parentPhone: "3411233286" },
+    { name: "Andrea Navarro Tapia", phone: "3334866670", code: "3B matutino", amount: 480, nss: "57230907727", parent: "Jesús Salvador Navarro moran", parentPhone: "3173837366" },
+    { name: "Stephanie Victoria Reyes Cabrera", phone: "3171286611", code: "3D matutino", amount: 480, nss: "3168847758", parent: "Salomé Monserrat Cabrera Vaca", parentPhone: "3171237510" },
+    { name: "Jesús Alejandro González Michel", phone: "3171316508", code: "3B matutino", amount: 480, nss: "17240961148", parent: "Claudia Araceli Michel peña", parentPhone: "3171207102" },
+    { name: "Gabriela Lizbeth Guzmán López", phone: "3171136149", code: "1D matutino", amount: 480, nss: "67040811794", parent: "Lizbeth López Cabrera", parentPhone: "3171055052" },
+    { name: "Maximiliano Pérez Reynaga", phone: "3171003536", code: "1C matutino", amount: 480, nss: "4987665116", parent: "Guadalupe Reynaga", parentPhone: "3171092056" },
+    { name: "Aarón Santiago Monico Ornelas", phone: "3171197987", code: "3D matutino", amount: 480, nss: "18240900110", parent: "Fatima Noemí Ornelas Ahumada", parentPhone: "3171088059" },
+    { name: "Litzy Estrella Lepe Guitron", phone: "3171290211", code: "N/A", amount: 480, nss: "10210785217", parent: "Teresa Maria Guitron Castellón", parentPhone: "3171000220" },
+    { name: "Omar Aldair Flores Aceves", phone: "3151255759", code: "1B matutino", amount: 480, nss: "4088304284", parent: "Óscar Omar Flores cuevas", parentPhone: "3151089743" },
+    { name: "Fanny Guzmán Gonzales", phone: "3173819207", code: "3A matutino", amount: 480, nss: "19240998062", parent: "Manuel Guzmán Castañeda", parentPhone: "3171082820" },
+    { name: "Oscar Rolando Villa Rentería", phone: "3171295133", code: "1A matutino", amount: 480, nss: "25251059439", parent: "Teresa Rentería Vázquez", parentPhone: "3171295133" },
+    { name: "Axel Fernando Álvarez Zavalza", phone: "3171315998", code: "2B vespertino", amount: 480, nss: "3240871008", parent: "Ana Beatriz Zavalza Cruz", parentPhone: "3171115998" },
+    { name: "Carlos Monico Solórzano", phone: "3171008827", code: "5C matutino", amount: 480, nss: "2220862946", parent: "Juan Carlos Monico Jiménez", parentPhone: "3173870704" },
+    { name: "Adilene Saraí Villafaña Gonzales", phone: "3171068710", code: "3C vespertino", amount: 480, nss: "58230862557", parent: "Norma Cecilia Gonzales Aguirre", parentPhone: "3171112265" },
+    { name: "Ángel Rubalcava Vivar", phone: "3171064361", code: "2B vespertino", amount: 480, nss: "25240953239", parent: "Ashley Carolina Vibar Ibarra", parentPhone: "3171194014" },
+    { name: "Román Uriel García Viramontes", phone: "3171125947", code: "3B vespertino", amount: 480, nss: "80966630628", parent: "María Guadalupe Viramontes", parentPhone: "3173814171" },
+    { name: "Dianne Paola Díaz Cisneros", phone: "3173872344", code: "1B vespertino", amount: 480, nss: "4148800651", parent: "Gabriela Cisneros", parentPhone: "3171009406" },
+    { name: "Camila Guadalupe González Guitierrez", phone: "3171204323", code: "3B vespertino", amount: 480, nss: "19240990259", parent: "Griselda Guitierrez Palomo", parentPhone: "3171192132" },
+    { name: "Maria Fernanda Pérez Robles", phone: "3171317395", code: "3B vespertino", amount: 480, nss: "44149379289", parent: "Fatima robles Rodríguez", parentPhone: "3171003708" },
+    { name: "Kristal Marisol Elias Lepe", phone: "3339796853", code: "3B vespertino", amount: 480, nss: "4998402186", parent: "Irene Lepe Aguilar", parentPhone: "3171019550" },
+    { name: "Daffne Estefanía Ávalos Arechiga", phone: "3171046386", code: "3B vespertino", amount: 480, nss: "8240951854", parent: "Claudia Elizabeth Arechiga flores", parentPhone: "3171212031" },
+    { name: "Maria Guadalupe Rodriguez Lopez Jimenez", phone: "3171057800", code: "5C vespertino", amount: 480, nss: "5230876848", parent: "Ismael Rodríguez Canal", parentPhone: "3171080746" },
+    { name: "Danilo Agustin Castillo Diaz", phone: "3171063803", code: "5D vespertino", amount: 480, nss: "59230805893", parent: "Karen Lizbeth Diaz Brambila", parentPhone: "3171168107" },
+    { name: "Diego Alberto Ruiz Nava", phone: "3171135386", code: "5C vespertino", amount: 480, nss: "18230885693", parent: "Lucia Nava Carvajal", parentPhone: "3171056291" },
+    { name: "Diego Alejandro Garay De Alba", phone: "3171085213", code: "1B matutino", amount: 480, nss: "5201016878", parent: "Esmeralda", parentPhone: "3171064407" },
+    { name: "Esmeralda González Gómez", phone: "3178736049", code: "3C matutino", amount: 480, nss: "19240962472", parent: "Federico Manuel Gonzales Sandoval", parentPhone: "3171006407" },
+    { name: "Alison Naomi Rodriguez Alvarez", phone: "3171080060", code: "4A vespertino", amount: 480, nss: "19230895476", parent: "Héctor Rodríguez Contreras", parentPhone: "3173881547" },
+    { name: "Regina Guzmán Gonzales", phone: "3171233583", code: "4C matutino", amount: 480, nss: "10230804972", parent: "Libia Piedad Gonzales Sandoval", parentPhone: "3171087881" },
+    { name: "Jatzi Guadalupe Chávez Duque", phone: "3171192342", code: "3A matutino", amount: 480, nss: "18240908782", parent: "Lanci Amapola Duque Zepeda", parentPhone: "3331838162" },
+    { name: "Carlos Daniel Franco Melendez", phone: "3171013724", code: "3B matutino", amount: 480, nss: "17240993539", parent: "Claudia Daniela Meléndez Rodriguez", parentPhone: "3171212394" },
+    { name: "Blanca Stephanie Grajeda Gil", phone: "3171096724", code: "1D matutino", amount: 480, nss: "10251010863", parent: "Héctor Miguel Grajeda Partida", parentPhone: "3173880100" },
+    { name: "Aleck Dominic Rodriguez Santana", phone: "3171093374", code: "3D matutino", amount: 480, nss: "56977726241", parent: "Lizeth Azucena Santana Montes", parentPhone: "3171091313" },
+    { name: "Andrea Yamilet Salazar Ramírez", phone: "3171087227", code: "5A Vespertino", amount: 480, nss: "19230728099", parent: "Juana Patricia Ramírez Michel", parentPhone: "3171045431" },
+    { name: "Carlos Manuel García García", phone: "3171002102", code: "3B matutino", amount: 480, nss: "5240987114", parent: "Lorena García Covarrubias", parentPhone: "3411179493" },
+    { name: "Dulce Elizabeth Arreola López", phone: "3171234067", code: "4A vespertino", amount: 480, nss: "3230886081", parent: "Nora López García", parentPhone: "3171118083" },
+    { name: "Aylin Roberta Ramos Mejía", phone: "3171282184", code: "221430749", amount: 480, nss: "N/A", parent: "N/A", parentPhone: "N/A" }
+];
+
+// CAMIÓN 3 (IKER)
+const OFFICIAL_LIST_C3 = [
+    { name: "Akeimy Yeraldi Mancilla Isidro", phone: "3171067689", amount: 480, code: "225519169", nss: "26251059940", parent: "Martha Angélica Isidro Medina", parentPhone: "3173877188" },
+    { name: "Kimberly Mileny Nolasco García", phone: "3171131744", amount: 480, code: "225520416", nss: "8251099696", parent: "Mayra Lizbeth García boyzo", parentPhone: "3171123507" },
+    { name: "Angeline Itzayana Terrones Chávez", phone: "3171314860", amount: 480, code: "225520645", nss: "1725104740-7", parent: "Karla Lizbeth Chávez Meraz", parentPhone: "317127065" },
+    { name: "Ximena Alejandra Contreras Ponce", phone: "3171238874", amount: 480, code: "225518896", nss: "4988192094", parent: "Tania Guadalupe partida montes", parentPhone: "3171056214" },
+    { name: "Camila Dévora", phone: "3339117462", amount: 480, code: "223442264", nss: "0323082708-5", parent: "Gloria Lorena Quintana flores", parentPhone: "3171312067" },
+    { name: "Dylan Gael Corona Méndez", phone: "3173896894", amount: 480, code: "223441764", nss: "2230808665", parent: "Patricia Méndez Ortega", parentPhone: "317104836" },
+    { name: "Helena García Martínez", phone: "3171297602", amount: 480, code: "223440156", nss: "10230890922", parent: "Cecilia Martínez Velazco", parentPhone: "3211007752" },
+    { name: "Sebastián García Martínez", phone: "3171124602", amount: 480, code: "223440164", nss: "10230890914", parent: "Celia Martínez Velasco", parentPhone: "3211007752" },
+    { name: "Dana Isabel Pérez Santana", phone: "3411771355", amount: 480, code: "223441632", nss: "5923080464", parent: "María Isabel Santana Pérez", parentPhone: "3171039329" },
+    { name: "Miriam Judith Cisneros Reyes", phone: "3173891418", amount: 480, code: "223442663", nss: "60230859443", parent: "Miriam reyes hernandez", parentPhone: "3171059591" },
+    { name: "Jonathan Emmanuel González Gálvez", phone: "3171043835", amount: 480, code: "223013681", nss: "18220735247", parent: "Fabiola Gálvez", parentPhone: "3171003498" },
+    { name: "María Esther Chávez Sandoval", phone: "3171287144", amount: 480, code: "223011972", nss: "3220781961", parent: "Esther Sandoval", parentPhone: "3171047081" },
+    { name: "Angélica Ariadna Gómez Moranchel", phone: "3171072106", amount: 480, code: "223014068", nss: "823076425", parent: "Esmeralda Nohemí moranchel ruiz", parentPhone: "3173836056" },
+    { name: "Fátima Moreno de Jesús", phone: "3171286643", amount: 480, code: "223014653", nss: "12160758079", parent: "Ana María de Jesús Vite", parentPhone: "3171282540" },
+    { name: "José Manuel Arreola Díaz", phone: "3173872370", amount: 480, code: "223441985", nss: "54826278456", parent: "José Luis Arreloa Zavalza", parentPhone: "3173871028" },
+    { name: "Renata Luna Ureña", phone: "3325109440", amount: 480, code: "N/A", nss: "N/A", parent: "N/A", parentPhone: "N/A" },
+    { name: "Zeus irán Lara Gabriel", phone: "3171084384", amount: 480, code: "223441667", nss: "60230870218", parent: "Guadalupe Gabriel Pérez", parentPhone: "3172886313" },
+    { name: "Christian Daniel Ruiz Saldaña", phone: "3171205135", amount: 480, code: "223443414", nss: "823083379", parent: "Alma Griselda Saldaña moreno", parentPhone: "3171113311" },
+    { name: "Rubi Castellón Pérez", phone: "3171093801", amount: 480, code: "224429318", nss: "44250992201", parent: "Azucena Pérez", parentPhone: "3171193258" },
+    { name: "Hanna Kareli Yamilet López Hernández", phone: "3178731120", amount: 480, code: "224430952", nss: "5240989482", parent: "Miguel Ángel López Gómez", parentPhone: "3171314469" },
+    { name: "Alondra María García Sánchez", phone: "3171283147", amount: 480, code: "224865134", nss: "17240936769", parent: "Rosa lidia Sánchez Ortega", parentPhone: "3171008352" },
+    { name: "Astrid Martínez Beltrán", phone: "3171058492", amount: 480, code: "224427072", nss: "31007609154", parent: "Isela Beltrán leon", parentPhone: "3171022355" },
+    { name: "Jesús López Campos", phone: "3320190233", amount: 480, code: "223442728", nss: "8230836333", parent: "Felipa Leticia campos Gutiérrez", parentPhone: "3171052000" },
+    { name: "Kimberly Fátima Rodríguez Trujillo", phone: "3171066325", amount: 480, code: "223443619", nss: "60230835633", parent: "Irma Verónica Trujillo castro", parentPhone: "3173886817" },
+    { name: "Cristina Itzel Pérez Pérez", phone: "3171205047", amount: 480, code: "224080943", nss: "0323088654-5", parent: "Miriam Elizabeth Pérez moran", parentPhone: "3173850876" },
+    { name: "Evelyn Yoselin Vázquez Ortega", phone: "4491235827", amount: 480, code: "223441748", nss: "18230808497", parent: "María Azucena Ortega tapia", parentPhone: "4499061731" },
+    { name: "Selene Ruby Téllez Baltazar", phone: "3317143526", amount: 480, code: "223441179", nss: "17230854956", parent: "Mariela Baltazar Zúñiga", parentPhone: "3173891593" },
+    { name: "Edna Citlalli Reyna Ayala", phone: "3171318696", amount: 480, code: "2234434406", nss: "5923082680", parent: "María Edith Ayala moran", parentPhone: "3171116076" },
+    { name: "Jorge Márquez Loera", phone: "3171234031", amount: 480, code: "224427951", nss: "19240903393", parent: "Ana Liliana Muñoz Pérez", parentPhone: "3171124191" },
+    { name: "Lucio Isac Sandoval Quintero", phone: "3171055683", amount: 480, code: "224427137", nss: "0403750889-4", parent: "José Rogelio Sandoval Hernández", parentPhone: "3173884154" },
+    { name: "Darío Gómez Rivera", phone: "3171215534", amount: 480, code: "224428532", nss: "7500823935", parent: "Nieva Teresita rivera hueso", parentPhone: "3171056618" },
+    { name: "Juan Pablo Rodríguez Pelayo", phone: "3171318561", amount: 480, code: "224428524", nss: "30250990816", parent: "María Isabel Pelayo cobian", parentPhone: "3178732644" },
+    { name: "Dante Sedano", phone: "3171038271", amount: 480, code: "225198603", nss: "75977501560", parent: "Elizabeth García rojas", parentPhone: "3171085242" },
+    { name: "Osmar Alejandro Méndez Ibarra", phone: "3173896781", amount: 480, code: "N/A", nss: "N/A", parent: "N/A", parentPhone: "N/A" },
+    { name: "Baldwin Alexander Rodríguez Hernández", phone: "3173886218", amount: 480, code: "225201299", nss: "4027737156", parent: "Iván Rodríguez", parentPhone: "3171210596" },
+    { name: "Marcos Zavalza Medina", phone: "N/A", amount: 480, code: "221431036", nss: "32110697854", parent: "José Salvador Zavalza", parentPhone: "3171041852" },
+    { name: "Camila Anahí Torres Montes", phone: "3171283203", amount: 480, code: "223443252", nss: "10230804048", parent: "Octavio César torres gomez", parentPhone: "3173883500" },
+    { name: "Karol Gabriela Robles Uribe", phone: "3171010251", amount: 480, code: "223443929", nss: "6023083445-3", parent: "Ricardo robles castillo", parentPhone: "3173886055" },
+    { name: "Nahomi Dayan Núñez Sánchez", phone: "3178734986", amount: 480, code: "224427129", nss: "35250950421", parent: "Ana Gabriela Sánchez Sánchez", parentPhone: "3173833784" },
+    { name: "Milton Santiago López Guerrero", phone: "3171070966", amount: 480, code: "223443686", nss: "0401720401-9", parent: "Roberto López Cázares", parentPhone: "3173889949" },
+    { name: "Iliana Valentina Rodríguez", phone: "3173851141", amount: 480, code: "223441608", nss: "25230806066", parent: "Gustavo Rodriguez Gómez", parentPhone: "3171049390" },
+    { name: "Diego Alejandro Mancilla García", phone: "3171128601", amount: 480, code: "225201213", nss: "54927417870", parent: "Alma Delia García torres", parentPhone: "3171079116" },
+    { name: "Abner Enríquez Casillas", phone: "+1 8185248474", amount: 300, code: "N/A", nss: "N/A", parent: "N/A", parentPhone: "N/A" },
+    { name: "Paola Sánchez Soltero", phone: "3171292143", amount: 480, code: "224430405", nss: "18240947020", parent: "Karla maravilla soltero mata", parentPhone: "3171292144" },
+    { name: "Iker Steve Soltero Rodríguez", phone: "3171041444", amount: 480, code: "221003476", nss: "N/A", parent: "N/A", parentPhone: "N/A" }
+];
+
+const BUSES = [
+    { 
+        id: 1, 
+        label: "Camión 1", 
+        color: "from-orange-500 to-orange-600", 
+        text: "text-orange-600", 
+        bg: "bg-orange-100",
+        coordinator: { name: "Samuel Méndez Vidrio", phone: "3125950081" },
+        list: OFFICIAL_LIST_C1
+    },
+    { 
+        id: 2, 
+        label: "Camión 2", 
+        color: "from-blue-500 to-blue-600", 
+        text: "text-blue-600", 
+        bg: "bg-blue-100",
+        coordinator: { name: "Aylin R. Ramos Mejía", phone: "3171282184" },
+        list: OFFICIAL_LIST_C2
+    },
+    { 
+        id: 3, 
+        label: "Camión 3", 
+        color: "from-purple-500 to-purple-600", 
+        text: "text-purple-600", 
+        bg: "bg-purple-100",
+        coordinator: { name: "Iker S Soltero Rodríguez", phone: "3171041444" },
+        list: OFFICIAL_LIST_C3
+    }
+];
 
 const App = () => {
   // --- TÍTULO DE LA PESTAÑA ---
@@ -70,6 +193,12 @@ const App = () => {
   // --- AUTENTICACIÓN COORDINADOR Y USUARIO ---
   const [currentUser, setCurrentUser] = useState(() => {
     return localStorage.getItem('fil2025_user') || null;
+  });
+  
+  // Access Level: null (viewer), 1 (Bus1), 2 (Bus2), 3 (Bus3)
+  const [userBusAccess, setUserBusAccess] = useState(() => {
+      const stored = localStorage.getItem('fil2025_bus_access');
+      return stored ? parseInt(stored) : null;
   });
    
   // Si hay un usuario, es coordinador
@@ -87,28 +216,62 @@ const App = () => {
   // DELETE LETTER CONFIRMATION
   const [deleteLetterId, setDeleteLetterId] = useState(null);
 
+  // BUS STATE
+  const [currentBus, setCurrentBus] = useState(1);
+
+  // Force Bus View on Login
+  useEffect(() => {
+      if (isCoordinator && userBusAccess) {
+          setCurrentBus(userBusAccess);
+      }
+  }, [isCoordinator, userBusAccess]);
+
   const handleLogin = (e) => {
     e.preventDefault();
     
-    // Credenciales
-    const isSamuel = loginUser === '223440784' && loginPass === 'samumv367';
-    // Permitir "Francisco" o "francisco" (case insensitive para el nombre)
-    const isFrancisco = (loginUser.toLowerCase() === 'francisco') && loginPass === 'fil2025';
+    let name = '';
+    let accessLevel = null;
+    let valid = false;
 
-    if (isSamuel) {
-      const name = "Samuel M.";
+    // Credenciales
+    // Samuel - Bus 1
+    if (loginUser === '223440784' && loginPass === 'samumv367') {
+        name = "Samuel M.";
+        accessLevel = 1;
+        valid = true;
+    }
+    // Aylin - Bus 2
+    else if (loginUser === '221430749' && loginPass === 'Prinsess123') {
+        name = "Aylin R.";
+        accessLevel = 2;
+        valid = true;
+    }
+    // Iker - Bus 3
+    else if (loginUser === '221003476' && loginPass === 'Iker0202') {
+        name = "Iker S.";
+        accessLevel = 3;
+        valid = true;
+    }
+    // Francisco (Legacy/Backup - Bus 1)
+    else if (loginUser.toLowerCase() === 'francisco' && loginPass === 'fil2025') {
+        name = "Francisco P.";
+        accessLevel = 1;
+        valid = true;
+    }
+
+    if (valid) {
       setCurrentUser(name);
+      setUserBusAccess(accessLevel);
       localStorage.setItem('fil2025_user', name);
+      localStorage.setItem('fil2025_bus_access', accessLevel);
+      
       setShowLoginModal(false);
       setLoginError('');
       setLoginUser(''); setLoginPass('');
-    } else if (isFrancisco) {
-      const name = "Francisco P.";
-      setCurrentUser(name);
-      localStorage.setItem('fil2025_user', name);
-      setShowLoginModal(false);
-      setLoginError('');
-      setLoginUser(''); setLoginPass('');
+      
+      // Immediate redirect to assigned bus
+      setCurrentBus(accessLevel);
+      showNotification(`Bienvenido, ${name}. Acceso al Camión ${accessLevel}`);
     } else {
       setLoginError('Credenciales incorrectas');
     }
@@ -116,12 +279,30 @@ const App = () => {
 
   const handleLogout = () => {
     setCurrentUser(null);
+    setUserBusAccess(null);
     localStorage.removeItem('fil2025_user');
+    localStorage.removeItem('fil2025_bus_access');
   };
 
   const triggerLogin = () => {
     setShowLoginModal(true);
     setLoginError('');
+  };
+
+  // Check Permission Helper
+  const canEdit = (targetBusId) => {
+      if (!isCoordinator) return false;
+      // If user has specific bus access, they can only edit that bus
+      if (userBusAccess && userBusAccess !== (targetBusId || 1)) return false;
+      return true;
+  };
+
+  const verifyPermissionAction = (targetBusId) => {
+      if (!canEdit(targetBusId)) {
+          showNotification(`Solo tienes permiso para editar el Camión ${userBusAccess}`, 'error');
+          return false;
+      }
+      return true;
   };
 
   // --- LÓGICA DE DATOS CON SUPABASE (Script Injection) ---
@@ -217,13 +398,24 @@ const App = () => {
         triggerLogin();
         return;
     }
+    // Determine which bus to restore
+    const busToRestore = currentBus;
+    
+    if(!verifyPermissionAction(busToRestore)) return; 
+
     if (!supabase) return;
 
-    if(!window.confirm("¿ESTÁS SEGURO? Esto subirá la lista oficial de 43 estudiantes a la base de datos. Solo hazlo si la lista está vacía.")) return;
+    if(!window.confirm(`¿ESTÁS SEGURO? Esto subirá la lista oficial del Camión ${busToRestore} a la base de datos.`)) return;
+
+    const busConfig = BUSES.find(b => b.id === busToRestore);
+    if (!busConfig || busConfig.list.length === 0) {
+        showNotification(`No hay lista oficial definida para el Camión ${busToRestore}`, 'error');
+        return;
+    }
 
     setUploading(true);
-    // Remove seat_number from insert payload to avoid error if column missing
-    const records = OFFICIAL_LIST.map(p => ({
+    
+    const records = busConfig.list.map(p => ({
       name: p.name,
       phone: p.phone,
       code: p.code,
@@ -235,13 +427,14 @@ const App = () => {
       times: [null, null, null],
       // Nuevos campos iniciales
       letter_url: null,
-      ticket_released: false
+      ticket_released: false,
+      bus_id: busToRestore
     }));
 
     const { error } = await supabase.from('passengers').insert(records);
     
     if (error) {
-        showNotification("Error al restaurar lista", "error");
+        showNotification("Error al restaurar lista: " + error.message, "error");
     } else {
         showNotification("¡Lista restaurada con éxito!", 'success');
         fetchPassengers();
@@ -253,14 +446,18 @@ const App = () => {
   const addCoordinatorIfMissing = async () => {
       if (!supabase || !isCoordinator) return;
       
-      const samuelExists = passengers.find(p => p.name === "Samuel Méndez Vidrio");
-      if (!samuelExists) {
-          // Use custom confirm if needed, here keeping simple for admin actions
-          if(window.confirm("Tu usuario (Samuel) no está en la lista de pasajeros de la base de datos. ¿Quieres agregarte ahora para poder asignarte asiento?")) {
+      // Auto add only to assigned bus
+      const targetBus = userBusAccess || 1;
+      const meName = currentUser === "Samuel M." ? "Samuel Méndez Vidrio" : (currentUser === "Aylin R." ? "Aylin R. Ramos Mejía" : "Iker S Soltero Rodríguez");
+      
+      const exists = passengers.find(p => p.name === meName && (p.bus_id || 1) === targetBus);
+      
+      if (!exists) {
+          if(window.confirm(`Tu usuario (${meName}) no está en la lista del Camión ${targetBus}. ¿Quieres agregarte?`)) {
                const newPassenger = {
-                  name: "Samuel Méndez Vidrio",
-                  phone: "3125950081",
-                  code: "223440784",
+                  name: meName,
+                  phone: "N/A",
+                  code: "ADMIN",
                   amount: 480,
                   nss: "N/A",
                   parent: "N/A",
@@ -269,13 +466,14 @@ const App = () => {
                   times: [null, null, null],
                   seat_number: null,
                   letter_url: null,
-                  ticket_released: false
+                  ticket_released: false,
+                  bus_id: targetBus
                 };
                 const { error } = await supabase.from('passengers').insert([newPassenger]);
                 if (!error) showNotification("Te has agregado a la lista correctamente");
           }
       } else {
-          showNotification("Ya estás en la lista, puedes asignarte asiento.");
+          showNotification(`Ya estás en la lista del C${targetBus}.`);
       }
   };
 
@@ -336,6 +534,10 @@ const App = () => {
   const addPassenger = async (e) => {
     e.preventDefault();
     if (!isCoordinator) { triggerLogin(); return; }
+    
+    // PERMISSION CHECK
+    if (!verifyPermissionAction(currentBus)) return;
+
     if (!supabase) return;
     if (!newName.trim()) return;
 
@@ -350,11 +552,12 @@ const App = () => {
       checks: [false, false, false],
       times: [null, null, null],
       letter_url: null,
-      ticket_released: false
+      ticket_released: false,
+      bus_id: currentBus // Asigna al camión actual
     };
 
     const { error } = await supabase.from('passengers').insert([newPassenger]);
-    if (!error) showNotification("Pasajero agregado correctamente");
+    if (!error) showNotification(`Pasajero agregado al Camión ${currentBus}`);
     
     setNewName(''); setNewPhone(''); setNewCode(''); setNewAmount(''); setNewNss(''); setNewParent(''); setNewParentPhone('');
     setShowAddForm(false);
@@ -362,6 +565,12 @@ const App = () => {
 
   const removePassenger = async (id) => {
     if (!isCoordinator) { triggerLogin(); return; }
+    
+    // Get passenger to check permissions
+    const passenger = passengers.find(p => p.id === id);
+    if (!passenger) return;
+    if (!verifyPermissionAction(passenger.bus_id || 1)) return;
+
     if (!supabase) return;
     if (window.confirm('¿Seguro que quieres eliminar a esta persona?')) {
       await supabase.from('passengers').delete().eq('id', id);
@@ -372,6 +581,7 @@ const App = () => {
 
   const handleEditClick = (passenger) => {
     if (!isCoordinator) { triggerLogin(); return; }
+    // View is allowed, but save will be blocked if not permitted.
     setEditFormData({ ...passenger });
     setShowEditModal(true);
   };
@@ -383,6 +593,11 @@ const App = () => {
 
   const handleSaveEdit = async () => {
     if (!supabase) return;
+    
+    // PERMISSION CHECK
+    const targetBus = editFormData.bus_id || 1;
+    if (!verifyPermissionAction(targetBus)) return;
+
     const { id, seat_number, ...dataToUpdate } = editFormData; // Exclude seat_number from general edit to prevent overwrite
     await supabase.from('passengers').update(dataToUpdate).eq('id', id);
     showNotification("Información actualizada");
@@ -395,6 +610,14 @@ const App = () => {
 
   const handleAmountBlur = async (id, newVal) => {
     if (!supabase) return;
+    
+    const passenger = passengers.find(p => p.id === id);
+    if (!passenger) return;
+    if (!verifyPermissionAction(passenger.bus_id || 1)) {
+        fetchPassengers(); // Revert local change
+        return;
+    }
+
     const amount = parseFloat(newVal) || 0;
     await supabase.from('passengers').update({ amount }).eq('id', id);
     showNotification(`Pago actualizado: $${amount}`);
@@ -406,6 +629,9 @@ const App = () => {
     
     const passenger = passengers.find(p => p.id === id);
     if (!passenger) return;
+
+    // PERMISSION CHECK
+    if (!verifyPermissionAction(passenger.bus_id || 1)) return;
 
     const isChecking = !passenger.checks[legIndex];
     const newChecks = [...passenger.checks];
@@ -428,6 +654,8 @@ const App = () => {
     const file = e.target.files[0];
     if (!file) return;
     if (!supabase) return;
+
+    // No permission check for upload (passengers can upload)
 
     const fileExt = file.name.split('.').pop();
     const fileName = `${passengerId}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
@@ -469,6 +697,15 @@ const App = () => {
       if (!deleteLetterId) return;
       if (!supabase) return;
       
+      const passenger = passengers.find(p => p.id === deleteLetterId);
+      if (!passenger) return;
+      
+      // PERMISSION CHECK
+      if (!verifyPermissionAction(passenger.bus_id || 1)) {
+          setDeleteLetterId(null);
+          return;
+      }
+
       const passengerId = deleteLetterId;
       setDeleteLetterId(null); // Close modal
 
@@ -495,6 +732,12 @@ const App = () => {
   const toggleTicketRelease = async (passengerId, currentStatus) => {
       if(!isCoordinator) return;
       if (!supabase) return;
+      
+      const passenger = passengers.find(p => p.id === passengerId);
+      if (!passenger) return;
+
+      // PERMISSION CHECK
+      if (!verifyPermissionAction(passenger.bus_id || 1)) return;
 
       const { error } = await supabase
         .from('passengers')
@@ -513,12 +756,19 @@ const App = () => {
 
   // --- SEAT MAP ACTIONS ---
   const handleSeatClick = (seatNum) => {
-    const occupant = passengers.find(p => p.seat_number === seatNum);
+    // Only check occupants for CURRENT BUS
+    const occupant = passengers.find(p => (p.bus_id || 1) === currentBus && p.seat_number === seatNum);
 
     // If seat is free and user is NOT coordinator -> Block and login
     if (!occupant && !isCoordinator) {
         showNotification("Solo coordinadores pueden asignar asientos", "error");
         triggerLogin();
+        return;
+    }
+    
+    // Permission Check for assignment intent
+    if (!occupant && !canEdit(currentBus)) {
+        showNotification(`Solo el encargado del Camión ${currentBus} puede asignar.`, 'error');
         return;
     }
 
@@ -530,13 +780,17 @@ const App = () => {
   const assignSeat = async (passengerId, seatNum) => {
     if (!supabase) return;
     if (!isCoordinator) return; // Safety check
+    if (!verifyPermissionAction(currentBus)) return;
 
     const previousPassengers = [...passengers]; // Backup
 
     // 1. Optimistic Update (Immediate Feedback)
     setPassengers(prev => {
         return prev.map(p => {
-            // Clear seat if someone else has it
+            // Check only within CURRENT BUS
+            if ((p.bus_id || 1) !== currentBus) return p;
+
+            // Clear seat if someone else has it (in this bus)
             if (p.seat_number == seatNum) return { ...p, seat_number: null };
             // Assign seat to new person
             if (p.id === passengerId) return { ...p, seat_number: seatNum };
@@ -546,8 +800,8 @@ const App = () => {
 
     // 2. Try DB Update, Fallback to Local
     try {
-        // Clear previous owner if any
-        const taken = previousPassengers.find(p => p.seat_number == seatNum);
+        // Clear previous owner if any (in this bus)
+        const taken = previousPassengers.find(p => (p.bus_id || 1) === currentBus && p.seat_number == seatNum);
         if (taken) {
              const { error: errorClear } = await supabase.from('passengers').update({ seat_number: null }).eq('id', taken.id);
              if (errorClear) throw errorClear;
@@ -557,17 +811,17 @@ const App = () => {
         
         if (errorAssign) throw errorAssign;
 
-        showNotification(`Asiento ${seatNum} asignado (Nube)`);
+        showNotification(`Asiento ${seatNum} asignado (C${currentBus})`);
 
     } catch (error) {
         console.warn("Fallo guardado en nube, guardando localmente...", error);
         
         // Save to LocalStorage
-        const taken = previousPassengers.find(p => p.seat_number == seatNum);
+        const taken = previousPassengers.find(p => (p.bus_id || 1) === currentBus && p.seat_number == seatNum);
         if(taken) saveLocalSeat(taken.id, null);
         saveLocalSeat(passengerId, seatNum);
 
-        showNotification(`Asiento ${seatNum} guardado localmente (Falta columna en DB)`, 'success');
+        showNotification(`Asiento ${seatNum} guardado localmente`, 'success');
     }
     
     setSelectedSeat(null);
@@ -577,6 +831,7 @@ const App = () => {
   const releaseSeat = async (passengerId) => {
     if (!supabase) return;
     if (!isCoordinator) return; // Safety check
+    if (!verifyPermissionAction(currentBus)) return;
 
     // Optimistic
     setPassengers(prev => prev.map(p => p.id === passengerId ? { ...p, seat_number: null } : p));
@@ -634,7 +889,10 @@ const App = () => {
   };
 
   // --- RENDER ---
-  const filteredPassengers = passengers.filter(p => {
+  // FILTER BY CURRENT BUS FIRST
+  const currentBusPassengers = passengers.filter(p => (p.bus_id || 1) === currentBus);
+
+  const filteredPassengers = currentBusPassengers.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || (p.code && p.code.includes(searchTerm));
     
     // NEW FILTER LOGIC: 'pending' vs leg index vs null
@@ -658,33 +916,39 @@ const App = () => {
   });
 
   const getStats = (legIndex) => {
-    const count = passengers.filter(p => p.checks && p.checks[legIndex]).length;
-    const total = passengers.length;
+    const count = currentBusPassengers.filter(p => p.checks && p.checks[legIndex]).length;
+    const total = currentBusPassengers.length;
     return { count, total, percent: total === 0 ? 0 : (count / total) * 100 };
   };
 
-  const totalPaidFull = passengers.filter(p => p.amount >= 480).length;
-  const totalAdvance = passengers.filter(p => p.amount > 0 && p.amount < 480).length;
-  const totalPending = passengers.filter(p => p.amount === 0).length;
-  const totalMoney = passengers.reduce((sum, p) => sum + (p.amount || 0), 0);
+  const totalPaidFull = currentBusPassengers.filter(p => p.amount >= 480).length;
+  const totalAdvance = currentBusPassengers.filter(p => p.amount > 0 && p.amount < 480).length;
+  const totalPending = currentBusPassengers.filter(p => p.amount === 0).length;
+  const totalMoney = currentBusPassengers.reduce((sum, p) => sum + (p.amount || 0), 0);
 
   const exportToCSV = () => {
     if (!isCoordinator) { triggerLogin(); return; }
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Nombre,Monto,Teléfono,Código,NSS,Tutor,Tel. Tutor,Asiento,Carta URL,Boleto Liberado,Autlan->FIL (Hora),FIL->Plaza (Hora),Plaza->Autlan (Hora)\n";
-    passengers.forEach(p => {
+    csvContent += "Camion,Nombre,Monto,Teléfono,Código,NSS,Tutor,Tel. Tutor,Asiento,Carta URL,Boleto Liberado,Autlan->FIL (Hora),FIL->Plaza (Hora),Plaza->Autlan (Hora)\n";
+    // Export ALL passengers or just current bus? Typically useful to export all, but sorted by bus
+    passengers.sort((a,b) => (a.bus_id||1) - (b.bus_id||1)).forEach(p => {
       const c1 = p.checks[0] ? `SI (${p.times[0]})` : 'NO';
       const c2 = p.checks[1] ? `SI (${p.times[1]})` : 'NO';
       const c3 = p.checks[2] ? `SI (${p.times[2]})` : 'NO';
-      const row = `${p.name.replace(/,/g, '')},${p.amount||0},${p.phone||'N/A'},${p.code||'N/A'},${p.nss||'N/A'},${p.parent ? p.parent.replace(/,/g, '') : 'N/A'},${p.parent_phone||'N/A'},${p.seat_number || 'N/A'},${p.letter_url || 'No'},${p.ticket_released ? 'SI' : 'NO'},${c1},${c2},${c3}`;
+      const row = `C${p.bus_id||1},${p.name.replace(/,/g, '')},${p.amount||0},${p.phone||'N/A'},${p.code||'N/A'},${p.nss||'N/A'},${p.parent ? p.parent.replace(/,/g, '') : 'N/A'},${p.parent_phone||'N/A'},${p.seat_number || 'N/A'},${p.letter_url || 'No'},${p.ticket_released ? 'SI' : 'NO'},${c1},${c2},${c3}`;
       csvContent += row + "\n";
     });
     const link = document.createElement("a");
     link.setAttribute("href", encodeURI(csvContent));
-    link.setAttribute("download", "asistencia_fil_2025.csv");
+    link.setAttribute("download", `asistencia_fil_2025_completo.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const getBusColor = (id) => {
+      const bus = BUSES.find(b => b.id === id);
+      return bus ? bus.color : "from-gray-500 to-gray-600";
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-orange-50 text-orange-600 font-bold">Cargando datos...</div>;
@@ -722,13 +986,19 @@ const App = () => {
           <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[70] flex items-center justify-center p-4 animate-in zoom-in duration-300">
               {(() => {
                   const p = passengers.find(p => p.id === ticketData.id) || ticketData;
+                  const busId = p.bus_id || 1;
+                  const busInfo = BUSES.find(b => b.id === busId);
+                  
                   return (
                     <div className="bg-white w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl relative">
-                        <div className="bg-gradient-to-br from-yellow-500 to-orange-600 p-6 text-white text-center relative overflow-hidden">
+                        <div className={`bg-gradient-to-br ${busInfo.color} p-6 text-white text-center relative overflow-hidden`}>
                             <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
                             <Ticket size={48} className="mx-auto mb-2 drop-shadow-lg"/>
                             <h2 className="text-2xl font-black uppercase tracking-widest drop-shadow-md">Boleto FIL 2025</h2>
                             <p className="text-xs font-bold opacity-80 uppercase tracking-wide">Pase de Abordar Oficial</p>
+                            <div className="mt-2 inline-block bg-white/20 px-3 py-1 rounded-full text-xs font-bold border border-white/20 backdrop-blur-md">
+                                {busInfo.label}
+                            </div>
                             <button onClick={() => setShowTicketModal(false)} className="absolute top-4 right-4 bg-black/20 hover:bg-black/30 p-2 rounded-full transition-colors"><X size={20}/></button>
                         </div>
                         
@@ -742,7 +1012,7 @@ const App = () => {
                                 <h3 className="text-xl font-bold text-gray-800 leading-tight">{p.name}</h3>
                                 <div className="flex justify-center gap-2 mt-2">
                                     <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-lg text-xs font-bold">{p.code}</span>
-                                    <span className="bg-orange-100 text-orange-600 px-3 py-1 rounded-lg text-xs font-bold">Asiento: {p.seat_number || 'N/A'}</span>
+                                    <span className={`px-3 py-1 rounded-lg text-xs font-bold ${busInfo.bg} ${busInfo.text}`}>Asiento: {p.seat_number || 'N/A'}</span>
                                 </div>
                             </div>
 
@@ -769,7 +1039,7 @@ const App = () => {
             <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl border border-orange-200 relative max-h-[95vh] flex flex-col overflow-hidden">
                 <div className="p-4 border-b flex justify-between items-center bg-gray-50">
                     <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                        <Bus className="text-orange-500" /> Mapa del Autobús
+                        <Bus className="text-orange-500" /> Mapa del {BUSES.find(b => b.id === currentBus).label}
                     </h3>
                     <button onClick={() => setShowBusMap(false)} className="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors"><X size={20}/></button>
                 </div>
@@ -793,7 +1063,7 @@ const App = () => {
                                             <div className="flex gap-2">
                                                 {[1, 2].map(offset => {
                                                     const seatNum = (rowIndex * 4) + offset;
-                                                    const occupant = passengers.find(p => p.seat_number == seatNum);
+                                                    const occupant = currentBusPassengers.find(p => p.seat_number == seatNum);
                                                     return (
                                                         <button 
                                                             key={seatNum}
@@ -809,7 +1079,7 @@ const App = () => {
                                             <div className="flex gap-2">
                                                 {[3, 4].map(offset => {
                                                     const seatNum = (rowIndex * 4) + offset;
-                                                    const occupant = passengers.find(p => p.seat_number == seatNum);
+                                                    const occupant = currentBusPassengers.find(p => p.seat_number == seatNum);
                                                     return (
                                                         <button 
                                                             key={seatNum}
@@ -829,7 +1099,7 @@ const App = () => {
                                         {/* Left: 41, 42 */}
                                         <div className="flex gap-2">
                                             {[41, 42].map(seatNum => {
-                                                const occupant = passengers.find(p => p.seat_number == seatNum);
+                                                const occupant = currentBusPassengers.find(p => p.seat_number == seatNum);
                                                 return (
                                                     <button 
                                                         key={seatNum}
@@ -855,7 +1125,7 @@ const App = () => {
                                     <div className="flex justify-start gap-2 md:gap-4 mt-1">
                                         <div className="flex gap-2">
                                             {[43, 44].map(seatNum => {
-                                                const occupant = passengers.find(p => p.seat_number == seatNum);
+                                                const occupant = currentBusPassengers.find(p => p.seat_number == seatNum);
                                                 return (
                                                     <button 
                                                         key={seatNum}
@@ -870,7 +1140,7 @@ const App = () => {
                                         {/* Seat 45 in aisle spot roughly */}
                                         <div className="ml-[10px]"> 
                                              {[45].map(seatNum => {
-                                                const occupant = passengers.find(p => p.seat_number == seatNum);
+                                                const occupant = currentBusPassengers.find(p => p.seat_number == seatNum);
                                                 return (
                                                     <button 
                                                         key={seatNum}
@@ -896,15 +1166,15 @@ const App = () => {
                                         <button onClick={() => setSelectedSeat(null)} className="text-gray-400 hover:text-gray-600"><X size={18}/></button>
                                     </div>
                                     
-                                    {passengers.find(p => p.seat_number == selectedSeat) ? (
+                                    {currentBusPassengers.find(p => p.seat_number == selectedSeat) ? (
                                         <div className="text-center py-6">
                                             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3 text-red-500"><User size={32}/></div>
                                             <p className="text-sm font-bold text-gray-500 uppercase mb-1">Ocupado por</p>
-                                            <p className="text-lg font-bold text-gray-800 mb-4">{passengers.find(p => p.seat_number == selectedSeat).name}</p>
+                                            <p className="text-lg font-bold text-gray-800 mb-4">{currentBusPassengers.find(p => p.seat_number == selectedSeat).name}</p>
                                             
                                             {/* Only show Release button if Coordinator */}
                                             {isCoordinator && (
-                                                <button onClick={() => releaseSeat(passengers.find(p => p.seat_number == selectedSeat).id)} className="bg-red-50 text-red-600 px-6 py-2 rounded-xl font-bold border border-red-200 hover:bg-red-100 w-full">Liberar Asiento</button>
+                                                <button onClick={() => releaseSeat(currentBusPassengers.find(p => p.seat_number == selectedSeat).id)} className="bg-red-50 text-red-600 px-6 py-2 rounded-xl font-bold border border-red-200 hover:bg-red-100 w-full">Liberar Asiento</button>
                                             )}
                                         </div>
                                     ) : (
@@ -924,8 +1194,8 @@ const App = () => {
                                             </div>
 
                                             <div className="max-h-80 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
-                                                {passengers.filter(p => !p.seat_number).length === 0 && <p className="text-center text-gray-400 text-xs py-4">Todos tienen asiento 🎉</p>}
-                                                {passengers
+                                                {currentBusPassengers.filter(p => !p.seat_number).length === 0 && <p className="text-center text-gray-400 text-xs py-4">Todos tienen asiento 🎉</p>}
+                                                {currentBusPassengers
                                                     .filter(p => !p.seat_number && (p.name.toLowerCase().includes(seatSearchTerm.toLowerCase()) || (p.code && p.code.includes(seatSearchTerm))))
                                                     .sort((a,b) => {
                                                       // Apply the selected sort mode (LastName or Alpha) to the seat assignment list as well
@@ -1055,7 +1325,7 @@ const App = () => {
       )}
       
       {/* HEADER */}
-      <div className="bg-gradient-to-br from-orange-700 via-orange-600 to-yellow-500 text-white p-6 pb-12 shadow-2xl shadow-orange-900/50 rounded-b-[2.5rem] relative z-20 transition-all overflow-hidden">
+      <div className={`bg-gradient-to-br ${BUSES.find(b => b.id === currentBus).color} text-white p-6 pb-12 shadow-2xl shadow-orange-900/50 rounded-b-[2.5rem] relative z-20 transition-all duration-500 overflow-hidden`}>
         {/* Decorative gloss/shadow for depth */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/5 pointer-events-none"></div>
         <div className="absolute -top-20 -right-20 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -1070,18 +1340,18 @@ const App = () => {
                 </div>
                 
                 {/* GREETING OR DEFAULT TEXT */}
-                <div className="flex items-center gap-2 text-xs text-orange-50 font-medium mt-2 flex-nowrap"> {/* Added flex-nowrap */}
+                <div className="flex items-center gap-2 text-xs text-orange-50 font-medium mt-2 flex-nowrap"> 
                     {currentUser ? (
-                        <div className="bg-yellow-400/90 text-yellow-900 px-3 py-1 rounded-full font-bold flex items-center gap-1 shadow-lg shadow-yellow-900/20 animate-in fade-in slide-in-from-left-2 backdrop-blur-sm border border-yellow-300/50 whitespace-nowrap"> {/* Added whitespace-nowrap */}
+                        <div className="bg-yellow-400/90 text-yellow-900 px-3 py-1 rounded-full font-bold flex items-center gap-1 shadow-lg shadow-yellow-900/20 animate-in fade-in slide-in-from-left-2 backdrop-blur-sm border border-yellow-300/50 whitespace-nowrap"> 
                             👋 Hola {currentUser}
                         </div>
                     ) : (
-                       <div className="bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm border border-white/10 whitespace-nowrap"> {/* Added whitespace-nowrap */}
-                           <Bus size={12} className="text-yellow-300 drop-shadow-sm"/> Camión 1
+                       <div className="bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm border border-white/10 whitespace-nowrap"> 
+                           <Bus size={12} className="text-yellow-300 drop-shadow-sm"/> {BUSES.find(b => b.id === currentBus).label}
                        </div>
                     )}
                     {isCoordinator && (
-                        <div className="bg-green-500/80 backdrop-blur-sm px-2 py-0.5 rounded-md flex items-center gap-1 text-white shadow-sm border border-green-400/30 whitespace-nowrap"> {/* Added whitespace-nowrap */}
+                        <div className="bg-green-500/80 backdrop-blur-sm px-2 py-0.5 rounded-md flex items-center gap-1 text-white shadow-sm border border-green-400/30 whitespace-nowrap"> 
                             <Lock size={10} className="drop-shadow-sm" /> Coord. Activo
                         </div>
                     )}
@@ -1093,13 +1363,26 @@ const App = () => {
                     {isCoordinator ? <LogOut size={20} className="drop-shadow-sm" /> : <Lock size={20} className="drop-shadow-sm" />}
                 </button>
                 <span className="text-sm bg-white/20 backdrop-blur-md px-4 py-2 rounded-2xl text-white font-bold border border-white/20 shadow-lg shadow-black/10 flex items-center drop-shadow-sm whitespace-nowrap">
-                    {passengers.length} Pax
+                    {currentBusPassengers.length} Pax
                 </span>
             </div>
             </div>
 
+            {/* BUS SELECTOR TABS */}
+            <div className="flex justify-between bg-black/20 backdrop-blur-md rounded-2xl p-1 mb-6 border border-white/10 shadow-inner">
+                {BUSES.map((bus) => (
+                    <button 
+                        key={bus.id} 
+                        onClick={() => setCurrentBus(bus.id)}
+                        className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all duration-300 ${currentBus === bus.id ? 'bg-white text-gray-800 shadow-lg scale-105' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
+                    >
+                        {bus.label}
+                    </button>
+                ))}
+            </div>
+
             {/* Resumen Asistencia */}
-            <div className="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-6 gap-3 mt-4 text-center text-xs">
+            <div className="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-6 gap-3 text-center text-xs">
             {legs.map((leg, idx) => {
                 const stats = getStats(idx);
                 return (
@@ -1151,14 +1434,14 @@ const App = () => {
                 <div>
                     <div className="flex items-center gap-2 mb-1">
                         <Crown size={16} className="text-yellow-400 fill-yellow-400 animate-pulse" />
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-yellow-400/90">{COORDINATOR.role}</span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-yellow-400/90">{BUSES.find(b => b.id === currentBus).label}</span>
                     </div>
-                    <h3 className="text-lg font-bold text-white leading-tight">{COORDINATOR.name}</h3>
+                    <h3 className="text-lg font-bold text-white leading-tight">{BUSES.find(b => b.id === currentBus).coordinator.name}</h3>
                     <div className="flex flex-row gap-3 mt-1 text-gray-400 text-xs">
-                        <span className="flex items-center gap-1.5"><Phone size={12} /> {COORDINATOR.phone}</span>
+                        <span className="flex items-center gap-1.5"><Phone size={12} /> {BUSES.find(b => b.id === currentBus).coordinator.phone}</span>
                     </div>
                 </div>
-                <a href={`tel:${COORDINATOR.phone}`} className="bg-green-600 hover:bg-green-500 text-white p-3 rounded-full shadow-lg shadow-green-900/50 transition-transform active:scale-95">
+                <a href={`tel:${BUSES.find(b => b.id === currentBus).coordinator.phone}`} className="bg-green-600 hover:bg-green-500 text-white p-3 rounded-full shadow-lg shadow-green-900/50 transition-transform active:scale-95">
                     <Phone size={20} strokeWidth={2.5} />
                 </a>
             </div>
@@ -1234,7 +1517,7 @@ const App = () => {
         {/* FORMULARIO AGREGAR */}
         {showAddForm && isCoordinator && (
           <div className="mb-6 bg-white p-5 rounded-3xl shadow-xl border border-orange-100 animate-in fade-in slide-in-from-top-4 max-w-2xl mx-auto">
-            <h3 className="font-bold text-gray-800 mb-4 text-sm uppercase tracking-wide flex items-center gap-2"><span className="w-1 h-4 bg-orange-500 rounded-full"></span> Nuevo Pasajero</h3>
+            <h3 className="font-bold text-gray-800 mb-4 text-sm uppercase tracking-wide flex items-center gap-2"><span className="w-1 h-4 bg-orange-500 rounded-full"></span> Nuevo Pasajero al {BUSES.find(b=>b.id === currentBus).label}</h3>
             <form onSubmit={addPassenger} className="space-y-3">
               <input type="text" placeholder="Nombre completo" value={newName} onChange={(e) => setNewName(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-orange-500/20 outline-none font-medium"/>
               <button type="submit" className="w-full bg-orange-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-orange-500/30 active:scale-95 transition-transform">Guardar Estudiante</button>
@@ -1256,9 +1539,11 @@ const App = () => {
                )}
             </div>
           ) : (
-            filteredPassengers.map((p) => (
+            filteredPassengers.map((p) => {
+              const busInfo = BUSES.find(b => b.id === (p.bus_id || 1));
+              return (
               <div key={p.id} className="bg-white rounded-2xl shadow-sm hover:shadow-xl border border-orange-50/50 overflow-hidden transition-all duration-300 group relative flex flex-col w-full mx-auto">
-                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-orange-400 to-yellow-400"></div>
+                <div className={`absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b ${busInfo.color}`}></div>
                 
                 <div className="p-3 relative z-10 pl-4 flex-1 flex justify-between items-start">
                   <div className="flex-1 pr-14 min-w-0"> {/* Aumentado el padding derecho para evitar solapamiento con el dinero */}
@@ -1297,6 +1582,7 @@ const App = () => {
                         <div className="flex flex-wrap gap-2 text-[10px] text-gray-500 mb-2">
                             <div className="flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-md border border-orange-100/50"><Phone size={10} className="text-orange-500" /><span className="font-medium">{p.phone}</span></div>
                             <div className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-md border border-gray-100/50"><GraduationCap size={12} className="text-gray-400" /><span>{p.code}</span></div>
+                            <div className={`flex items-center gap-1 px-2 py-1 rounded-md border border-gray-100/50 ${busInfo.bg} ${busInfo.text} font-bold`}><span>C{p.bus_id || 1}</span></div>
                         </div>
 
                         {/* --- CARTA PERMISO AREA --- */}
@@ -1394,20 +1680,20 @@ const App = () => {
                     ))}
                 </div>
               </div>
-            ))
+            )})
           )}
         </div>
         
         {/* BOTONES FLOTANTES */}
         <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3">
-            {/* BOTÓN RESTAURAR LISTA (Visible si está vacío o si es Coord) */}
-            {isCoordinator && passengers.length === 0 && (
+            {/* BOTÓN RESTAURAR LISTA (Visible si LA LISTA DEL CAMIÓN ACTUAL está vacía y es Coord) */}
+            {isCoordinator && currentBusPassengers.length === 0 && (
                 <button 
                     onClick={handleRestoreList} 
                     disabled={uploading}
                     className="bg-red-600 text-white p-3 rounded-full shadow-2xl shadow-red-900/40 hover:scale-105 active:scale-95 transition-all border-2 border-white flex items-center gap-2 font-bold text-xs"
                 >
-                    {uploading ? 'Subiendo...' : '⚠️ RESTAURAR LISTA OFICIAL'}
+                    {uploading ? 'Subiendo...' : `⚠️ RESTAURAR LISTA C${currentBus}`}
                 </button>
             )}
 
