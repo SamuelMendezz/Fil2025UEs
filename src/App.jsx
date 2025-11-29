@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone, Edit2, Lock, LogOut, EyeOff, Crown, FileText, Users, GraduationCap, ListFilter, Save, ShieldAlert, CreditCard, Hash, User, Bell, ArrowUpDown, ArrowDownAZ } from 'lucide-react';
+import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone, Edit2, Lock, LogOut, EyeOff, Crown, FileText, Users, GraduationCap, ListFilter, Save, ShieldAlert, CreditCard, Hash, User, Bell, ArrowUpDown, ArrowDownAZ, Armchair, LayoutGrid } from 'lucide-react';
 
 // --- CONFIGURACIÓN DE SUPABASE ---
 const SUPABASE_URL = 'https://fgzegoflnkwkcztivila.supabase.co';
@@ -210,7 +210,8 @@ const App = () => {
       parent: p.parent || 'N/A',
       parent_phone: p.parentPhone || 'N/A',
       checks: [false, false, false],
-      times: [null, null, null]
+      times: [null, null, null],
+      seat_number: null // Ensure seat_number is initialized
     }));
 
     const { error } = await supabase.from('passengers').insert(records);
@@ -243,6 +244,11 @@ const App = () => {
   // MODAL EDIT STATE
   const [showEditModal, setShowEditModal] = useState(false);
   const [editFormData, setEditFormData] = useState({});
+
+  // BUS MAP STATE
+  const [showBusMap, setShowBusMap] = useState(false);
+  const [selectedSeat, setSelectedSeat] = useState(null); // The seat number user clicked on
+  const [seatSearchTerm, setSeatSearchTerm] = useState(''); // NEW: Seat search
 
   // NOTIFICATION SYSTEM
   const [notification, setNotification] = useState({ message: '', type: '', visible: false });
@@ -277,7 +283,8 @@ const App = () => {
       parent: newParent.trim() || 'N/A',
       parent_phone: newParentPhone.trim() || 'N/A',
       checks: [false, false, false],
-      times: [null, null, null]
+      times: [null, null, null],
+      seat_number: null
     };
 
     const { error } = await supabase.from('passengers').insert([newPassenger]);
@@ -293,7 +300,7 @@ const App = () => {
     if (window.confirm('¿Seguro que quieres eliminar a esta persona?')) {
       await supabase.from('passengers').delete().eq('id', id);
       showNotification("Pasajero eliminado", "error");
-      setShowEditModal(false); // Close modal if open
+      setShowEditModal(false);
     }
   };
 
@@ -317,14 +324,12 @@ const App = () => {
   };
 
   const handleLocalAmountChange = (id, newVal) => {
-    // Update local state immediately for input responsiveness
     setPassengers(prev => prev.map(p => p.id === id ? { ...p, amount: newVal } : p));
   };
 
   const handleAmountBlur = async (id, newVal) => {
     if (!supabase) return;
     const amount = parseFloat(newVal) || 0;
-    // Ensure the saved value is a number
     await supabase.from('passengers').update({ amount }).eq('id', id);
     showNotification(`Pago actualizado: $${amount}`);
   };
@@ -351,33 +356,57 @@ const App = () => {
     await supabase.from('passengers').update({ checks: newChecks, times: newTimes }).eq('id', id);
   };
 
+  // --- SEAT MAP ACTIONS ---
+  const handleSeatClick = (seatNum) => {
+    if (!isCoordinator) {
+        showNotification("Solo coordinadores pueden asignar asientos", "error");
+        return;
+    }
+    setSelectedSeat(seatNum);
+    setSeatSearchTerm(''); // Clear search when selecting new seat
+  };
+
+  const assignSeat = async (passengerId, seatNum) => {
+    if (!supabase) return;
+    // Check if seat is already taken
+    const taken = passengers.find(p => p.seat_number === seatNum);
+    if (taken) {
+        if(!window.confirm(`El asiento ${seatNum} ya está ocupado por ${taken.name}. ¿Deseas reemplazarlo?`)) return;
+        // Unassign previous
+        await supabase.from('passengers').update({ seat_number: null }).eq('id', taken.id);
+    }
+
+    // Assign new
+    await supabase.from('passengers').update({ seat_number: seatNum }).eq('id', passengerId);
+    showNotification(`Asiento ${seatNum} asignado`);
+    setSelectedSeat(null);
+  };
+
+  const releaseSeat = async (passengerId) => {
+    if (!supabase) return;
+    await supabase.from('passengers').update({ seat_number: null }).eq('id', passengerId);
+    showNotification("Asiento liberado");
+    setSelectedSeat(null);
+  };
+
   // --- SORTING LOGIC ---
   const getSurname = (fullName) => {
     const parts = fullName.trim().split(/\s+/);
-    // Simple heuristic: if 4 names, surname is usually index 2. If 3, index 1.
-    // Example: "Juan Carlos Perez Lopez" -> Perez (index 2)
-    // Example: "Juan Perez Lopez" -> Perez (index 1)
     if (parts.length >= 4) return parts[2];
     if (parts.length === 3) return parts[1];
-    return parts[0]; // Fallback to first name if short
+    return parts[0];
   };
 
-  // Función para reformatear el nombre en pantalla cuando se ordena por apellido
   const formatDisplayName = (name) => {
     if (sortMode !== 'lastname') return name;
-    
     const parts = name.trim().split(/\s+/);
-    
     if (parts.length >= 4) {
-       // [0]Juan [1]Carlos [2]Perez [3]Lopez -> Perez Lopez Juan Carlos
        return `${parts.slice(2).join(' ')} ${parts.slice(0, 2).join(' ')}`;
     }
     if (parts.length === 3) {
-       // [0]Juan [1]Perez [2]Lopez -> Perez Lopez Juan
        return `${parts.slice(1).join(' ')} ${parts[0]}`;
     }
     if (parts.length === 2) {
-       // [0]Juan [1]Perez -> Perez Juan
        return `${parts[1]} ${parts[0]}`;
     }
     return name;
@@ -393,6 +422,12 @@ const App = () => {
     if (sortMode === 'alpha') return 'A-Z (Nombre)';
     if (sortMode === 'lastname') return 'A-Z (Apellido)';
     return 'Original';
+  };
+
+  const getInitials = (name) => {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return name.slice(0, 2).toUpperCase();
   };
 
   // --- RENDER ---
@@ -425,12 +460,12 @@ const App = () => {
   const exportToCSV = () => {
     if (!isCoordinator) { triggerLogin(); return; }
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Nombre,Monto,Teléfono,Código,NSS,Tutor,Tel. Tutor,Autlan->FIL (Hora),FIL->Plaza (Hora),Plaza->Autlan (Hora)\n";
+    csvContent += "Nombre,Monto,Teléfono,Código,NSS,Tutor,Tel. Tutor,Asiento,Autlan->FIL (Hora),FIL->Plaza (Hora),Plaza->Autlan (Hora)\n";
     passengers.forEach(p => {
       const c1 = p.checks[0] ? `SI (${p.times[0]})` : 'NO';
       const c2 = p.checks[1] ? `SI (${p.times[1]})` : 'NO';
       const c3 = p.checks[2] ? `SI (${p.times[2]})` : 'NO';
-      const row = `${p.name.replace(/,/g, '')},${p.amount||0},${p.phone||'N/A'},${p.code||'N/A'},${p.nss||'N/A'},${p.parent ? p.parent.replace(/,/g, '') : 'N/A'},${p.parent_phone||'N/A'},${c1},${c2},${c3}`;
+      const row = `${p.name.replace(/,/g, '')},${p.amount||0},${p.phone||'N/A'},${p.code||'N/A'},${p.nss||'N/A'},${p.parent ? p.parent.replace(/,/g, '') : 'N/A'},${p.parent_phone||'N/A'},${p.seat_number || 'N/A'},${c1},${c2},${c3}`;
       csvContent += row + "\n";
     });
     const link = document.createElement("a");
@@ -453,6 +488,146 @@ const App = () => {
             <span className="font-bold text-sm">{notification.message}</span>
         </div>
       </div>
+
+      {/* BUS MAP MODAL */}
+      {showBusMap && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+            <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl border border-orange-200 relative max-h-[95vh] flex flex-col overflow-hidden">
+                <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+                    <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        <Bus className="text-orange-500" /> Mapa del Autobús
+                    </h3>
+                    <button onClick={() => setShowBusMap(false)} className="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors"><X size={20}/></button>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-gray-100/50">
+                    <div className="flex flex-col md:flex-row gap-8">
+                        {/* THE BUS */}
+                        <div className="flex-1">
+                            <div className="bg-white p-6 rounded-[3rem] shadow-xl border-4 border-gray-200 relative mx-auto max-w-sm">
+                                {/* Driver Area */}
+                                <div className="border-b-4 border-dashed border-gray-200 pb-4 mb-6 flex justify-between px-8 text-gray-300 font-bold uppercase tracking-widest text-xs">
+                                    <span>Frente</span>
+                                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center border-2 border-gray-200"><User size={20}/></div>
+                                </div>
+
+                                {/* Seats Grid (11 rows x 4 cols + aisle) */}
+                                <div className="space-y-3">
+                                    {Array.from({ length: 11 }).map((_, rowIndex) => (
+                                        <div key={rowIndex} className="flex justify-between items-center gap-2 md:gap-4">
+                                            {/* Left Side (Seats 1,2 - 5,6 etc) */}
+                                            <div className="flex gap-2">
+                                                {[1, 2].map(offset => {
+                                                    const seatNum = (rowIndex * 4) + offset;
+                                                    const occupant = passengers.find(p => p.seat_number === seatNum);
+                                                    return (
+                                                        <button 
+                                                            key={seatNum}
+                                                            onClick={() => handleSeatClick(seatNum)}
+                                                            className={`w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center shadow-sm transition-all transform hover:scale-110 active:scale-95 border-b-4 ${occupant ? 'bg-red-500 border-red-700 text-white' : 'bg-green-400 border-green-600 text-white hover:bg-green-500'}`}
+                                                        >
+                                                            {occupant ? <span className="text-xs font-bold">{getInitials(occupant.name)}</span> : <span className="text-xs font-bold opacity-50">{seatNum}</span>}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+
+                                            {/* Aisle Number */}
+                                            <span className="text-[10px] font-bold text-gray-300 w-4 text-center">{rowIndex + 1}</span>
+
+                                            {/* Right Side (Seats 3,4 - 7,8 etc) */}
+                                            <div className="flex gap-2">
+                                                {[3, 4].map(offset => {
+                                                    const seatNum = (rowIndex * 4) + offset;
+                                                    const occupant = passengers.find(p => p.seat_number === seatNum);
+                                                    return (
+                                                        <button 
+                                                            key={seatNum}
+                                                            onClick={() => handleSeatClick(seatNum)}
+                                                            className={`w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center shadow-sm transition-all transform hover:scale-110 active:scale-95 border-b-4 ${occupant ? 'bg-red-500 border-red-700 text-white' : 'bg-green-400 border-green-600 text-white hover:bg-green-500'}`}
+                                                        >
+                                                            {occupant ? <span className="text-xs font-bold">{getInitials(occupant.name)}</span> : <span className="text-xs font-bold opacity-50">{seatNum}</span>}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* SELECTION PANEL */}
+                        <div className="w-full md:w-80 flex-shrink-0">
+                            {selectedSeat ? (
+                                <div className="bg-white p-6 rounded-3xl shadow-lg border border-orange-100 animate-in slide-in-from-right">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h4 className="font-bold text-lg text-gray-800">Asiento #{selectedSeat}</h4>
+                                        <button onClick={() => setSelectedSeat(null)} className="text-gray-400 hover:text-gray-600"><X size={18}/></button>
+                                    </div>
+                                    
+                                    {passengers.find(p => p.seat_number === selectedSeat) ? (
+                                        <div className="text-center py-6">
+                                            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3 text-red-500"><User size={32}/></div>
+                                            <p className="text-sm font-bold text-gray-500 uppercase mb-1">Ocupado por</p>
+                                            <p className="text-lg font-bold text-gray-800 mb-4">{passengers.find(p => p.seat_number === selectedSeat).name}</p>
+                                            <button onClick={() => releaseSeat(passengers.find(p => p.seat_number === selectedSeat).id)} className="bg-red-50 text-red-600 px-6 py-2 rounded-xl font-bold border border-red-200 hover:bg-red-100 w-full">Liberar Asiento</button>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            <p className="text-xs font-bold text-gray-400 uppercase mb-2">Asignar a pasajero sin asiento:</p>
+                                            
+                                            {/* SEARCH IN SEAT SELECTION */}
+                                            <div className="relative mb-2">
+                                                <Search className="absolute left-3 top-2.5 text-gray-400" size={14} />
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="Buscar pasajero..." 
+                                                    value={seatSearchTerm}
+                                                    onChange={(e) => setSeatSearchTerm(e.target.value)}
+                                                    className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-orange-500 outline-none"
+                                                />
+                                            </div>
+
+                                            <div className="max-h-80 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+                                                {passengers.filter(p => !p.seat_number).length === 0 && <p className="text-center text-gray-400 text-xs py-4">Todos tienen asiento 🎉</p>}
+                                                {passengers
+                                                    .filter(p => !p.seat_number && (p.name.toLowerCase().includes(seatSearchTerm.toLowerCase()) || (p.code && p.code.includes(seatSearchTerm))))
+                                                    .sort((a,b) => {
+                                                      // Apply the selected sort mode (LastName or Alpha) to the seat assignment list as well
+                                                      if (sortMode === 'lastname') {
+                                                          const surnameA = getSurname(a.name);
+                                                          const surnameB = getSurname(b.name);
+                                                          return surnameA.localeCompare(surnameB);
+                                                      }
+                                                      return a.name.localeCompare(b.name);
+                                                    })
+                                                    .map(p => (
+                                                    <button 
+                                                        key={p.id} 
+                                                        onClick={() => assignSeat(p.id, selectedSeat)}
+                                                        className="w-full text-left p-3 rounded-xl hover:bg-orange-50 border border-transparent hover:border-orange-100 transition-all group"
+                                                    >
+                                                        <span className="font-bold text-xs text-gray-700 group-hover:text-orange-700 block">{formatDisplayName(p.name)}</span>
+                                                        <span className="text-[10px] text-gray-400">{p.code}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="bg-white/50 border border-dashed border-gray-300 p-8 rounded-3xl flex flex-col items-center justify-center text-center h-full text-gray-400">
+                                    <Armchair size={48} className="mb-3 opacity-50"/>
+                                    <p className="text-sm font-medium">Selecciona un asiento del mapa para ver detalles o asignar un pasajero.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+      )}
 
       {/* EDIT MODAL WINDOW */}
       {showEditModal && (
@@ -670,6 +845,14 @@ const App = () => {
         <div className="flex items-center gap-3 mb-6 overflow-x-auto pb-2 px-1 no-scrollbar justify-start md:justify-center">
            <div className="bg-white p-2 rounded-full shadow-sm"><ListFilter size={16} className="text-orange-500"/></div>
            
+           {/* MAP BUTTON */}
+           <button onClick={() => setShowBusMap(true)} className="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-sm bg-white text-gray-600 hover:bg-orange-50 flex items-center gap-2 border border-gray-100 hover:border-orange-200 group">
+              <Armchair size={14} className="text-orange-500 group-hover:scale-110 transition-transform"/>
+              <span className="group-hover:text-orange-600">Mapa</span>
+           </button>
+
+           <div className="w-px h-6 bg-gray-200 mx-1"></div>
+           
            {/* SORT BUTTON */}
            <button onClick={cycleSortMode} className="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-sm bg-white text-gray-600 hover:bg-gray-50 flex items-center gap-2 border border-gray-100">
               {sortMode === 'original' ? <ArrowUpDown size={14} className="text-gray-400"/> : <ArrowDownAZ size={14} className="text-orange-500"/>}
@@ -756,7 +939,6 @@ const App = () => {
                   </div>
                 </div>
 
-                {/* ... existing leg buttons ... */}
                 <div className="grid grid-cols-3 divide-x divide-gray-100 bg-gray-50/30 relative z-10 border-t border-gray-100 mt-auto">
                     {legs.map((leg, idx) => (
                       <button key={idx} onClick={() => toggleCheck(p.id, idx)} className={`relative flex flex-col items-center justify-center py-3 transition-all duration-300 group/btn hover:bg-white ${p.checks && p.checks[idx] ? 'bg-green-500/5 text-green-700' : 'text-gray-400'}`}>
@@ -782,7 +964,7 @@ const App = () => {
           )}
         </div>
         
-        {/* ... existing buttons ... */}
+        {/* BOTONES FLOTANTES */}
         <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3">
             {/* BOTÓN RESTAURAR LISTA (Visible si está vacío o si es Coord) */}
             {isCoordinator && passengers.length === 0 && (
