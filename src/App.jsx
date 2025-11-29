@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone, Edit2, Lock, LogOut, EyeOff, Crown, FileText, Users, GraduationCap, ListFilter, Save, ShieldAlert, CreditCard, Hash, User, Bell, ArrowUpDown, ArrowDownAZ, Armchair, LayoutGrid, UserPlus, Bath } from 'lucide-react';
+import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone, Edit2, Lock, LogOut, EyeOff, Crown, FileText, Users, GraduationCap, ListFilter, Save, ShieldAlert, CreditCard, Hash, User, Bell, ArrowUpDown, ArrowDownAZ, Armchair, LayoutGrid, UserPlus, Bath, Upload, FileCheck, Ticket, ExternalLink, Unlock, AlertTriangle, Eye } from 'lucide-react';
 
 // --- CONFIGURACIÓN DE SUPABASE ---
 const SUPABASE_URL = 'https://fgzegoflnkwkcztivila.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnemVnb2Zsbmt3a2N6dGl2aWxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzMzQyOTYsImV4cCI6MjA3OTkxMDI5Nn0.-u-NUiR5Eqitf4-zqvAAZhTKHc1_Cj3OKHAhGRHl8Xs';
 
-// --- LISTA OFICIAL COMPLETA ---
+// --- LISTA OFICIAL COMPLETA (Misma lista original) ---
 const OFFICIAL_LIST = [
   { name: "Joseph Yancarlo Avalos Canales", phone: "3171325247", code: "225519213", amount: 480, nss: "5251056577", parent: "Lenis Alejandra Canales Castro", parentPhone: "3171048798" },
   { name: "Daira Athziri Saldaña Dávila", phone: "3171284644", code: "225521072", amount: 480, nss: "4927321887", parent: "María Luisa Dávila Muñoz", parentPhone: "3171146753" },
@@ -71,7 +71,7 @@ const App = () => {
   const [currentUser, setCurrentUser] = useState(() => {
     return localStorage.getItem('fil2025_user') || null;
   });
-  
+   
   // Si hay un usuario, es coordinador
   const isCoordinator = !!currentUser;
 
@@ -79,6 +79,13 @@ const App = () => {
   const [loginUser, setLoginUser] = useState('');
   const [loginPass, setLoginPass] = useState('');
   const [loginError, setLoginError] = useState('');
+
+  // TICKET MODAL STATE
+  const [showTicketModal, setShowTicketModal] = useState(false);
+  const [ticketData, setTicketData] = useState(null);
+
+  // DELETE LETTER CONFIRMATION
+  const [deleteLetterId, setDeleteLetterId] = useState(null);
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -190,7 +197,8 @@ const App = () => {
 
     if (error) {
       console.error('Error cargando:', error);
-      alert("Error conectando a Supabase. ¿Desactivaste RLS? Mira la consola.");
+      // Removed alert for cleaner UI
+      showNotification("Error conectando a Supabase. ¿RLS?", "error");
     } else {
       // MERGE LOCAL STORAGE SEATS
       const localSeats = JSON.parse(localStorage.getItem('fil2025_local_seats') || '{}');
@@ -209,7 +217,7 @@ const App = () => {
         triggerLogin();
         return;
     }
-    if (!supabase) return alert("Supabase aún no carga");
+    if (!supabase) return;
 
     if(!window.confirm("¿ESTÁS SEGURO? Esto subirá la lista oficial de 43 estudiantes a la base de datos. Solo hazlo si la lista está vacía.")) return;
 
@@ -225,13 +233,15 @@ const App = () => {
       parent_phone: p.parentPhone || 'N/A',
       checks: [false, false, false],
       times: [null, null, null],
-      // seat_number: null // Removed to be safe with strict schema
+      // Nuevos campos iniciales
+      letter_url: null,
+      ticket_released: false
     }));
 
     const { error } = await supabase.from('passengers').insert(records);
     
     if (error) {
-        alert("Error al subir: " + error.message + ". ¿Seguro que desactivaste RLS?");
+        showNotification("Error al restaurar lista", "error");
     } else {
         showNotification("¡Lista restaurada con éxito!", 'success');
         fetchPassengers();
@@ -245,6 +255,7 @@ const App = () => {
       
       const samuelExists = passengers.find(p => p.name === "Samuel Méndez Vidrio");
       if (!samuelExists) {
+          // Use custom confirm if needed, here keeping simple for admin actions
           if(window.confirm("Tu usuario (Samuel) no está en la lista de pasajeros de la base de datos. ¿Quieres agregarte ahora para poder asignarte asiento?")) {
                const newPassenger = {
                   name: "Samuel Méndez Vidrio",
@@ -256,7 +267,9 @@ const App = () => {
                   parent_phone: "N/A",
                   checks: [false, false, false],
                   times: [null, null, null],
-                  seat_number: null
+                  seat_number: null,
+                  letter_url: null,
+                  ticket_released: false
                 };
                 const { error } = await supabase.from('passengers').insert([newPassenger]);
                 if (!error) showNotification("Te has agregado a la lista correctamente");
@@ -335,8 +348,9 @@ const App = () => {
       parent: newParent.trim() || 'N/A',
       parent_phone: newParentPhone.trim() || 'N/A',
       checks: [false, false, false],
-      times: [null, null, null]
-      // seat_number excluded for safety
+      times: [null, null, null],
+      letter_url: null,
+      ticket_released: false
     };
 
     const { error } = await supabase.from('passengers').insert([newPassenger]);
@@ -406,6 +420,95 @@ const App = () => {
     }
 
     await supabase.from('passengers').update({ checks: newChecks, times: newTimes }).eq('id', id);
+  };
+
+  // --- CARTA / TICKET ACTIONS ---
+
+  const handleUploadLetter = async (e, passengerId) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!supabase) return;
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${passengerId}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    setLoading(true);
+
+    // 1. Upload file to 'letters' bucket
+    const { error: uploadError } = await supabase.storage
+        .from('letters')
+        .upload(filePath, file);
+
+    if (uploadError) {
+        console.error(uploadError);
+        showNotification("Error al subir archivo (PDF/IMG < 5MB)", "error");
+        setLoading(false);
+        return;
+    }
+
+    // 2. Get Public URL
+    const { data: { publicUrl } } = supabase.storage.from('letters').getPublicUrl(filePath);
+
+    // 3. Update Passenger Record
+    const { error: dbError } = await supabase
+        .from('passengers')
+        .update({ letter_url: publicUrl })
+        .eq('id', passengerId);
+
+    if (dbError) {
+        console.error(dbError);
+        showNotification("Error guardando enlace en base de datos", "error");
+    } else {
+        showNotification('Carta subida correctamente');
+    }
+    setLoading(false);
+  };
+
+  const confirmDeleteLetter = async () => {
+      if (!deleteLetterId) return;
+      if (!supabase) return;
+      
+      const passengerId = deleteLetterId;
+      setDeleteLetterId(null); // Close modal
+
+      // Optimistic update for UI responsiveness
+      setPassengers(prev => prev.map(p => 
+          p.id === passengerId 
+          ? { ...p, letter_url: null, ticket_released: false } 
+          : p
+      ));
+      
+      const { error } = await supabase
+        .from('passengers')
+        .update({ letter_url: null, ticket_released: false })
+        .eq('id', passengerId);
+      
+      if(error) {
+          showNotification("Error al eliminar carta", "error");
+          fetchPassengers(); // Revert on error
+      } else {
+          showNotification("Carta eliminada", "error");
+      }
+  };
+
+  const toggleTicketRelease = async (passengerId, currentStatus) => {
+      if(!isCoordinator) return;
+      if (!supabase) return;
+
+      const { error } = await supabase
+        .from('passengers')
+        .update({ ticket_released: !currentStatus })
+        .eq('id', passengerId);
+
+      if(!error) {
+          showNotification(!currentStatus ? "Boleto LIBERADO" : "Boleto BLOQUEADO");
+      }
+  };
+
+  const openTicketModal = (passenger) => {
+      setTicketData(passenger);
+      setShowTicketModal(true);
   };
 
   // --- SEAT MAP ACTIONS ---
@@ -560,12 +663,12 @@ const App = () => {
   const exportToCSV = () => {
     if (!isCoordinator) { triggerLogin(); return; }
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Nombre,Monto,Teléfono,Código,NSS,Tutor,Tel. Tutor,Asiento,Autlan->FIL (Hora),FIL->Plaza (Hora),Plaza->Autlan (Hora)\n";
+    csvContent += "Nombre,Monto,Teléfono,Código,NSS,Tutor,Tel. Tutor,Asiento,Carta URL,Boleto Liberado,Autlan->FIL (Hora),FIL->Plaza (Hora),Plaza->Autlan (Hora)\n";
     passengers.forEach(p => {
       const c1 = p.checks[0] ? `SI (${p.times[0]})` : 'NO';
       const c2 = p.checks[1] ? `SI (${p.times[1]})` : 'NO';
       const c3 = p.checks[2] ? `SI (${p.times[2]})` : 'NO';
-      const row = `${p.name.replace(/,/g, '')},${p.amount||0},${p.phone||'N/A'},${p.code||'N/A'},${p.nss||'N/A'},${p.parent ? p.parent.replace(/,/g, '') : 'N/A'},${p.parent_phone||'N/A'},${p.seat_number || 'N/A'},${c1},${c2},${c3}`;
+      const row = `${p.name.replace(/,/g, '')},${p.amount||0},${p.phone||'N/A'},${p.code||'N/A'},${p.nss||'N/A'},${p.parent ? p.parent.replace(/,/g, '') : 'N/A'},${p.parent_phone||'N/A'},${p.seat_number || 'N/A'},${p.letter_url || 'No'},${p.ticket_released ? 'SI' : 'NO'},${c1},${c2},${c3}`;
       csvContent += row + "\n";
     });
     const link = document.createElement("a");
@@ -588,6 +691,70 @@ const App = () => {
             <span className="font-bold text-sm">{notification.message}</span>
         </div>
       </div>
+
+      {/* DELETE LETTER CONFIRM MODAL */}
+      {deleteLetterId && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[80] flex items-center justify-center p-4 animate-in fade-in">
+           <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-red-100 text-center">
+               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
+                   <Trash2 size={32}/>
+               </div>
+               <h3 className="text-xl font-bold text-gray-800 mb-2">¿Eliminar carta?</h3>
+               <p className="text-sm text-gray-500 mb-6">Si te equivocaste al subirla, puedes borrarla. Esto también revocará el boleto liberado.</p>
+               <div className="flex gap-3">
+                   <button onClick={() => setDeleteLetterId(null)} className="flex-1 py-3 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">Cancelar</button>
+                   <button onClick={confirmDeleteLetter} className="flex-1 py-3 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 transition-colors shadow-lg shadow-red-500/30">Sí, eliminar</button>
+               </div>
+           </div>
+        </div>
+      )}
+
+      {/* TICKET MODAL */}
+      {showTicketModal && ticketData && (
+          <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[70] flex items-center justify-center p-4 animate-in zoom-in duration-300">
+              <div className="bg-white w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl relative">
+                  <div className="bg-gradient-to-br from-yellow-500 to-orange-600 p-6 text-white text-center relative overflow-hidden">
+                      <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                      <Ticket size={48} className="mx-auto mb-2 drop-shadow-lg"/>
+                      <h2 className="text-2xl font-black uppercase tracking-widest drop-shadow-md">Boleto FIL 2025</h2>
+                      <p className="text-xs font-bold opacity-80 uppercase tracking-wide">Pase de Abordar Oficial</p>
+                      <button onClick={() => setShowTicketModal(false)} className="absolute top-4 right-4 bg-black/20 hover:bg-black/30 p-2 rounded-full transition-colors"><X size={20}/></button>
+                  </div>
+                  
+                  <div className="p-8 flex flex-col items-center gap-6 relative">
+                      {/* Perforaciones decorativas */}
+                      <div className="absolute -left-3 top-0 bottom-0 my-auto w-6 h-6 bg-black rounded-full"></div>
+                      <div className="absolute -right-3 top-0 bottom-0 my-auto w-6 h-6 bg-black rounded-full"></div>
+
+                      <div className="text-center w-full">
+                          <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">Pasajero</p>
+                          <h3 className="text-xl font-bold text-gray-800 leading-tight">{ticketData.name}</h3>
+                          <div className="flex justify-center gap-2 mt-2">
+                              <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-lg text-xs font-bold">{ticketData.code}</span>
+                              {ticketData.seat_number && <span className="bg-orange-100 text-orange-600 px-3 py-1 rounded-lg text-xs font-bold">Asiento {ticketData.seat_number}</span>}
+                          </div>
+                      </div>
+
+                      <div className="w-full border-t border-dashed border-gray-300"></div>
+
+                      <div className="text-center w-full">
+                           <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">Tutor Responsable</p>
+                           <h4 className="font-bold text-gray-700">{ticketData.parent}</h4>
+                           <a href={`tel:${ticketData.parent_phone}`} className="inline-flex items-center gap-1 text-xs font-bold text-green-600 mt-1 bg-green-50 px-2 py-1 rounded-md">
+                               <Phone size={12}/> {ticketData.parent_phone}
+                           </a>
+                      </div>
+                      
+                      <div className="bg-gray-50 p-4 rounded-xl w-full text-center">
+                          <p className="text-[10px] text-gray-400 uppercase font-bold mb-2">Estado</p>
+                          <div className="flex items-center justify-center gap-2 text-green-600 font-black text-lg uppercase tracking-wider">
+                              <Check size={24} strokeWidth={3} /> Liberado
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      )}
 
       {/* BUS MAP MODAL */}
       {showBusMap && (
@@ -1107,6 +1274,62 @@ const App = () => {
                         <div className="flex flex-wrap gap-2 text-[10px] text-gray-500 mb-2">
                             <div className="flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-md border border-orange-100/50"><Phone size={10} className="text-orange-500" /><span className="font-medium">{p.phone}</span></div>
                             <div className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-md border border-gray-100/50"><GraduationCap size={12} className="text-gray-400" /><span>{p.code}</span></div>
+                        </div>
+
+                        {/* --- CARTA PERMISO AREA --- */}
+                        <div className="mt-3 flex items-center gap-2">
+                            {p.letter_url ? (
+                                <>
+                                   {/* Link Ver Carta */}
+                                   <a 
+                                      href={p.letter_url} 
+                                      target="_blank" 
+                                      rel="noreferrer" 
+                                      className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border transition-colors ${
+                                          p.ticket_released 
+                                            ? 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100' // Aceptada
+                                            : 'bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100' // En revisión
+                                      }`}
+                                   >
+                                       {p.ticket_released ? <FileCheck size={14}/> : <FileText size={14}/>}
+                                       {p.ticket_released ? 'Carta Aceptada' : 'En Revisión'}
+                                   </a>
+
+                                   {/* COORDINADOR: Toggle Release */}
+                                   {isCoordinator && (
+                                       <button 
+                                          onClick={() => toggleTicketRelease(p.id, p.ticket_released)}
+                                          className={`p-1.5 rounded-lg border transition-colors ${p.ticket_released ? 'bg-green-100 border-green-300 text-green-700' : 'bg-gray-100 border-gray-300 text-gray-400 hover:bg-gray-200'}`}
+                                          title="Liberar Boleto"
+                                       >
+                                           {p.ticket_released ? <Unlock size={14} /> : <Lock size={14}/>}
+                                       </button>
+                                   )}
+                                   
+                                   {/* Botón Borrar Carta - DISPARA MODAL DE CONFIRMACIÓN */}
+                                   <button 
+                                      onClick={() => setDeleteLetterId(p.id)} 
+                                      className="p-1.5 bg-red-50 text-red-500 rounded-lg border border-red-100 hover:bg-red-100 transition-colors"
+                                      title="Eliminar carta"
+                                   >
+                                       <Trash2 size={14}/>
+                                   </button>
+                                </>
+                            ) : (
+                                <>
+                                   <label className="flex items-center gap-1.5 text-xs font-bold bg-gray-50 text-gray-600 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer active:scale-95">
+                                       <Upload size={14}/> Subir Carta
+                                       <input type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => handleUploadLetter(e, p.id)} />
+                                   </label>
+                                </>
+                            )}
+
+                            {/* TICKET BUTTON (Si está liberado) */}
+                            {p.ticket_released && (
+                                <button onClick={() => openTicketModal(p)} className="flex items-center gap-1.5 text-xs font-bold bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1.5 rounded-lg shadow-md hover:shadow-lg transition-all animate-pulse">
+                                    <Ticket size={14}/> VER BOLETO
+                                </button>
+                            )}
                         </div>
                   </div>
                 </div>
