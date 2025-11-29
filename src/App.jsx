@@ -1257,7 +1257,7 @@ const App = () => {
             </div>
           ) : (
             filteredPassengers.map((p) => (
-              <div key={p.id} className="bg-white rounded-2xl shadow-sm hover:shadow-xl border border-orange-50/50 overflow-hidden transition-all duration-300 group relative flex flex-col w-full max-w-md mx-auto">
+              <div key={p.id} className="bg-white rounded-2xl shadow-sm hover:shadow-xl border border-orange-50/50 overflow-hidden transition-all duration-300 group relative flex flex-col w-full mx-auto">
                 <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-orange-400 to-yellow-400"></div>
                 
                 <div className="p-3 relative z-10 pl-4 flex-1 flex justify-between items-start">
