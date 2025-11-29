@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone, Edit2, Lock, LogOut, EyeOff, Crown, FileText, Users, GraduationCap, ListFilter, Save, ShieldAlert, CreditCard, Hash, User, Bell, ArrowUpDown, ArrowDownAZ, Armchair, LayoutGrid } from 'lucide-react';
+import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone, Edit2, Lock, LogOut, EyeOff, Crown, FileText, Users, GraduationCap, ListFilter, Save, ShieldAlert, CreditCard, Hash, User, Bell, ArrowUpDown, ArrowDownAZ, Armchair, LayoutGrid, UserPlus } from 'lucide-react';
 
 // --- CONFIGURACIÓN DE SUPABASE ---
 const SUPABASE_URL = 'https://fgzegoflnkwkcztivila.supabase.co';
@@ -50,7 +50,8 @@ const OFFICIAL_LIST = [
   { name: "Ricardo Ponce Orellana", phone: "3171121197", code: "224429563", amount: 480, nss: "18240985046", parent: "Berta Alicia Gonzalez Sevilla", parentPhone: "3171133752" },
   { name: "Carolina Trinidad Orozco", phone: "3171211500", code: "225520491", amount: 300, nss: "Pendiente", parent: "Pendiente", parentPhone: "Pendiente" },
   { name: "Aldo Ivan Lepe Figueroa", phone: "3171071964", code: "225200217", amount: 480, nss: "Pendiente", parent: "Pendiente", parentPhone: "Pendiente" },
-  { name: "Arturo Pioquinto Alanis Avioneda", phone: "3171312596", code: "22519865", amount: 480, nss: "5240959782", parent: "Alejandra Avianeda Gutierrez", parentPhone: "3171237127" }
+  { name: "Arturo Pioquinto Alanis Avioneda", phone: "3171312596", code: "22519865", amount: 480, nss: "5240959782", parent: "Alejandra Avianeda Gutierrez", parentPhone: "3171237127" },
+  { name: "Samuel Méndez Vidrio", phone: "3125950081", code: "223440784", amount: 480, nss: "N/A", parent: "N/A", parentPhone: "N/A" }
 ];
 
 const COORDINATOR = {
@@ -162,7 +163,13 @@ const App = () => {
           } else if (payload.eventType === 'DELETE') {
             setPassengers((prev) => prev.filter((p) => p.id !== payload.old.id));
           } else if (payload.eventType === 'UPDATE') {
-            setPassengers((prev) => prev.map((p) => (p.id === payload.new.id ? payload.new : p)));
+            // MERGE SEAT DATA FROM LOCAL STORAGE IF PAYLOAD HAS NO SEAT (Safety)
+            const localSeats = JSON.parse(localStorage.getItem('fil2025_local_seats') || '{}');
+            const updatedPassenger = payload.new;
+            if (updatedPassenger.seat_number === null && localSeats[updatedPassenger.id]) {
+                updatedPassenger.seat_number = localSeats[updatedPassenger.id];
+            }
+            setPassengers((prev) => prev.map((p) => (p.id === payload.new.id ? updatedPassenger : p)));
           }
         }
       )
@@ -185,7 +192,13 @@ const App = () => {
       console.error('Error cargando:', error);
       alert("Error conectando a Supabase. ¿Desactivaste RLS? Mira la consola.");
     } else {
-      setPassengers(data);
+      // MERGE LOCAL STORAGE SEATS
+      const localSeats = JSON.parse(localStorage.getItem('fil2025_local_seats') || '{}');
+      const mergedData = data.map(p => ({
+          ...p,
+          seat_number: p.seat_number !== null ? p.seat_number : (localSeats[p.id] || null)
+      }));
+      setPassengers(mergedData);
     }
     setLoading(false);
   };
@@ -201,6 +214,7 @@ const App = () => {
     if(!window.confirm("¿ESTÁS SEGURO? Esto subirá la lista oficial de 43 estudiantes a la base de datos. Solo hazlo si la lista está vacía.")) return;
 
     setUploading(true);
+    // Remove seat_number from insert payload to avoid error if column missing
     const records = OFFICIAL_LIST.map(p => ({
       name: p.name,
       phone: p.phone,
@@ -211,7 +225,7 @@ const App = () => {
       parent_phone: p.parentPhone || 'N/A',
       checks: [false, false, false],
       times: [null, null, null],
-      seat_number: null // Ensure seat_number is initialized
+      // seat_number: null // Removed to be safe with strict schema
     }));
 
     const { error } = await supabase.from('passengers').insert(records);
@@ -223,6 +237,33 @@ const App = () => {
         fetchPassengers();
     }
     setUploading(false);
+  };
+
+  // --- HELPER: AUTO-ADD COORDINATOR IF MISSING ---
+  const addCoordinatorIfMissing = async () => {
+      if (!supabase || !isCoordinator) return;
+      
+      const samuelExists = passengers.find(p => p.name === "Samuel Méndez Vidrio");
+      if (!samuelExists) {
+          if(window.confirm("Tu usuario (Samuel) no está en la lista de pasajeros de la base de datos. ¿Quieres agregarte ahora para poder asignarte asiento?")) {
+               const newPassenger = {
+                  name: "Samuel Méndez Vidrio",
+                  phone: "3125950081",
+                  code: "223440784",
+                  amount: 480,
+                  nss: "N/A",
+                  parent: "N/A",
+                  parent_phone: "N/A",
+                  checks: [false, false, false],
+                  times: [null, null, null],
+                  seat_number: null
+                };
+                const { error } = await supabase.from('passengers').insert([newPassenger]);
+                if (!error) showNotification("Te has agregado a la lista correctamente");
+          }
+      } else {
+          showNotification("Ya estás en la lista, puedes asignarte asiento.");
+      }
   };
 
   // --- UI STATE ---
@@ -266,6 +307,17 @@ const App = () => {
     { id: 2, label: "Regreso Plaza", sub: "→ Autlán", icon: <RotateCcw size={14} />, short: "Regreso" }
   ];
 
+  // --- HELPERS FOR LOCAL STORAGE ---
+  const saveLocalSeat = (passengerId, seatNum) => {
+      const localSeats = JSON.parse(localStorage.getItem('fil2025_local_seats') || '{}');
+      if (seatNum === null) {
+          delete localSeats[passengerId];
+      } else {
+          localSeats[passengerId] = seatNum;
+      }
+      localStorage.setItem('fil2025_local_seats', JSON.stringify(localSeats));
+  };
+
   // --- ACTIONS ---
 
   const addPassenger = async (e) => {
@@ -283,8 +335,8 @@ const App = () => {
       parent: newParent.trim() || 'N/A',
       parent_phone: newParentPhone.trim() || 'N/A',
       checks: [false, false, false],
-      times: [null, null, null],
-      seat_number: null
+      times: [null, null, null]
+      // seat_number excluded for safety
     };
 
     const { error } = await supabase.from('passengers').insert([newPassenger]);
@@ -317,7 +369,7 @@ const App = () => {
 
   const handleSaveEdit = async () => {
     if (!supabase) return;
-    const { id, ...dataToUpdate } = editFormData;
+    const { id, seat_number, ...dataToUpdate } = editFormData; // Exclude seat_number from general edit to prevent overwrite
     await supabase.from('passengers').update(dataToUpdate).eq('id', id);
     showNotification("Información actualizada");
     setShowEditModal(false);
@@ -363,29 +415,70 @@ const App = () => {
         return;
     }
     setSelectedSeat(seatNum);
-    setSeatSearchTerm(''); // Clear search when selecting new seat
+    setSeatSearchTerm(''); 
   };
 
   const assignSeat = async (passengerId, seatNum) => {
     if (!supabase) return;
-    // Check if seat is already taken
-    const taken = passengers.find(p => p.seat_number === seatNum);
-    if (taken) {
-        if(!window.confirm(`El asiento ${seatNum} ya está ocupado por ${taken.name}. ¿Deseas reemplazarlo?`)) return;
-        // Unassign previous
-        await supabase.from('passengers').update({ seat_number: null }).eq('id', taken.id);
-    }
+    
+    const previousPassengers = [...passengers]; // Backup
 
-    // Assign new
-    await supabase.from('passengers').update({ seat_number: seatNum }).eq('id', passengerId);
-    showNotification(`Asiento ${seatNum} asignado`);
+    // 1. Optimistic Update (Immediate Feedback)
+    setPassengers(prev => {
+        return prev.map(p => {
+            // Clear seat if someone else has it
+            if (p.seat_number == seatNum) return { ...p, seat_number: null };
+            // Assign seat to new person
+            if (p.id === passengerId) return { ...p, seat_number: seatNum };
+            return p;
+        });
+    });
+
+    // 2. Try DB Update, Fallback to Local
+    try {
+        // Clear previous owner if any
+        const taken = previousPassengers.find(p => p.seat_number == seatNum);
+        if (taken) {
+             const { error: errorClear } = await supabase.from('passengers').update({ seat_number: null }).eq('id', taken.id);
+             if (errorClear) throw errorClear;
+        }
+
+        const { error: errorAssign } = await supabase.from('passengers').update({ seat_number: seatNum }).eq('id', passengerId);
+        
+        if (errorAssign) throw errorAssign;
+
+        showNotification(`Asiento ${seatNum} asignado (Nube)`);
+
+    } catch (error) {
+        console.warn("Fallo guardado en nube, guardando localmente...", error);
+        
+        // Save to LocalStorage
+        const taken = previousPassengers.find(p => p.seat_number == seatNum);
+        if(taken) saveLocalSeat(taken.id, null);
+        saveLocalSeat(passengerId, seatNum);
+
+        showNotification(`Asiento ${seatNum} guardado localmente (Falta columna en DB)`, 'success');
+    }
+    
     setSelectedSeat(null);
+    setSeatSearchTerm(''); 
   };
 
   const releaseSeat = async (passengerId) => {
     if (!supabase) return;
-    await supabase.from('passengers').update({ seat_number: null }).eq('id', passengerId);
-    showNotification("Asiento liberado");
+    
+    // Optimistic
+    setPassengers(prev => prev.map(p => p.id === passengerId ? { ...p, seat_number: null } : p));
+    
+    try {
+        const { error } = await supabase.from('passengers').update({ seat_number: null }).eq('id', passengerId);
+        if (error) throw error;
+        showNotification("Asiento liberado (Nube)");
+    } catch(error) {
+        saveLocalSeat(passengerId, null);
+        showNotification("Asiento liberado (Local)", 'success');
+    }
+    
     setSelectedSeat(null);
   };
 
@@ -424,10 +517,9 @@ const App = () => {
     return 'Original';
   };
 
-  const getInitials = (name) => {
+  const getFirstName = (name) => {
     const parts = name.trim().split(/\s+/);
-    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-    return name.slice(0, 2).toUpperCase();
+    return parts[0];
   };
 
   // --- RENDER ---
@@ -511,48 +603,103 @@ const App = () => {
                                     <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center border-2 border-gray-200"><User size={20}/></div>
                                 </div>
 
-                                {/* Seats Grid (11 rows x 4 cols + aisle) */}
+                                {/* Seats Grid */}
                                 <div className="space-y-3">
-                                    {Array.from({ length: 11 }).map((_, rowIndex) => (
+                                    {/* Rows 1-10 (Standard 4 seats) */}
+                                    {Array.from({ length: 10 }).map((_, rowIndex) => (
                                         <div key={rowIndex} className="flex justify-between items-center gap-2 md:gap-4">
-                                            {/* Left Side (Seats 1,2 - 5,6 etc) */}
                                             <div className="flex gap-2">
                                                 {[1, 2].map(offset => {
                                                     const seatNum = (rowIndex * 4) + offset;
-                                                    const occupant = passengers.find(p => p.seat_number === seatNum);
+                                                    const occupant = passengers.find(p => p.seat_number == seatNum);
                                                     return (
                                                         <button 
                                                             key={seatNum}
                                                             onClick={() => handleSeatClick(seatNum)}
                                                             className={`w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center shadow-sm transition-all transform hover:scale-110 active:scale-95 border-b-4 ${occupant ? 'bg-red-500 border-red-700 text-white' : 'bg-green-400 border-green-600 text-white hover:bg-green-500'}`}
                                                         >
-                                                            {occupant ? <span className="text-xs font-bold">{getInitials(occupant.name)}</span> : <span className="text-xs font-bold opacity-50">{seatNum}</span>}
+                                                            {occupant ? <span className="text-[10px] font-bold leading-none overflow-hidden px-0.5">{getFirstName(occupant.name)}</span> : <span className="text-xs font-bold opacity-50">{seatNum}</span>}
                                                         </button>
                                                     );
                                                 })}
                                             </div>
-
-                                            {/* Aisle Number */}
                                             <span className="text-[10px] font-bold text-gray-300 w-4 text-center">{rowIndex + 1}</span>
-
-                                            {/* Right Side (Seats 3,4 - 7,8 etc) */}
                                             <div className="flex gap-2">
                                                 {[3, 4].map(offset => {
                                                     const seatNum = (rowIndex * 4) + offset;
-                                                    const occupant = passengers.find(p => p.seat_number === seatNum);
+                                                    const occupant = passengers.find(p => p.seat_number == seatNum);
                                                     return (
                                                         <button 
                                                             key={seatNum}
                                                             onClick={() => handleSeatClick(seatNum)}
                                                             className={`w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center shadow-sm transition-all transform hover:scale-110 active:scale-95 border-b-4 ${occupant ? 'bg-red-500 border-red-700 text-white' : 'bg-green-400 border-green-600 text-white hover:bg-green-500'}`}
                                                         >
-                                                            {occupant ? <span className="text-xs font-bold">{getInitials(occupant.name)}</span> : <span className="text-xs font-bold opacity-50">{seatNum}</span>}
+                                                            {occupant ? <span className="text-[10px] font-bold leading-none overflow-hidden px-0.5">{getFirstName(occupant.name)}</span> : <span className="text-xs font-bold opacity-50">{seatNum}</span>}
                                                         </button>
                                                     );
                                                 })}
                                             </div>
                                         </div>
                                     ))}
+                                    
+                                    {/* Row 11 (41, 42) & WC */}
+                                    <div className="flex justify-between items-center gap-2 md:gap-4 border-t-2 border-dashed border-gray-100 pt-3">
+                                        {/* Left: 41, 42 */}
+                                        <div className="flex gap-2">
+                                            {[41, 42].map(seatNum => {
+                                                const occupant = passengers.find(p => p.seat_number == seatNum);
+                                                return (
+                                                    <button 
+                                                        key={seatNum}
+                                                        onClick={() => handleSeatClick(seatNum)}
+                                                        className={`w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center shadow-sm transition-all transform hover:scale-110 active:scale-95 border-b-4 ${occupant ? 'bg-red-500 border-red-700 text-white' : 'bg-green-400 border-green-600 text-white hover:bg-green-500'}`}
+                                                    >
+                                                        {occupant ? <span className="text-[10px] font-bold leading-none overflow-hidden px-0.5">{getFirstName(occupant.name)}</span> : <span className="text-xs font-bold opacity-50">{seatNum}</span>}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                        
+                                        {/* WC Area - Right aligned */}
+                                        <div className="flex gap-2 items-center justify-end flex-1">
+                                            <div className="w-[104px] h-12 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400">
+                                                <span className="text-xl font-black tracking-widest">WC</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Row 12 (Back Left: 43, 44, 45) - Aligned with left and aisle */}
+                                    <div className="flex justify-start gap-2 md:gap-4 mt-1">
+                                        <div className="flex gap-2">
+                                            {[43, 44].map(seatNum => {
+                                                const occupant = passengers.find(p => p.seat_number == seatNum);
+                                                return (
+                                                    <button 
+                                                        key={seatNum}
+                                                        onClick={() => handleSeatClick(seatNum)}
+                                                        className={`w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center shadow-sm transition-all transform hover:scale-110 active:scale-95 border-b-4 ${occupant ? 'bg-red-500 border-red-700 text-white' : 'bg-green-400 border-green-600 text-white hover:bg-green-500'}`}
+                                                    >
+                                                        {occupant ? <span className="text-[10px] font-bold leading-none overflow-hidden px-0.5">{getFirstName(occupant.name)}</span> : <span className="text-xs font-bold opacity-50">{seatNum}</span>}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                        {/* Seat 45 in aisle spot roughly */}
+                                        <div className="ml-[10px]"> 
+                                             {[45].map(seatNum => {
+                                                const occupant = passengers.find(p => p.seat_number == seatNum);
+                                                return (
+                                                    <button 
+                                                        key={seatNum}
+                                                        onClick={() => handleSeatClick(seatNum)}
+                                                        className={`w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center shadow-sm transition-all transform hover:scale-110 active:scale-95 border-b-4 ${occupant ? 'bg-red-500 border-red-700 text-white' : 'bg-green-400 border-green-600 text-white hover:bg-green-500'}`}
+                                                    >
+                                                        {occupant ? <span className="text-[10px] font-bold leading-none overflow-hidden px-0.5">{getFirstName(occupant.name)}</span> : <span className="text-xs font-bold opacity-50">{seatNum}</span>}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -566,12 +713,12 @@ const App = () => {
                                         <button onClick={() => setSelectedSeat(null)} className="text-gray-400 hover:text-gray-600"><X size={18}/></button>
                                     </div>
                                     
-                                    {passengers.find(p => p.seat_number === selectedSeat) ? (
+                                    {passengers.find(p => p.seat_number == selectedSeat) ? (
                                         <div className="text-center py-6">
                                             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3 text-red-500"><User size={32}/></div>
                                             <p className="text-sm font-bold text-gray-500 uppercase mb-1">Ocupado por</p>
-                                            <p className="text-lg font-bold text-gray-800 mb-4">{passengers.find(p => p.seat_number === selectedSeat).name}</p>
-                                            <button onClick={() => releaseSeat(passengers.find(p => p.seat_number === selectedSeat).id)} className="bg-red-50 text-red-600 px-6 py-2 rounded-xl font-bold border border-red-200 hover:bg-red-100 w-full">Liberar Asiento</button>
+                                            <p className="text-lg font-bold text-gray-800 mb-4">{passengers.find(p => p.seat_number == selectedSeat).name}</p>
+                                            <button onClick={() => releaseSeat(passengers.find(p => p.seat_number == selectedSeat).id)} className="bg-red-50 text-red-600 px-6 py-2 rounded-xl font-bold border border-red-200 hover:bg-red-100 w-full">Liberar Asiento</button>
                                         </div>
                                     ) : (
                                         <div className="space-y-2">
@@ -869,6 +1016,18 @@ const App = () => {
            ))}
         </div>
 
+        {/* ADD SAMUEL BUTTON (IF MISSING) */}
+        {isCoordinator && !passengers.find(p => p.name === "Samuel Méndez Vidrio") && (
+           <div className="flex justify-center mb-4 animate-in fade-in">
+               <button 
+                  onClick={addCoordinatorIfMissing} 
+                  className="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-full text-xs font-bold border border-indigo-200 hover:bg-indigo-100 flex items-center gap-2 shadow-sm"
+               >
+                  <UserPlus size={14}/> No apareces en la lista? Agrégate aquí
+               </button>
+           </div>
+        )}
+
         {/* FORMULARIO AGREGAR */}
         {showAddForm && isCoordinator && (
           <div className="mb-6 bg-white p-5 rounded-3xl shadow-xl border border-orange-100 animate-in fade-in slide-in-from-top-4 max-w-2xl mx-auto">
@@ -939,6 +1098,7 @@ const App = () => {
                   </div>
                 </div>
 
+                {/* ... existing leg buttons ... */}
                 <div className="grid grid-cols-3 divide-x divide-gray-100 bg-gray-50/30 relative z-10 border-t border-gray-100 mt-auto">
                     {legs.map((leg, idx) => (
                       <button key={idx} onClick={() => toggleCheck(p.id, idx)} className={`relative flex flex-col items-center justify-center py-3 transition-all duration-300 group/btn hover:bg-white ${p.checks && p.checks[idx] ? 'bg-green-500/5 text-green-700' : 'text-gray-400'}`}>
