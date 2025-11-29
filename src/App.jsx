@@ -738,17 +738,9 @@ const App = () => {
                                 </div>
                             </div>
 
-                            <div className="w-full border-t border-dashed border-gray-300"></div>
-
-                            <div className="text-center w-full">
-                                <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">Tutor Responsable</p>
-                                <h4 className="font-bold text-gray-700">{p.parent}</h4>
-                                <a href={`tel:${p.parent_phone}`} className="inline-flex items-center gap-1 text-xs font-bold text-green-600 mt-1 bg-green-50 px-2 py-1 rounded-md">
-                                    <Phone size={12}/> {p.parent_phone}
-                                </a>
-                            </div>
+                            {/* SECCIÓN TUTOR ELIMINADA POR PRIVACIDAD */}
                             
-                            <div className="bg-gray-50 p-4 rounded-xl w-full text-center">
+                            <div className="bg-gray-50 p-4 rounded-xl w-full text-center mt-2">
                                 <p className="text-[10px] text-gray-400 uppercase font-bold mb-2">Estado</p>
                                 <div className="flex items-center justify-center gap-2 text-green-600 font-black text-lg uppercase tracking-wider">
                                     <Check size={24} strokeWidth={3} /> Liberado
@@ -1285,20 +1277,33 @@ const App = () => {
                         <div className="mt-3 flex items-center gap-2">
                             {p.letter_url ? (
                                 <>
-                                   {/* Link Ver Carta */}
-                                   <a 
-                                      href={p.letter_url} 
-                                      target="_blank" 
-                                      rel="noreferrer" 
-                                      className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border transition-colors ${
-                                          p.ticket_released 
-                                            ? 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100' // Aceptada
-                                            : 'bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100' // En revisión
-                                      }`}
-                                   >
-                                       {p.ticket_released ? <FileCheck size={14}/> : <FileText size={14}/>}
-                                       {p.ticket_released ? 'Carta Aceptada' : 'En Revisión'}
-                                   </a>
+                                   {/* Link Ver Carta (SOLO COORDINADORES) o Etiqueta de Estado (PUBLICO) */}
+                                   {isCoordinator ? (
+                                       <a 
+                                          href={p.letter_url} 
+                                          target="_blank" 
+                                          rel="noreferrer" 
+                                          className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border transition-colors ${
+                                              p.ticket_released 
+                                                ? 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100' // Aceptada
+                                                : 'bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100' // En revisión
+                                          }`}
+                                       >
+                                           {p.ticket_released ? <FileCheck size={14}/> : <FileText size={14}/>}
+                                           {p.ticket_released ? 'Carta Aceptada' : 'En Revisión'}
+                                       </a>
+                                   ) : (
+                                       <div 
+                                          className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border cursor-default ${
+                                              p.ticket_released 
+                                                ? 'bg-green-50 text-green-600 border-green-100' // Aceptada
+                                                : 'bg-yellow-50 text-yellow-700 border-yellow-200' // En revisión
+                                          }`}
+                                       >
+                                           {p.ticket_released ? <FileCheck size={14}/> : <FileText size={14}/>}
+                                           {p.ticket_released ? 'Carta Aceptada' : 'En Revisión'}
+                                       </div>
+                                   )}
 
                                    {/* COORDINADOR: Toggle Release */}
                                    {isCoordinator && (
@@ -1311,14 +1316,16 @@ const App = () => {
                                        </button>
                                    )}
                                    
-                                   {/* Botón Borrar Carta - DISPARA MODAL DE CONFIRMACIÓN */}
-                                   <button 
-                                      onClick={() => setDeleteLetterId(p.id)} 
-                                      className="p-1.5 bg-red-50 text-red-500 rounded-lg border border-red-100 hover:bg-red-100 transition-colors"
-                                      title="Eliminar carta"
-                                   >
-                                       <Trash2 size={14}/>
-                                   </button>
+                                   {/* Botón Borrar Carta - DISPARA MODAL DE CONFIRMACIÓN (SOLO COORDINADORES) */}
+                                   {isCoordinator && (
+                                       <button 
+                                          onClick={() => setDeleteLetterId(p.id)} 
+                                          className="p-1.5 bg-red-50 text-red-500 rounded-lg border border-red-100 hover:bg-red-100 transition-colors"
+                                          title="Eliminar carta"
+                                       >
+                                           <Trash2 size={14}/>
+                                       </button>
+                                   )}
                                 </>
                             ) : (
                                 <>
