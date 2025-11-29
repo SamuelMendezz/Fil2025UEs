@@ -1070,18 +1070,18 @@ const App = () => {
                 </div>
                 
                 {/* GREETING OR DEFAULT TEXT */}
-                <div className="flex items-center gap-2 text-xs text-orange-50 font-medium mt-2">
+                <div className="flex items-center gap-2 text-xs text-orange-50 font-medium mt-2 flex-nowrap"> {/* Added flex-nowrap */}
                     {currentUser ? (
-                        <div className="bg-yellow-400/90 text-yellow-900 px-3 py-1 rounded-full font-bold flex items-center gap-1 shadow-lg shadow-yellow-900/20 animate-in fade-in slide-in-from-left-2 backdrop-blur-sm border border-yellow-300/50">
+                        <div className="bg-yellow-400/90 text-yellow-900 px-3 py-1 rounded-full font-bold flex items-center gap-1 shadow-lg shadow-yellow-900/20 animate-in fade-in slide-in-from-left-2 backdrop-blur-sm border border-yellow-300/50 whitespace-nowrap"> {/* Added whitespace-nowrap */}
                             👋 Hola {currentUser}
                         </div>
                     ) : (
-                       <div className="bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm border border-white/10">
+                       <div className="bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm border border-white/10 whitespace-nowrap"> {/* Added whitespace-nowrap */}
                            <Bus size={12} className="text-yellow-300 drop-shadow-sm"/> Camión 1
                        </div>
                     )}
                     {isCoordinator && (
-                        <div className="bg-green-500/80 backdrop-blur-sm px-2 py-0.5 rounded-md flex items-center gap-1 text-white shadow-sm border border-green-400/30">
+                        <div className="bg-green-500/80 backdrop-blur-sm px-2 py-0.5 rounded-md flex items-center gap-1 text-white shadow-sm border border-green-400/30 whitespace-nowrap"> {/* Added whitespace-nowrap */}
                             <Lock size={10} className="drop-shadow-sm" /> Coord. Activo
                         </div>
                     )}
