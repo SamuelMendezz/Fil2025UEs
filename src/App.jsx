@@ -150,8 +150,8 @@ const OFFICIAL_LIST_C3 = [
     { name: "Iliana Valentina Rodríguez", phone: "3173851141", amount: 480, code: "223441608", nss: "25230806066", parent: "Gustavo Rodriguez Gómez", parentPhone: "3171049390" },
     { name: "Diego Alejandro Mancilla García", phone: "3171128601", amount: 480, code: "225201213", nss: "54927417870", parent: "Alma Delia García torres", parentPhone: "3171079116" },
     { name: "Abner Enríquez Casillas", phone: "+1 8185248474", amount: 300, code: "N/A", nss: "N/A", parent: "N/A", parentPhone: "N/A" },
-    { name: "Paola Sánchez Soltero", phone: "3171292143", amount: 480, code: "224430405", nss: "18240947020", parent: "Karla maravilla soltero mata", parentPhone: "3171292144" },
-    { name: "Iker Steve Soltero Rodríguez", phone: "3171041444", amount: 480, nss: "N/A", parent: "N/A", parentPhone: "N/A" }
+    { name: "Paola Sánchez Soltero", phone: "3171292143", code: "224430405", amount: 480, nss: "18240947020", parent: "Karla maravilla soltero mata", parentPhone: "3171292144" },
+    { name: "Iker Steve Soltero Rodríguez", phone: "3171041444", code: "221003476", amount: 480, nss: "N/A", parent: "N/A", parentPhone: "N/A" }
 ];
 
 const BUSES = [
@@ -181,7 +181,7 @@ const BUSES = [
         color: "from-red-500 to-pink-600", 
         text: "text-red-700", 
         bg: "bg-red-100",
-        coordinator: { name: "Iker S. Soltero Rodríguez", phone: "3171041444" },
+        coordinator: { name: "Iker S Soltero Rodríguez", phone: "3171041444" },
         list: OFFICIAL_LIST_C3
     }
 ];
@@ -1403,8 +1403,9 @@ const App = () => {
             <div className="flex flex-col">
                 <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-orange-100/90 mb-1 drop-shadow-md">Planilla</span>
                 <div className="flex flex-col">
-                    <h1 className="text-2xl md:text-3xl font-black flex items-center gap-2 drop-shadow-xl filter">Unión Estudiantil</h1>
-                    <span className="text-sm font-bold text-orange-100 opacity-90 -mt-1 drop-shadow-md">FIL 2025 (Supabase)</span>
+                    {/* CAMBIO: UNIÓN ESTUDIANTIL en mayúsculas */}
+                    <h1 className="text-2xl md:text-3xl font-black flex items-center gap-2 drop-shadow-xl filter">UNIÓN ESTUDIANTIL</h1>
+                    <span className="text-sm font-bold text-orange-100 opacity-90 -mt-1 drop-shadow-md">FIL 2025</span>
                 </div>
                 
                 {/* GREETING OR DEFAULT TEXT */}
@@ -1426,13 +1427,11 @@ const App = () => {
                 </div>
             </div>
             
+            {/* CAMBIO: Eliminado el contador de Pax */}
             <div className="flex gap-2">
                 <button onClick={isCoordinator ? handleLogout : triggerLogin} className={`p-2 rounded-2xl backdrop-blur-md border border-white/20 shadow-lg transition-all ${isCoordinator ? 'bg-red-500/80 hover:bg-red-600 shadow-red-900/20' : 'bg-white/20 hover:bg-white/30 shadow-black/10'}`}>
                     {isCoordinator ? <LogOut size={20} className="drop-shadow-sm" /> : <Lock size={20} className="drop-shadow-sm" />}
                 </button>
-                <span className="text-sm bg-white/20 backdrop-blur-md px-4 py-2 rounded-2xl text-white font-bold border border-white/20 shadow-lg shadow-black/10 flex items-center drop-shadow-sm whitespace-nowrap">
-                    {currentBusPassengers.length} Pax
-                </span>
             </div>
             </div>
 
