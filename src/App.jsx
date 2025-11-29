@@ -5,7 +5,7 @@ import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone
 const SUPABASE_URL = 'https://fgzegoflnkwkcztivila.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnemVnb2Zsbmt3a2N6dGl2aWxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzMzQyOTYsImV4cCI6MjA3OTkxMDI5Nn0.-u-NUiR5Eqitf4-zqvAAZhTKHc1_Cj3OKHAhGRHl8Xs';
 
-// --- LISTA OFICIAL COMPLETA ---
+// --- LISTA OFICIAL COMPLETA (Misma lista original) ---
 const OFFICIAL_LIST = [
   { name: "Joseph Yancarlo Avalos Canales", phone: "3171325247", code: "225519213", amount: 480, nss: "5251056577", parent: "Lenis Alejandra Canales Castro", parentPhone: "3171048798" },
   { name: "Daira Athziri Saldaña Dávila", phone: "3171284644", code: "225521072", amount: 480, nss: "4927321887", parent: "María Luisa Dávila Muñoz", parentPhone: "3171146753" },
@@ -690,7 +690,7 @@ const App = () => {
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-orange-50 text-orange-600 font-bold">Cargando datos...</div>;
 
   return (
-    <div className="min-h-screen bg-orange-50/40 font-sans pb-24 text-gray-800">
+    <div className="min-h-screen bg-white font-sans pb-24 text-gray-800">
       
       {/* NOTIFICATION TOAST */}
       <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[60] transition-all duration-500 ease-in-out ${notification.visible ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0 pointer-events-none'}`}>
