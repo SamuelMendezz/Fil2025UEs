@@ -1582,7 +1582,10 @@ const App = () => {
                         <div className="flex flex-wrap gap-2 text-[10px] text-gray-500 mb-2">
                             <div className="flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-md border border-orange-100/50"><Phone size={10} className="text-orange-500" /><span className="font-medium">{p.phone}</span></div>
                             <div className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-md border border-gray-100/50"><GraduationCap size={12} className="text-gray-400" /><span>{p.code}</span></div>
-                            <div className={`flex items-center gap-1 px-2 py-1 rounded-md border border-gray-100/50 ${busInfo.bg} ${busInfo.text} font-bold`}><span>C{p.bus_id || 1}</span></div>
+                            <div className={`flex items-center gap-1 px-2 py-1 rounded-md border border-gray-100/50 ${busInfo.bg} ${busInfo.text} font-bold`}>
+                                <Bus size={10} />
+                                <span>C{p.bus_id || 1}</span>
+                            </div>
                         </div>
 
                         {/* --- CARTA PERMISO AREA --- */}
