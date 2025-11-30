@@ -148,7 +148,7 @@ const OFFICIAL_LIST_C3 = [
     { name: "Nahomi Dayan Núñez Sánchez", phone: "3178734986", amount: 480, code: "224427129", nss: "35250950421", parent: "Ana Gabriela Sánchez Sánchez", parentPhone: "3173833784" },
     { name: "Milton Santiago López Guerrero", phone: "3171070966", amount: 480, code: "223443686", nss: "0401720401-9", parent: "Roberto López Cázares", parentPhone: "3173889949" },
     { name: "Iliana Valentina Rodríguez", phone: "3173851141", amount: 480, code: "223441608", nss: "25230806066", parent: "Gustavo Rodriguez Gómez", parentPhone: "3171049390" },
-    { name: "Diego Alejandro Mancilla García", phone: "3171128601", amount: 480, code: "225201213", nss: "54927417870", parent: "Alma Delia García torres", parentPhone: "3171079116" },
+    { name: "Diego Alejandro Mancilla García", phone: "3171128601", code: "225201213", amount: 480, nss: "54927417870", parent: "Alma Delia García torres", parentPhone: "3171079116" },
     { name: "Abner Enríquez Casillas", phone: "+1 8185248474", amount: 300, code: "N/A", nss: "N/A", parent: "N/A", parentPhone: "N/A" },
     { name: "Paola Sánchez Soltero", phone: "3171292143", code: "224430405", amount: 480, nss: "18240947020", parent: "Karla maravilla soltero mata", parentPhone: "3171292144" },
     { name: "Iker Steve Soltero Rodríguez", phone: "3171041444", code: "221003476", amount: 480, nss: "N/A", parent: "N/A", parentPhone: "N/A" }
@@ -228,6 +228,9 @@ const App = () => {
 
   // BUS STATE
   const [currentBus, setCurrentBus] = useState(1);
+
+  // MAP LIST TOGGLE STATE (NEW)
+  const [mapListMode, setMapListMode] = useState('unassigned'); // 'unassigned' | 'assigned'
 
   // Force Bus View on Login
   useEffect(() => {
@@ -612,7 +615,10 @@ const App = () => {
   };
 
   const handleEditClick = (passenger) => {
-    if (!isCoordinator) { triggerLogin(); return; }
+    if (!isCoordinator) { 
+        showNotification("Acceso denegado. Solo coordinadores.", "error"); 
+        return; 
+    }
     
     // Si el coordinador no tiene permiso para editar este camión, solo abrimos el modal para verlo,
     // pero el botón de guardar estará deshabilitado (lógica implementada dentro del modal).
@@ -1025,11 +1031,17 @@ const App = () => {
   const filteredPassengers = currentBusPassengers.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || (p.code && p.code.includes(searchTerm));
     
-    // NEW FILTER LOGIC: 'pending' vs leg index vs null
+    // NEW FILTER LOGIC: 'pending' vs 'reviewed' vs 'seated' vs leg index vs null
     let matchesFilter = true;
     if (filterLeg === 'pending') {
         // Ahora verifica si hay documentos Y si el ticket NO ha sido liberado
         matchesFilter = (p.documents && p.documents.length > 0) && !p.ticket_released;
+    } else if (filterLeg === 'reviewed') {
+        // Verifica si hay documentos Y si el ticket YA fue liberado
+        matchesFilter = (p.documents && p.documents.length > 0) && p.ticket_released;
+    } else if (filterLeg === 'seated') {
+        // NUEVO: Verifica si tiene asiento asignado
+        matchesFilter = p.seat_number !== null;
     } else if (filterLeg !== null) {
         matchesFilter = !p.checks[filterLeg];
     }
@@ -1369,6 +1381,22 @@ const App = () => {
                                         <div className="space-y-2">
                                             <p className="text-xs font-bold text-gray-400 uppercase mb-2">Asignar a pasajero sin asiento:</p>
                                             
+                                            {/* --- MAP LIST TOGGLE BUTTONS (NEW) --- */}
+                                            <div className="flex bg-gray-100 p-1 rounded-xl mb-3">
+                                                <button 
+                                                    onClick={() => setMapListMode('unassigned')}
+                                                    className={`flex-1 py-1.5 text-[10px] font-bold uppercase rounded-lg transition-all ${mapListMode === 'unassigned' ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                                                >
+                                                    Sin Asiento ({currentBusPassengers.filter(p => !p.seat_number).length})
+                                                </button>
+                                                <button 
+                                                    onClick={() => setMapListMode('assigned')}
+                                                    className={`flex-1 py-1.5 text-[10px] font-bold uppercase rounded-lg transition-all ${mapListMode === 'assigned' ? 'bg-white text-green-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                                                >
+                                                    Con Asiento ({currentBusPassengers.filter(p => p.seat_number).length})
+                                                </button>
+                                            </div>
+
                                             {/* SEARCH IN SEAT SELECTION */}
                                             <div className="relative mb-2">
                                                 <Search className="absolute left-3 top-2.5 text-gray-400" size={14} />
@@ -1382,9 +1410,17 @@ const App = () => {
                                             </div>
 
                                             <div className="max-h-80 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
-                                                {currentBusPassengers.filter(p => !p.seat_number).length === 0 && <p className="text-center text-gray-400 text-xs py-4">Todos tienen asiento 🎉</p>}
+                                                {/* Empty state based on mode */}
+                                                {mapListMode === 'unassigned' && currentBusPassengers.filter(p => !p.seat_number).length === 0 && <p className="text-center text-gray-400 text-xs py-4">Todos tienen asiento 🎉</p>}
+                                                {mapListMode === 'assigned' && currentBusPassengers.filter(p => p.seat_number).length === 0 && <p className="text-center text-gray-400 text-xs py-4">Nadie tiene asiento aún</p>}
+
                                                 {currentBusPassengers
-                                                    .filter(p => !p.seat_number && (p.name.toLowerCase().includes(seatSearchTerm.toLowerCase()) || (p.code && p.code.includes(seatSearchTerm))))
+                                                    // FILTERING BY SEAT NUMBER & MODE
+                                                    .filter(p => {
+                                                        const matchesSearch = p.name.toLowerCase().includes(seatSearchTerm.toLowerCase()) || (p.code && p.code.includes(seatSearchTerm));
+                                                        const matchesMode = mapListMode === 'unassigned' ? !p.seat_number : p.seat_number;
+                                                        return matchesSearch && matchesMode;
+                                                    })
                                                     .sort((a,b) => {
                                                       // Apply the selected sort mode (LastName or Alpha) to the seat assignment list as well
                                                       if (sortMode === 'lastname') {
@@ -1400,8 +1436,15 @@ const App = () => {
                                                         onClick={() => assignSeat(p.id, selectedSeat)}
                                                         className="w-full text-left p-3 rounded-xl hover:bg-orange-50 border border-transparent hover:border-orange-100 transition-all group"
                                                     >
-                                                        <span className="font-bold text-xs text-gray-700 group-hover:text-orange-700 block">{formatDisplayName(p.name)}</span>
-                                                        <span className="text-[10px] text-gray-400">{p.code}</span>
+                                                        <div className="flex justify-between items-start">
+                                                            <div>
+                                                                <span className="font-bold text-xs text-gray-700 group-hover:text-orange-700 block">{formatDisplayName(p.name)}</span>
+                                                                <span className="text-[10px] text-gray-400">{p.code}</span>
+                                                            </div>
+                                                            {p.seat_number && (
+                                                                <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-md">#{p.seat_number}</span>
+                                                            )}
+                                                        </div>
                                                     </button>
                                                 ))}
                                             </div>
@@ -1695,6 +1738,24 @@ const App = () => {
                   <span className="bg-white/20 px-1.5 py-0.5 rounded-md text-[10px]">{passengers.filter(p => p.documents && p.documents.length > 0 && !p.ticket_released).length}</span>
                </button>
 
+               {/* FILTER: CARTAS REVISADAS (NUEVO) */}
+               <button 
+                  onClick={() => setFilterLeg('reviewed')} 
+                  className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 shadow-sm ${filterLeg === 'reviewed' ? 'bg-green-500 text-white scale-105 shadow-green-500/30' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+               >
+                  <FileCheck size={14} /> Cartas Revisadas
+                  <span className="bg-white/20 px-1.5 py-0.5 rounded-md text-[10px]">{passengers.filter(p => p.documents && p.documents.length > 0 && p.ticket_released).length}</span>
+               </button>
+
+               {/* FILTER: CON ASIENTO (NUEVO) */}
+               <button 
+                  onClick={() => setFilterLeg('seated')} 
+                  className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 shadow-sm ${filterLeg === 'seated' ? 'bg-purple-500 text-white scale-105 shadow-purple-500/30' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+               >
+                  <Armchair size={14} /> Con Asiento
+                  <span className="bg-white/20 px-1.5 py-0.5 rounded-md text-[10px]">{currentBusPassengers.filter(p => p.seat_number).length}</span>
+               </button>
+
                <div className="flex-shrink-0 w-px h-6 bg-gray-200 mx-1"></div>
 
                <button onClick={() => setFilterLeg(null)} className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-sm ${filterLeg === null ? 'bg-gray-800 text-white scale-105 shadow-md' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>Todos</button>
@@ -1734,13 +1795,21 @@ const App = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-20 max-w-7xl mx-auto">
           {filteredPassengers.length === 0 ? (
             <div className="col-span-full text-center py-12 px-6 bg-white/50 rounded-3xl border border-dashed border-gray-300 mt-4">
-               {filterLeg !== null && filterLeg !== 'pending' ? (
+               {filterLeg !== null && filterLeg !== 'pending' && filterLeg !== 'reviewed' && filterLeg !== 'seated' ? (
                  <>
                    <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 shadow-inner"><Check size={32} className="text-green-600" strokeWidth={3} /></div>
                    <h3 className="text-lg font-bold text-gray-800">¡Zona Completada!</h3>
                  </>
                ) : (
-                 <><Search size={40} className="mx-auto mb-3 text-gray-300" /><p className="text-gray-400 font-medium">{filterLeg === 'pending' ? 'No hay documentos pendientes de revisión' : 'No se encontraron resultados'}</p></>
+                 <>
+                    <Search size={40} className="mx-auto mb-3 text-gray-300" />
+                    <p className="text-gray-400 font-medium">
+                        {filterLeg === 'pending' ? 'No hay documentos pendientes de revisión' : 
+                         filterLeg === 'reviewed' ? 'No hay cartas revisadas aún' : 
+                         filterLeg === 'seated' ? 'Nadie ha apartado asiento aún' :
+                         'No se encontraron resultados'}
+                    </p>
+                 </>
                )}
             </div>
           ) : (
