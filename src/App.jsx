@@ -1791,10 +1791,16 @@ const App = () => {
                                         <FileCheck size={14}/> {docCount} Documento(s) Subido(s)
                                     </div>
                                 ) : (
-                                    // PASAJERO: Muestra EN REVISIÓN
-                                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold bg-yellow-50 text-yellow-600 px-3 py-1.5 rounded-lg border border-yellow-200">
-                                        <FileText size={14}/> Documentos En Revisión
-                                    </div>
+                                    // PASAJERO: Lógica condicional según estado del boleto
+                                    p.ticket_released ? (
+                                        <div className="flex items-center justify-center gap-1.5 text-xs font-bold bg-green-50 text-green-600 px-3 py-1.5 rounded-lg border border-green-200">
+                                            <FileCheck size={14}/> Documentos Revisados
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center justify-center gap-1.5 text-xs font-bold bg-yellow-50 text-yellow-600 px-3 py-1.5 rounded-lg border border-yellow-200">
+                                            <FileText size={14}/> Documentos En Revisión
+                                        </div>
+                                    )
                                 )
                             ) : (
                                 // Sin documentos subidos: Mostrar botón de subir
@@ -1830,9 +1836,9 @@ const App = () => {
                                                 <Ticket size={14}/> VER BOLETO
                                             </button>
                                         ) : (
-                                            // PASAJERO DEBE VERIFICAR TELEFONO
-                                            <button onClick={() => openAuthModal(p.id)} className="flex items-center gap-1.5 text-xs font-bold bg-blue-600 text-white px-3 py-1.5 rounded-lg shadow-md hover:bg-blue-700 transition-all flex-1">
-                                                <KeyRound size={14}/> Ver mi Boleto
+                                            // PASAJERO DEBE VERIFICAR TELEFONO (Ahora con el MISMO diseño que coordinador)
+                                            <button onClick={() => openAuthModal(p.id)} className="flex items-center gap-1.5 text-xs font-bold bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1.5 rounded-lg shadow-md hover:shadow-lg transition-all animate-pulse flex-1">
+                                                <Ticket size={14}/> VER BOLETO
                                             </button>
                                         )}
                                     </>
