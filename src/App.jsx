@@ -1068,6 +1068,11 @@ const App = () => {
   const totalAdvance = currentBusPassengers.filter(p => p.amount > 0 && p.amount < 480).length;
   const totalPending = currentBusPassengers.filter(p => p.amount === 0).length; // Mantenemos para mostrar en la tarjeta si es coordinador
   const totalMoney = currentBusPassengers.reduce((sum, p) => sum + (p.amount || 0), 0);
+  
+  // --- CALCULATE CARD/SEAT FILTER COUNTS BASED ON currentBusPassengers ---
+  const countPendingCards = currentBusPassengers.filter(p => p.documents && p.documents.length > 0 && !p.ticket_released).length;
+  const countReviewedCards = currentBusPassengers.filter(p => p.documents && p.documents.length > 0 && p.ticket_released).length;
+  const countSeated = currentBusPassengers.filter(p => p.seat_number).length;
 
   const exportToCSV = () => {
     if (!isCoordinator) { triggerLogin(); return; }
@@ -1735,8 +1740,8 @@ const App = () => {
                   className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 shadow-sm ${filterLeg === 'pending' ? 'bg-yellow-500 text-white scale-105 shadow-yellow-500/30' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
                >
                   <FileText size={14} /> Cartas Pendientes
-                  {/* Cambiado el filtro para usar el nuevo array documents */}
-                  <span className="bg-white/20 px-1.5 py-0.5 rounded-md text-[10px]">{passengers.filter(p => p.documents && p.documents.length > 0 && !p.ticket_released).length}</span>
+                  {/* Se actualizó el conteo para usar la nueva variable local (currentBusPassengers) */}
+                  <span className="bg-white/20 px-1.5 py-0.5 rounded-md text-[10px]">{countPendingCards}</span>
                </button>
 
                {/* FILTER: CARTAS REVISADAS (NUEVO) */}
@@ -1745,7 +1750,8 @@ const App = () => {
                   className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 shadow-sm ${filterLeg === 'reviewed' ? 'bg-green-500 text-white scale-105 shadow-green-500/30' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
                >
                   <FileCheck size={14} /> Cartas Revisadas
-                  <span className="bg-white/20 px-1.5 py-0.5 rounded-md text-[10px]">{passengers.filter(p => p.documents && p.documents.length > 0 && p.ticket_released).length}</span>
+                  {/* Se actualizó el conteo para usar la nueva variable local (currentBusPassengers) */}
+                  <span className="bg-white/20 px-1.5 py-0.5 rounded-md text-[10px]">{countReviewedCards}</span>
                </button>
 
                {/* FILTER: CON ASIENTO (NUEVO) */}
@@ -1754,7 +1760,8 @@ const App = () => {
                   className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 shadow-sm ${filterLeg === 'seated' ? 'bg-purple-500 text-white scale-105 shadow-purple-500/30' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
                >
                   <Armchair size={14} /> Con Asiento
-                  <span className="bg-white/20 px-1.5 py-0.5 rounded-md text-[10px]">{currentBusPassengers.filter(p => p.seat_number).length}</span>
+                  {/* Se actualizó el conteo para usar la nueva variable local (currentBusPassengers) */}
+                  <span className="bg-white/20 px-1.5 py-0.5 rounded-md text-[10px]">{countSeated}</span>
                </button>
 
                <div className="flex-shrink-0 w-px h-6 bg-gray-200 mx-1"></div>
