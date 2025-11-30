@@ -220,8 +220,8 @@ const App = () => {
   const [authTargetId, setAuthTargetId] = useState(null);
   const [authInputPhone, setAuthInputPhone] = useState('');
 
-  // DELETE LETTER CONFIRMATION
-  const [deleteLetterId, setDeleteLetterId] = useState(null);
+  // DELETE DOCUMENT CONFIRMATION STATE (Reemplaza deleteLetterId)
+  const [documentToDelete, setDocumentToDelete] = useState(null); // { passengerId, docUrl, docName }
 
   // BUS STATE
   const [currentBus, setCurrentBus] = useState(1);
@@ -318,6 +318,19 @@ const App = () => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
 
+  // Helper para parsear la columna letter_url como un array de documentos
+  const parseDocuments = (letterUrl) => {
+      if (!letterUrl) return [];
+      try {
+          const docs = typeof letterUrl === 'string' ? JSON.parse(letterUrl) : letterUrl;
+          return Array.isArray(docs) ? docs : [];
+      } catch (e) {
+          // Si falla el parseo, probablemente solo era una URL antigua o 'null'
+          return typeof letterUrl === 'string' && letterUrl.startsWith('http') ? [{ name: 'Documento Antiguo', url: letterUrl, legacy: true }] : [];
+      }
+  };
+
+
   // 1. Cargar el script de Supabase
   useEffect(() => {
     if (window.supabase) {
@@ -353,19 +366,25 @@ const App = () => {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'passengers' },
         (payload) => {
-          if (payload.eventType === 'INSERT') {
-            setPassengers((prev) => [...prev, payload.new]);
-          } else if (payload.eventType === 'DELETE') {
-            setPassengers((prev) => prev.filter((p) => p.id !== payload.old.id));
-          } else if (payload.eventType === 'UPDATE') {
-            // MERGE SEAT DATA FROM LOCAL STORAGE IF PAYLOAD HAS NO SEAT (Safety)
-            const localSeats = JSON.parse(localStorage.getItem('fil2025_local_seats') || '{}');
-            const updatedPassenger = payload.new;
-            if (updatedPassenger.seat_number === null && localSeats[updatedPassenger.id]) {
-                updatedPassenger.seat_number = localSeats[updatedPassenger.id];
+            let updatedPassenger = payload.new;
+            
+            // Asegurar que el campo documents se actualice desde letter_url
+            if (updatedPassenger && updatedPassenger.letter_url !== undefined) {
+                updatedPassenger.documents = parseDocuments(updatedPassenger.letter_url);
             }
-            setPassengers((prev) => prev.map((p) => (p.id === payload.new.id ? updatedPassenger : p)));
-          }
+
+            if (payload.eventType === 'INSERT') {
+                setPassengers((prev) => [...prev, updatedPassenger]);
+            } else if (payload.eventType === 'DELETE') {
+                setPassengers((prev) => prev.filter((p) => p.id !== payload.old.id));
+            } else if (payload.eventType === 'UPDATE') {
+                // MERGE SEAT DATA FROM LOCAL STORAGE IF PAYLOAD HAS NO SEAT (Safety)
+                const localSeats = JSON.parse(localStorage.getItem('fil2025_local_seats') || '{}');
+                if (updatedPassenger.seat_number === null && localSeats[updatedPassenger.id]) {
+                    updatedPassenger.seat_number = localSeats[updatedPassenger.id];
+                }
+                setPassengers((prev) => prev.map((p) => (p.id === payload.new.id ? updatedPassenger : p)));
+            }
         }
       )
       .subscribe();
@@ -385,14 +404,14 @@ const App = () => {
 
     if (error) {
       console.error('Error cargando:', error);
-      // Removed alert for cleaner UI
       showNotification("Error conectando a Supabase. ¿RLS?", "error");
     } else {
-      // MERGE LOCAL STORAGE SEATS
+      // 1. Mapear y parsear documentos para el estado local (documents array)
       const localSeats = JSON.parse(localStorage.getItem('fil2025_local_seats') || '{}');
       const mergedData = data.map(p => ({
           ...p,
-          seat_number: p.seat_number !== null ? p.seat_number : (localSeats[p.id] || null)
+          seat_number: p.seat_number !== null ? p.seat_number : (localSeats[p.id] || null),
+          documents: parseDocuments(p.letter_url), // Usar el helper de parseo
       }));
       setPassengers(mergedData);
     }
@@ -412,7 +431,6 @@ const App = () => {
 
     if (!supabase) return;
 
-    // NOTE: Removed window.confirm due to mandate constraints on modal usage, but using simple confirm for code brevity here.
     if(!window.confirm(`¿ESTÁS SEGURO? Esto subirá la lista oficial del Camión ${busToRestore} a la base de datos.`)) return;
 
     const busConfig = BUSES.find(b => b.id === busToRestore);
@@ -433,8 +451,8 @@ const App = () => {
       parent_phone: p.parentPhone || 'N/A',
       checks: [false, false, false],
       times: [null, null, null],
-      // Nuevos campos iniciales
-      letter_url: null,
+      // Nuevo campo inicial: array de documentos serializado
+      letter_url: JSON.stringify([]), 
       ticket_released: false,
       bus_id: busToRestore
     }));
@@ -461,7 +479,6 @@ const App = () => {
       const exists = passengers.find(p => p.name === meName && (p.bus_id || 1) === targetBus);
       
       if (!exists) {
-          // NOTE: Removed window.confirm due to mandate constraints on modal usage, but using simple confirm for code brevity here.
           if(window.confirm(`Tu usuario (${meName}) no está en la lista del Camión ${targetBus}. ¿Quieres agregarte?`)) {
                const newPassenger = {
                   name: meName,
@@ -474,7 +491,7 @@ const App = () => {
                   checks: [false, false, false],
                   times: [null, null, null],
                   seat_number: null,
-                  letter_url: null,
+                  letter_url: JSON.stringify([]), // Nuevo campo inicial
                   ticket_released: false,
                   bus_id: targetBus
                 };
@@ -560,7 +577,8 @@ const App = () => {
       parent_phone: newParentPhone.trim() || 'N/A',
       checks: [false, false, false],
       times: [null, null, null],
-      letter_url: null,
+      // Actualizado para manejar el array serializado
+      letter_url: JSON.stringify([]), 
       ticket_released: false,
       bus_id: currentBus // Asigna al camión actual
     };
@@ -591,8 +609,8 @@ const App = () => {
 
   const handleEditClick = (passenger) => {
     if (!isCoordinator) { triggerLogin(); return; }
-    // View is allowed, but save will be blocked if not permitted.
-    setEditFormData({ ...passenger });
+    // Crear una copia del pasajero para edición, asegurando que documents se mapee a letter_url para el guardado.
+    setEditFormData({ ...passenger, letter_url: JSON.stringify(passenger.documents || []) }); 
     setShowEditModal(true);
   };
 
@@ -608,7 +626,7 @@ const App = () => {
     const targetBus = editFormData.bus_id || 1;
     if (!verifyPermissionAction(targetBus)) return;
 
-    const { id, seat_number, ...dataToUpdate } = editFormData; // Exclude seat_number from general edit to prevent overwrite
+    const { id, seat_number, documents, ...dataToUpdate } = editFormData; // Excluir documents del payload
     await supabase.from('passengers').update(dataToUpdate).eq('id', id);
     showNotification("Información actualizada");
     setShowEditModal(false);
@@ -661,83 +679,110 @@ const App = () => {
   // --- CARTA / TICKET ACTIONS ---
 
   const handleUploadLetter = async (e, passengerId) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (!supabase) return;
-
-    // No permission check for upload (passengers can upload)
-
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${passengerId}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-    const filePath = `${fileName}`;
+    const files = e.target.files;
+    if (!files || files.length === 0 || !supabase) return;
+    if (files.length > 5) {
+        showNotification("Límite de 5 archivos por carga.", "error");
+        return;
+    }
 
     setLoading(true);
-
-    // 1. Upload file to 'letters' bucket
-    const { error: uploadError } = await supabase.storage
-        .from('letters')
-        .upload(filePath, file);
-
-    if (uploadError) {
-        console.error(uploadError);
-        showNotification("Error al subir archivo (PDF/IMG < 5MB)", "error");
+    const passenger = passengers.find(p => p.id === passengerId);
+    if (!passenger) {
         setLoading(false);
         return;
     }
 
-    // 2. Get Public URL
-    const { data: { publicUrl } } = supabase.storage.from('letters').getPublicUrl(filePath);
+    let currentDocuments = passenger.documents || [];
+    const filesToUpload = Array.from(files);
+    let uploadedDocuments = [];
+
+    for (const file of filesToUpload) {
+        // Validación de tipo (opcional, Supabase storage lo controla)
+        if (!file.type.match('image.*|application/pdf')) {
+            showNotification(`Archivo ${file.name} no es una imagen o PDF.`, "error");
+            continue;
+        }
+
+        const fileExt = file.name.split('.').pop();
+        // Usar timestamp + random para asegurar nombre único
+        const fileName = `${passengerId}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        // 1. Upload file to 'letters' bucket
+        const { error: uploadError } = await supabase.storage
+            .from('letters')
+            .upload(filePath, file);
+
+        if (uploadError) {
+            console.error(uploadError);
+            showNotification(`Error al subir ${file.name}: ${uploadError.message}`, "error");
+            continue; 
+        }
+
+        // 2. Get Public URL
+        const { data: { publicUrl } } = supabase.storage.from('letters').getPublicUrl(filePath);
+
+        uploadedDocuments.push({
+            name: file.name,
+            url: publicUrl,
+            timestamp: new Date().toISOString()
+        });
+    }
+    
+    // Merge new documents with existing ones
+    const newDocuments = [...currentDocuments, ...uploadedDocuments];
+    const newDocumentsJson = JSON.stringify(newDocuments);
 
     // 3. Update Passenger Record
     const { error: dbError } = await supabase
         .from('passengers')
-        .update({ letter_url: publicUrl })
+        // Usar letter_url para el campo en la base de datos, con la data serializada.
+        .update({ letter_url: newDocumentsJson }) 
         .eq('id', passengerId);
 
     if (dbError) {
         console.error(dbError);
-        showNotification("Error guardando enlace en base de datos", "error");
+        showNotification("Error guardando enlaces en base de datos", "error");
     } else {
-        showNotification('Carta subida correctamente');
+        // Optimistically update local state immediately (the live channel will also update it)
+        setPassengers(prev => prev.map(p => (p.id === passengerId ? { ...p, documents: newDocuments } : p)));
+        showNotification(`${uploadedDocuments.length} documento(s) subido(s) correctamente`);
     }
     setLoading(false);
   };
 
-  const confirmDeleteLetter = async () => {
-      if (!deleteLetterId) return;
-      if (!supabase) return;
-      
-      const passenger = passengers.find(p => p.id === deleteLetterId);
-      if (!passenger) return;
-      
-      // PERMISSION CHECK
-      if (!verifyPermissionAction(passenger.bus_id || 1)) {
-          setDeleteLetterId(null);
-          return;
-      }
+  const confirmDeleteDocument = async () => {
+    const docInfo = documentToDelete;
+    if (!docInfo || !supabase) return;
+    
+    setDocumentToDelete(null); // Cerrar modal
 
-      const passengerId = deleteLetterId;
-      setDeleteLetterId(null); // Close modal
+    const passenger = passengers.find(p => p.id === docInfo.passengerId);
+    if (!passenger || !verifyPermissionAction(passenger.bus_id || 1)) return;
 
-      // Optimistic update for UI responsiveness
-      setPassengers(prev => prev.map(p => 
-          p.id === passengerId 
-          ? { ...p, letter_url: null, ticket_released: false } 
-          : p
-      ));
-      
-      const { error } = await supabase
+    // Filtrar el documento a eliminar
+    const newDocuments = (passenger.documents || []).filter(doc => doc.url !== docInfo.docUrl);
+    const newDocumentsJson = JSON.stringify(newDocuments);
+
+    // Actualizar el registro del pasajero
+    const { error: dbError } = await supabase
         .from('passengers')
-        .update({ letter_url: null, ticket_released: false })
-        .eq('id', passengerId);
-      
-      if(error) {
-          showNotification("Error al eliminar carta", "error");
-          fetchPassengers(); // Revert on error
-      } else {
-          showNotification("Carta eliminada", "error");
-      }
+        .update({ 
+            letter_url: newDocumentsJson, 
+            // Si no quedan documentos, revocamos el ticket_released (medida de seguridad)
+            ticket_released: newDocuments.length > 0 ? passenger.ticket_released : false 
+        })
+        .eq('id', docInfo.passengerId);
+    
+    if(dbError) {
+        showNotification("Error al eliminar referencia del documento", "error");
+        fetchPassengers(); // Revertir en caso de error
+    } else {
+        showNotification(`Documento "${docInfo.docName}" eliminado`, "error");
+    }
   };
+
 
   const toggleTicketRelease = async (passengerId, currentStatus) => {
       if(!isCoordinator) return;
@@ -748,6 +793,12 @@ const App = () => {
 
       // PERMISSION CHECK
       if (!verifyPermissionAction(passenger.bus_id || 1)) return;
+      
+      // Bloquear si intenta liberar sin documentos
+      if (!currentStatus && (!passenger.documents || passenger.documents.length === 0)) {
+           showNotification("¡No puedes liberar el boleto! No hay documentos subidos.", "error");
+           return;
+      }
 
       const { error } = await supabase
         .from('passengers')
@@ -937,7 +988,8 @@ const App = () => {
     // NEW FILTER LOGIC: 'pending' vs leg index vs null
     let matchesFilter = true;
     if (filterLeg === 'pending') {
-        matchesFilter = p.letter_url && !p.ticket_released;
+        // Ahora verifica si hay documentos Y si el ticket NO ha sido liberado
+        matchesFilter = (p.documents && p.documents.length > 0) && !p.ticket_released;
     } else if (filterLeg !== null) {
         matchesFilter = !p.checks[filterLeg];
     }
@@ -962,19 +1014,22 @@ const App = () => {
 
   const totalPaidFull = currentBusPassengers.filter(p => p.amount >= 480).length;
   const totalAdvance = currentBusPassengers.filter(p => p.amount > 0 && p.amount < 480).length;
-  const totalPending = currentBusPassengers.filter(p => p.amount === 0).length;
+  const totalPending = currentBusPassengers.filter(p => p.amount === 0).length; // Mantenemos para mostrar en la tarjeta si es coordinador
   const totalMoney = currentBusPassengers.reduce((sum, p) => sum + (p.amount || 0), 0);
 
   const exportToCSV = () => {
     if (!isCoordinator) { triggerLogin(); return; }
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Camion,Nombre,Monto,Teléfono,Código,NSS,Tutor,Tel. Tutor,Asiento,Carta URL,Boleto Liberado,Autlan->FIL (Hora),FIL->Plaza (Hora),Plaza->Autlan (Hora)\n";
+    csvContent += "Camion,Nombre,Monto,Teléfono,Código,NSS,Tutor,Tel. Tutor,Asiento,Documentos URL,Boleto Liberado,Autlan->FIL (Hora),FIL->Plaza (Hora),Plaza->Autlan (Hora)\n";
     // Export ALL passengers or just current bus? Typically useful to export all, but sorted by bus
     passengers.sort((a,b) => (a.bus_id||1) - (b.bus_id||1)).forEach(p => {
       const c1 = p.checks[0] ? `SI (${p.times[0]})` : 'NO';
       const c2 = p.checks[1] ? `SI (${p.times[1]})` : 'NO';
       const c3 = p.checks[2] ? `SI (${p.times[2]})` : 'NO';
-      const row = `C${p.bus_id||1},${p.name.replace(/,/g, '')},${p.amount||0},${p.phone||'N/A'},${p.code||'N/A'},${p.nss||'N/A'},${p.parent ? p.parent.replace(/,/g, '') : 'N/A'},${p.parent_phone||'N/A'},${p.seat_number || 'N/A'},${p.letter_url || 'No'},${p.ticket_released ? 'SI' : 'NO'},${c1},${c2},${c3}`;
+      
+      const docUrls = (p.documents || []).map(d => d.url).join(' | '); // Concatenar URLs
+      
+      const row = `C${p.bus_id||1},${p.name.replace(/,/g, '')},${p.amount||0},${p.phone||'N/A'},${p.code||'N/A'},${p.nss||'N/A'},${p.parent ? p.parent.replace(/,/g, '') : 'N/A'},${p.parent_phone||'N/A'},${p.seat_number || 'N/A'},"${docUrls}",${p.ticket_released ? 'SI' : 'NO'},${c1},${c2},${c3}`;
       csvContent += row + "\n";
     });
     const link = document.createElement("a");
@@ -1003,18 +1058,19 @@ const App = () => {
         </div>
       </div>
 
-      {/* DELETE LETTER CONFIRM MODAL */}
-      {deleteLetterId && (
+      {/* DELETE DOCUMENT CONFIRMATION MODAL */}
+      {documentToDelete && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[80] flex items-center justify-center p-4 animate-in fade-in">
            <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-red-100 text-center">
                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
                    <Trash2 size={32}/>
                </div>
-               <h3 className="text-xl font-bold text-gray-800 mb-2">¿Eliminar carta?</h3>
-               <p className="text-sm text-gray-500 mb-6">Si te equivocaste al subirla, puedes borrarla. Esto también revocará el boleto liberado.</p>
+               <h3 className="text-xl font-bold text-gray-800 mb-2">¿Eliminar documento?</h3>
+               <p className="text-sm text-gray-500 mb-3 font-bold truncate">"{documentToDelete.docName}"</p>
+               <p className="text-sm text-gray-500 mb-6">Esta acción no se puede deshacer y puede bloquear el boleto si no quedan documentos.</p>
                <div className="flex gap-3">
-                   <button onClick={() => setDeleteLetterId(null)} className="flex-1 py-3 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">Cancelar</button>
-                   <button onClick={confirmDeleteLetter} className="flex-1 py-3 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 transition-colors shadow-lg shadow-red-500/30">Sí, eliminar</button>
+                   <button onClick={() => setDocumentToDelete(null)} className="flex-1 py-3 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">Cancelar</button>
+                   <button onClick={confirmDeleteDocument} className="flex-1 py-3 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 transition-colors shadow-lg shadow-red-500/30">Sí, eliminar</button>
                </div>
            </div>
         </div>
@@ -1474,7 +1530,7 @@ const App = () => {
       <div className="max-w-7xl mx-auto px-4 -mt-6 relative z-30">
         
         {/* STATS CARDS */}
-        <div className={`grid gap-3 mb-6 grid-cols-2 sm:grid-cols-4`}>
+        <div className={`grid gap-3 mb-6 grid-cols-2 ${isCoordinator ? 'sm:grid-cols-4' : 'sm:grid-cols-2'}`}>
           <div className="bg-white p-3 rounded-2xl shadow-lg border-b-4 border-green-500 flex flex-col items-center text-center transform hover:-translate-y-1 transition-transform">
              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Pagados</span>
              <span className="text-xl font-black text-gray-800">{totalPaidFull}</span>
@@ -1483,10 +1539,22 @@ const App = () => {
              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Anticipos</span>
              <span className="text-xl font-black text-gray-800">{totalAdvance}</span>
           </div>
-          <div className="bg-white p-3 rounded-2xl shadow-lg border-b-4 border-red-500 flex flex-col items-center text-center transform hover:-translate-y-1 transition-transform">
-             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Pendientes</span>
-             <span className="text-xl font-black text-gray-800">{totalPending}</span>
-          </div>
+          
+          {/* Muestra la tarjeta de Pendientes solo si NO es coordinador (si es coordinador, se muestra el total MXN que ocupa el 4to espacio) */}
+          {!isCoordinator && (
+            <div className="bg-white p-3 rounded-2xl shadow-lg border-b-4 border-red-500 flex flex-col items-center text-center transform hover:-translate-y-1 transition-transform">
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Pendientes</span>
+                <span className="text-xl font-black text-gray-800">{currentBusPassengers.length - totalPaidFull - totalAdvance}</span>
+            </div>
+          )}
+
+          {isCoordinator && (
+            <div className="bg-white p-3 rounded-2xl shadow-lg border-b-4 border-red-500 flex flex-col items-center text-center transform hover:-translate-y-1 transition-transform">
+               <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Pendientes</span>
+               <span className="text-xl font-black text-gray-800">{currentBusPassengers.length - totalPaidFull - totalAdvance}</span>
+            </div>
+          )}
+          
           {isCoordinator && (
             <div className="bg-white p-3 rounded-2xl shadow-lg border-b-4 border-orange-500 flex flex-col items-center text-center transform hover:-translate-y-1 transition-transform">
                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Total MXN</span>
@@ -1554,7 +1622,8 @@ const App = () => {
                   className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 shadow-sm ${filterLeg === 'pending' ? 'bg-yellow-500 text-white scale-105 shadow-yellow-500/30' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
                >
                   <FileText size={14} /> Cartas Pendientes
-                  <span className="bg-white/20 px-1.5 py-0.5 rounded-md text-[10px]">{passengers.filter(p => p.letter_url && !p.ticket_released).length}</span>
+                  {/* Cambiado el filtro para usar el nuevo array documents */}
+                  <span className="bg-white/20 px-1.5 py-0.5 rounded-md text-[10px]">{passengers.filter(p => p.documents && p.documents.length > 0 && !p.ticket_released).length}</span>
                </button>
 
                <div className="flex-shrink-0 w-px h-6 bg-gray-200 mx-1"></div>
@@ -1602,12 +1671,14 @@ const App = () => {
                    <h3 className="text-lg font-bold text-gray-800">¡Zona Completada!</h3>
                  </>
                ) : (
-                 <><Search size={40} className="mx-auto mb-3 text-gray-300" /><p className="text-gray-400 font-medium">{filterLeg === 'pending' ? 'No hay cartas pendientes de revisión' : 'No se encontraron resultados'}</p></>
+                 <><Search size={40} className="mx-auto mb-3 text-gray-300" /><p className="text-gray-400 font-medium">{filterLeg === 'pending' ? 'No hay documentos pendientes de revisión' : 'No se encontraron resultados'}</p></>
                )}
             </div>
           ) : (
             filteredPassengers.map((p) => {
               const busInfo = BUSES.find(b => b.id === (p.bus_id || 1));
+              const docCount = p.documents ? p.documents.length : 0;
+
               return (
               <div key={p.id} className="bg-white rounded-2xl shadow-sm hover:shadow-xl border border-orange-50/50 overflow-hidden transition-all duration-300 group relative flex flex-col w-full mx-auto">
                 <div className={`absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b ${busInfo.color}`}></div>
@@ -1656,85 +1727,85 @@ const App = () => {
                             </div>
                         </div>
 
-                        {/* --- CARTA PERMISO AREA --- */}
-                        <div className="mt-3 flex items-center gap-2 flex-wrap">
-                            {p.letter_url ? (
-                                <>
-                                   {/* Link Ver Carta (SOLO COORDINADORES) o Etiqueta de Estado (PUBLICO) */}
-                                   {isCoordinator ? (
-                                     <a 
-                                       href={p.letter_url} 
-                                       target="_blank" 
-                                       rel="noreferrer" 
-                                       className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border transition-colors ${
-                                         p.ticket_released 
-                                           ? 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100' // Aceptada
-                                           : 'bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100' // En revisión
-                                       }`}
-                                     >
-                                       {p.ticket_released ? <FileCheck size={14}/> : <FileText size={14}/>}
-                                       {p.ticket_released ? 'Carta Aceptada' : 'En Revisión'}
-                                     </a>
-                                   ) : (
-                                     <div 
-                                       className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border cursor-default ${
-                                         p.ticket_released 
-                                           ? 'bg-green-50 text-green-600 border-green-100' // Aceptada
-                                           : 'bg-yellow-50 text-yellow-700 border-yellow-200' // En revisión
-                                       }`}
-                                     >
-                                       {p.ticket_released ? <FileCheck size={14}/> : <FileText size={14}/>}
-                                       {p.ticket_released ? 'Carta Aceptada' : 'En Revisión'}
-                                     </div>
-                                   )}
+                        {/* --- CARTA / DOCUMENTO AREA --- */}
+                        <div className="mt-3 flex flex-col gap-2">
+                            {/* Documentos subidos */}
+                            {docCount > 0 && (
+                                <div className="space-y-1">
+                                {p.documents.map((doc, index) => (
+                                    <div key={index} className="flex items-center gap-2 p-2 rounded-lg text-xs font-medium border border-gray-100 bg-gray-50">
+                                        <FileText size={14} className={`text-gray-500 ${doc.name.endsWith('.pdf') ? 'text-red-500' : 'text-blue-500'}`} />
+                                        <a href={doc.url} target="_blank" rel="noreferrer" className="truncate text-gray-700 hover:underline flex-1">{doc.name}</a>
+                                        {isCoordinator && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setDocumentToDelete({
+                                                        passengerId: p.id,
+                                                        docUrl: doc.url,
+                                                        docName: doc.name,
+                                                    });
+                                                }}
+                                                className="text-red-500 hover:text-red-700 p-0.5 rounded-full hover:bg-white transition-colors"
+                                                title="Eliminar este documento"
+                                            >
+                                                <Trash2 size={12} />
+                                            </button>
+                                        )}
+                                        {!isCoordinator && (
+                                            <a href={doc.url} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-orange-500"><ExternalLink size={12}/></a>
+                                        )}
+                                    </div>
+                                ))}
+                                </div>
+                            )}
 
-                                   {/* COORDINADOR: Toggle Release */}
-                                   {isCoordinator && (
-                                     <button 
-                                       onClick={() => toggleTicketRelease(p.id, p.ticket_released)}
-                                       className={`p-1.5 rounded-lg border transition-colors ${p.ticket_released ? 'bg-green-100 border-green-300 text-green-700' : 'bg-gray-100 border-gray-300 text-gray-400 hover:bg-gray-200'}`}
-                                       title="Liberar Boleto"
-                                     >
-                                       {p.ticket_released ? <Unlock size={14} /> : <Lock size={14}/>}
-                                     </button>
-                                   )}
-                                   
-                                   {/* Botón Borrar Carta - DISPARA MODAL DE CONFIRMACIÓN (SOLO COORDINADORES) */}
-                                   {isCoordinator && (
-                                     <button 
-                                       onClick={() => setDeleteLetterId(p.id)} 
-                                       className="p-1.5 bg-red-50 text-red-500 rounded-lg border border-red-100 hover:bg-red-100 transition-colors"
-                                       title="Eliminar carta"
-                                     >
-                                       <Trash2 size={14}/>
-                                     </button>
-                                   )}
-                                </>
+                            {/* Botón de Subir/Gestionar */}
+                            {docCount === 0 || !isCoordinator ? (
+                                <label className="flex items-center justify-center gap-1.5 text-xs font-bold bg-gray-50 text-gray-600 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer active:scale-95">
+                                    <Upload size={14}/> {docCount > 0 ? `Subir más (${docCount} archivos)` : 'Subir Documentos'}
+                                    <input type="file" multiple accept="image/*,application/pdf" className="hidden" onChange={(e) => handleUploadLetter(e, p.id)} />
+                                </label>
                             ) : (
-                                <>
-                                   <label className="flex items-center gap-1.5 text-xs font-bold bg-gray-50 text-gray-600 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer active:scale-95">
-                                     <Upload size={14}/> Subir Carta
-                                     <input type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => handleUploadLetter(e, p.id)} />
-                                   </label>
-                                </>
+                                <div className="flex items-center gap-1.5 text-xs font-bold bg-green-50 text-green-600 px-3 py-1.5 rounded-lg border border-green-200">
+                                    <FileCheck size={14}/> {docCount} Documento(s) Subido(s)
+                                </div>
                             )}
 
-                            {/* TICKET BUTTON (Si está liberado) */}
-                            {p.ticket_released && (
-                                <>
-                                    {isCoordinator ? (
-                                        // COORDINADOR VE DIRECTAMENTE
-                                        <button onClick={() => openTicketModal(p)} className="flex items-center gap-1.5 text-xs font-bold bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1.5 rounded-lg shadow-md hover:shadow-lg transition-all animate-pulse">
-                                            <Ticket size={14}/> VER BOLETO
-                                        </button>
-                                    ) : (
-                                        // PASAJERO DEBE VERIFICAR TELEFONO
-                                        <button onClick={() => openAuthModal(p.id)} className="flex items-center gap-1.5 text-xs font-bold bg-blue-600 text-white px-3 py-1.5 rounded-lg shadow-md hover:bg-blue-700 transition-all">
-                                            <KeyRound size={14}/> Ver mi Boleto
-                                        </button>
-                                    )}
-                                </>
-                            )}
+                            {/* TICKET RELEASE & TOGGLE (Solo Coordinador) */}
+                            <div className="flex gap-2 items-center">
+                                {isCoordinator && (
+                                    <button 
+                                        onClick={() => toggleTicketRelease(p.id, p.ticket_released)}
+                                        className={`p-2 rounded-lg border transition-colors flex items-center justify-center flex-1 text-xs font-bold ${
+                                            p.ticket_released 
+                                            ? 'bg-green-100 border-green-300 text-green-700 hover:bg-green-200' 
+                                            : 'bg-red-100 border-red-300 text-red-700 hover:bg-red-200'
+                                        }`}
+                                        title={p.ticket_released ? "Bloquear Boleto" : "Liberar Boleto"}
+                                        disabled={docCount === 0 && !p.ticket_released}
+                                    >
+                                        {p.ticket_released ? <Unlock size={14} /> : <Lock size={14}/>} {p.ticket_released ? 'Liberado' : 'Bloqueado'}
+                                    </button>
+                                )}
+
+                                {/* TICKET BUTTON (Si está liberado) */}
+                                {p.ticket_released && (
+                                    <>
+                                        {isCoordinator ? (
+                                            // COORDINADOR VE DIRECTAMENTE
+                                            <button onClick={() => openTicketModal(p)} className="flex items-center gap-1.5 text-xs font-bold bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1.5 rounded-lg shadow-md hover:shadow-lg transition-all animate-pulse flex-1">
+                                                <Ticket size={14}/> VER BOLETO
+                                            </button>
+                                        ) : (
+                                            // PASAJERO DEBE VERIFICAR TELEFONO
+                                            <button onClick={() => openAuthModal(p.id)} className="flex items-center gap-1.5 text-xs font-bold bg-blue-600 text-white px-3 py-1.5 rounded-lg shadow-md hover:bg-blue-700 transition-all flex-1">
+                                                <KeyRound size={14}/> Ver mi Boleto
+                                            </button>
+                                        )}
+                                    </>
+                                )}
+                            </div>
                         </div>
                   </div>
                 </div>
