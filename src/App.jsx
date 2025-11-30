@@ -215,10 +215,13 @@ const App = () => {
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [ticketData, setTicketData] = useState(null);
 
-  // AUTH PHONE MODAL STATE
+  // AUTH MODAL STATE
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authTargetId, setAuthTargetId] = useState(null);
-  const [authInputPhone, setAuthInputPhone] = useState('');
+  
+  // States for double verification
+  const [authCodeInput, setAuthCodeInput] = useState('');
+  const [authPhoneInput, setAuthPhoneInput] = useState('');
 
   // DELETE DOCUMENT CONFIRMATION STATE (Reemplaza deleteLetterId)
   const [documentToDelete, setDocumentToDelete] = useState(null); // { passengerId, docUrl, docName }
@@ -828,32 +831,56 @@ const App = () => {
       setShowTicketModal(true);
   };
 
-  // --- PHONE AUTH VERIFICATION ---
-  const handleVerifyPhone = (e) => {
+  // --- IDENTITY VERIFICATION (DUAL FACTOR: CODE & PHONE) ---
+  const handleVerifyIdentity = (e) => {
       e.preventDefault();
       const target = passengers.find(p => p.id === authTargetId);
       if (!target) return;
 
-      // Clean strings for comparison (remove non-digits)
-      const inputClean = authInputPhone.replace(/\D/g, '');
-      const targetClean = (target.phone || '').replace(/\D/g, '');
+      // Determinar si el usuario tiene código
+      const hasCode = target.code && target.code !== 'N/A' && target.code !== 'Pendiente';
+      let isValid = false;
 
-      // Simple Check
-      // Validar que ambos tengan longitud suficiente para evitar falsos positivos con teléfonos cortos
-      if (inputClean.length > 6 && inputClean === targetClean) {
+      // Limpiar inputs
+      const phoneInputClean = authPhoneInput.replace(/\D/g, '');
+      const targetPhoneClean = (target.phone || '').replace(/\D/g, '');
+
+      if (hasCode) {
+          // Requiere AMBOS: Código y Teléfono
+          const codeMatch = authCodeInput.trim().toLowerCase() === target.code.trim().toLowerCase();
+          const phoneMatch = phoneInputClean.length > 6 && phoneInputClean === targetPhoneClean;
+          
+          if (codeMatch && phoneMatch) {
+              isValid = true;
+          } else {
+              // Mensaje genérico de error por seguridad
+              showNotification("Datos incorrectos. Por favor verifica tu información.", "error");
+              return; // Detener si falla alguno
+          }
+      } else {
+          // Solo Teléfono (Fallback)
+          if (phoneInputClean.length > 6 && phoneInputClean === targetPhoneClean) {
+              isValid = true;
+          } else {
+              showNotification("Datos incorrectos. Verifica el número.", "error");
+              return;
+          }
+      }
+
+      if (isValid) {
           setShowAuthModal(false);
           setTicketData(target);
           setShowTicketModal(true);
           showNotification(`¡Bienvenido ${target.name.split(' ')[0]}!`);
-          setAuthInputPhone('');
-      } else {
-          showNotification("El número no coincide con el registrado. Revisa el teléfono.", "error");
+          setAuthCodeInput('');
+          setAuthPhoneInput('');
       }
   };
 
   const openAuthModal = (id) => {
       setAuthTargetId(id);
-      setAuthInputPhone('');
+      setAuthCodeInput('');
+      setAuthPhoneInput('');
       setShowAuthModal(true);
   };
 
@@ -1089,31 +1116,55 @@ const App = () => {
         </div>
       )}
 
-      {/* PHONE AUTH MODAL FOR PASSENGERS */}
+      {/* AUTH MODAL FOR PASSENGERS (DYNAMIC: CODE & PHONE) */}
       {showAuthModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[80] flex items-center justify-center p-4 animate-in fade-in">
            <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-orange-100 text-center relative">
                <button onClick={() => setShowAuthModal(false)} className="absolute top-4 right-4 bg-gray-100 p-2 rounded-full hover:bg-gray-200"><X size={20}/></button>
                
-               <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 text-orange-500">
-                   <KeyRound size={32}/>
-               </div>
-               <h3 className="text-xl font-bold text-gray-800 mb-2">Verifica tu Identidad</h3>
-               <p className="text-sm text-gray-500 mb-6">Para ver tu boleto, ingresa tu número de teléfono registrado.</p>
-               
-               <form onSubmit={handleVerifyPhone} className="space-y-4">
-                   <input 
-                     type="tel" 
-                     placeholder="Ej: 3171234567" 
-                     value={authInputPhone}
-                     onChange={(e) => setAuthInputPhone(e.target.value)}
-                     className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-center font-bold text-lg focus:ring-2 focus:ring-orange-500 outline-none"
-                     autoFocus
-                   />
-                   <button type="submit" className="w-full py-3 rounded-xl font-bold text-white bg-orange-600 hover:bg-orange-700 transition-colors shadow-lg shadow-orange-500/30">
-                     Ver mi Boleto
-                   </button>
-               </form>
+               {(() => {
+                   const target = passengers.find(p => p.id === authTargetId);
+                   // Lógica para decidir qué pedir: Si tiene código válido, pide ambos. Si no, pide teléfono.
+                   const hasCode = target && target.code && target.code !== 'N/A' && target.code !== 'Pendiente';
+                   
+                   return (
+                       <>
+                           <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 text-orange-500">
+                               <ShieldAlert size={32}/>
+                           </div>
+                           <h3 className="text-xl font-bold text-gray-800 mb-2">Verificación de Seguridad</h3>
+                           <p className="text-sm text-gray-500 mb-6">
+                               {hasCode 
+                                ? "Para proteger tu boleto, ingresa tu Código de Estudiante y tu Teléfono." 
+                                : "Ingresa tu Número de Teléfono registrado para ver tu boleto."}
+                           </p>
+                           
+                           <form onSubmit={handleVerifyIdentity} className="space-y-4">
+                               {hasCode && (
+                                   <input 
+                                     type="text"
+                                     placeholder="Código de Estudiante"
+                                     value={authCodeInput}
+                                     onChange={(e) => setAuthCodeInput(e.target.value)}
+                                     className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-center font-bold text-lg focus:ring-2 focus:ring-orange-500 outline-none" 
+                                     autoFocus
+                                   />
+                               )}
+                               <input 
+                                 type="tel"
+                                 placeholder="Número de Teléfono"
+                                 value={authPhoneInput}
+                                 onChange={(e) => setAuthPhoneInput(e.target.value)}
+                                 className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-center font-bold text-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                                 autoFocus={!hasCode} // Autofocus en teléfono si no hay código
+                               />
+                               <button type="submit" className="w-full py-3 rounded-xl font-bold text-white bg-orange-600 hover:bg-orange-700 transition-colors shadow-lg shadow-orange-500/30">
+                                 Ver mi Boleto
+                               </button>
+                           </form>
+                       </>
+                   );
+               })()}
            </div>
         </div>
       )}
@@ -1743,7 +1794,7 @@ const App = () => {
                         
                         <div className="flex flex-wrap gap-2 text-[10px] text-gray-500 mb-2">
                             <div className="flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-md border border-orange-100/50"><Phone size={10} className="text-orange-500" /><span className="font-medium">{p.phone}</span></div>
-                            <div className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-md border border-gray-100/50"><GraduationCap size={12} className="text-gray-400" /><span>{p.code}</span></div>
+                            <div className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-md border border-gray-100/50"><GraduationCap size={12} className="text-gray-400" /><span>{isCoordinator ? p.code : '•••••'}</span></div>
                             <div className={`flex items-center gap-1 px-2 py-1 rounded-md border border-gray-100/50 ${busInfo.bg} ${busInfo.text} font-bold`}>
                                 <Bus size={10} />
                                 <span>C{p.bus_id || 1}</span>
@@ -1752,8 +1803,8 @@ const App = () => {
 
                         {/* --- CARTA / DOCUMENTO AREA --- */}
                         <div className="mt-3 flex flex-col gap-2">
-                            {/* Documentos subidos (Visible solo para Coordinador O si el boleto ya fue liberado) */}
-                            {(isCoordinator || p.ticket_released) && docCount > 0 && (
+                            {/* Documentos subidos (Visible solo para Coordinador) */}
+                            {isCoordinator && docCount > 0 && (
                                 <div className="space-y-1">
                                 {p.documents.map((doc, index) => (
                                     <div key={index} className="flex items-center gap-2 p-2 rounded-lg text-xs font-medium border border-gray-100 bg-gray-50">
