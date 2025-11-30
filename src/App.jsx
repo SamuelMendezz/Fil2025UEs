@@ -202,7 +202,7 @@ const App = () => {
       const stored = localStorage.getItem('fil2025_bus_access');
       return stored ? parseInt(stored) : null;
   });
-   
+    
   // Si hay un usuario, es coordinador
   const isCoordinator = !!currentUser;
 
@@ -1744,7 +1744,6 @@ const App = () => {
                         <div className="flex flex-wrap gap-2 text-[10px] text-gray-500 mb-2">
                             <div className="flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-md border border-orange-100/50"><Phone size={10} className="text-orange-500" /><span className="font-medium">{p.phone}</span></div>
                             <div className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-md border border-gray-100/50"><GraduationCap size={12} className="text-gray-400" /><span>{p.code}</span></div>
-                            {/* CAMBIO APLICADO AQUÍ: Agregamos el icono de Bus */}
                             <div className={`flex items-center gap-1 px-2 py-1 rounded-md border border-gray-100/50 ${busInfo.bg} ${busInfo.text} font-bold`}>
                                 <Bus size={10} />
                                 <span>C{p.bus_id || 1}</span>
@@ -1753,14 +1752,14 @@ const App = () => {
 
                         {/* --- CARTA / DOCUMENTO AREA --- */}
                         <div className="mt-3 flex flex-col gap-2">
-                            {/* Documentos subidos */}
-                            {docCount > 0 && (
+                            {/* Documentos subidos (Visible solo para Coordinador O si el boleto ya fue liberado) */}
+                            {(isCoordinator || p.ticket_released) && docCount > 0 && (
                                 <div className="space-y-1">
                                 {p.documents.map((doc, index) => (
                                     <div key={index} className="flex items-center gap-2 p-2 rounded-lg text-xs font-medium border border-gray-100 bg-gray-50">
                                         <FileText size={14} className={`text-gray-500 ${doc.name.endsWith('.pdf') ? 'text-red-500' : 'text-blue-500'}`} />
                                         <a href={doc.url} target="_blank" rel="noreferrer" className="truncate text-gray-700 hover:underline flex-1">{doc.name}</a>
-                                        {canModify && ( // Solo el coordinador de este bus puede ver el botón de eliminar
+                                        {canModify && (
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
@@ -1776,7 +1775,7 @@ const App = () => {
                                                 <Trash2 size={12} />
                                             </button>
                                         )}
-                                        {!canModify && ( // Si no puede modificar, solo muestra el enlace externo
+                                        {isCoordinator && !canModify && (
                                             <a href={doc.url} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-orange-500"><ExternalLink size={12}/></a>
                                         )}
                                     </div>
@@ -1784,16 +1783,25 @@ const App = () => {
                                 </div>
                             )}
 
-                            {/* Botón de Subir/Gestionar */}
-                            {docCount === 0 || !isCoordinator ? (
+                            {/* Botón de Subir/Gestionar (Pasajero) o Estado (Coordinador) */}
+                            {docCount > 0 ? (
+                                isCoordinator ? (
+                                    // COORDINADOR: Muestra documentos subidos y el botón de subir más
+                                    <div className="flex items-center gap-1.5 text-xs font-bold bg-green-50 text-green-600 px-3 py-1.5 rounded-lg border border-green-200">
+                                        <FileCheck size={14}/> {docCount} Documento(s) Subido(s)
+                                    </div>
+                                ) : (
+                                    // PASAJERO: Muestra EN REVISIÓN
+                                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold bg-yellow-50 text-yellow-600 px-3 py-1.5 rounded-lg border border-yellow-200">
+                                        <FileText size={14}/> Documentos En Revisión
+                                    </div>
+                                )
+                            ) : (
+                                // Sin documentos subidos: Mostrar botón de subir
                                 <label className="flex items-center justify-center gap-1.5 text-xs font-bold bg-gray-50 text-gray-600 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer active:scale-95">
-                                    <Upload size={14}/> {docCount > 0 ? `Subir más (${docCount} archivos)` : 'Subir Documentos'}
+                                    <Upload size={14}/> Subir Documentos
                                     <input type="file" multiple accept="image/*,application/pdf" className="hidden" onChange={(e) => handleUploadLetter(e, p.id)} />
                                 </label>
-                            ) : (
-                                <div className="flex items-center gap-1.5 text-xs font-bold bg-green-50 text-green-600 px-3 py-1.5 rounded-lg border border-green-200">
-                                    <FileCheck size={14}/> {docCount} Documento(s) Subido(s)
-                                </div>
                             )}
 
                             {/* TICKET RELEASE & TOGGLE (Solo Coordinador) */}
@@ -1834,7 +1842,7 @@ const App = () => {
                   </div>
                 </div>
 
-                {/* ... existing leg buttons ... */}
+                {/* --- CHECKBOXES ASISTENCIA --- */}
                 <div className="grid grid-cols-3 divide-x divide-gray-100 bg-gray-50/30 relative z-10 border-t border-gray-100 mt-auto">
                     {legs.map((leg, idx) => (
                       <button 
