@@ -297,13 +297,14 @@ const App = () => {
   };
 
   // Check Permission Helper
+  // Un usuario SÓLO puede editar si es coordinador Y si el bus del pasajero es su bus asignado.
   const canEdit = (targetBusId) => {
       if (!isCoordinator) return false;
-      // If user has specific bus access, they can only edit that bus
       if (userBusAccess && userBusAccess !== (targetBusId || 1)) return false;
       return true;
   };
 
+  // Re-define esta función para que verifique si el bus del pasajero coincide con el bus del coordinador
   const verifyPermissionAction = (targetBusId) => {
       if (!canEdit(targetBusId)) {
           showNotification(`Solo tienes permiso para editar el Camión ${userBusAccess}`, 'error');
@@ -595,8 +596,8 @@ const App = () => {
     
     // Get passenger to check permissions
     const passenger = passengers.find(p => p.id === id);
-    if (!passenger) return;
-    if (!verifyPermissionAction(passenger.bus_id || 1)) return;
+    // Verificar que el ID del bus coincida con el acceso del coordinador
+    if (!passenger || !verifyPermissionAction(passenger.bus_id || 1)) return;
 
     if (!supabase) return;
     // NOTE: Removed window.confirm due to mandate constraints on modal usage, but using simple confirm for code brevity here.
@@ -609,6 +610,14 @@ const App = () => {
 
   const handleEditClick = (passenger) => {
     if (!isCoordinator) { triggerLogin(); return; }
+    
+    // Si el coordinador no tiene permiso para editar este camión, solo abrimos el modal para verlo,
+    // pero el botón de guardar estará deshabilitado (lógica implementada dentro del modal).
+    // NOTA: Mantenemos la lógica de verificación aquí para la UI en caso de que se intente editar desde un bus equivocado.
+    if (!canEdit(passenger.bus_id)) {
+      showNotification(`Solo tienes permiso para editar el Camión ${userBusAccess}`, 'error');
+    }
+
     // Crear una copia del pasajero para edición, asegurando que documents se mapee a letter_url para el guardado.
     setEditFormData({ ...passenger, letter_url: JSON.stringify(passenger.documents || []) }); 
     setShowEditModal(true);
@@ -622,7 +631,7 @@ const App = () => {
   const handleSaveEdit = async () => {
     if (!supabase) return;
     
-    // PERMISSION CHECK
+    // PERMISSION CHECK - ESTRICTO ANTES DE GUARDAR
     const targetBus = editFormData.bus_id || 1;
     if (!verifyPermissionAction(targetBus)) return;
 
@@ -641,6 +650,8 @@ const App = () => {
     
     const passenger = passengers.find(p => p.id === id);
     if (!passenger) return;
+    
+    // PERMISSION CHECK - ESTRICTO ANTES DE GUARDAR
     if (!verifyPermissionAction(passenger.bus_id || 1)) {
         fetchPassengers(); // Revert local change
         return;
@@ -658,7 +669,7 @@ const App = () => {
     const passenger = passengers.find(p => p.id === id);
     if (!passenger) return;
 
-    // PERMISSION CHECK
+    // PERMISSION CHECK - ESTRICTO ANTES DE GUARDAR
     if (!verifyPermissionAction(passenger.bus_id || 1)) return;
 
     const isChecking = !passenger.checks[legIndex];
@@ -686,6 +697,7 @@ const App = () => {
         return;
     }
 
+    // No se requiere permiso de coordinador para subir archivos (esto lo hace el pasajero).
     setLoading(true);
     const passenger = passengers.find(p => p.id === passengerId);
     if (!passenger) {
@@ -759,6 +771,7 @@ const App = () => {
     setDocumentToDelete(null); // Cerrar modal
 
     const passenger = passengers.find(p => p.id === docInfo.passengerId);
+    // PERMISSION CHECK - ESTRICTO ANTES DE GUARDAR
     if (!passenger || !verifyPermissionAction(passenger.bus_id || 1)) return;
 
     // Filtrar el documento a eliminar
@@ -791,7 +804,7 @@ const App = () => {
       const passenger = passengers.find(p => p.id === passengerId);
       if (!passenger) return;
 
-      // PERMISSION CHECK
+      // PERMISSION CHECK - ESTRICTO ANTES DE GUARDAR
       if (!verifyPermissionAction(passenger.bus_id || 1)) return;
       
       // Bloquear si intenta liberar sin documentos
@@ -870,7 +883,7 @@ const App = () => {
   const assignSeat = async (passengerId, seatNum) => {
     if (!supabase) return;
     if (!isCoordinator) return; // Safety check
-    if (!verifyPermissionAction(currentBus)) return;
+    if (!verifyPermissionAction(currentBus)) return; // Permiso para el camión actual
 
     const previousPassengers = [...passengers]; // Backup
 
@@ -1413,8 +1426,12 @@ const App = () => {
                 </div>
 
                 <div className="flex gap-3 pt-2">
-                    <button onClick={() => removePassenger(editFormData.id)} className="px-4 py-3 bg-red-100 text-red-600 rounded-xl font-bold hover:bg-red-200 transition-colors flex items-center justify-center"><Trash2 size={20}/></button>
-                    <button onClick={handleSaveEdit} className="flex-1 bg-green-500 text-white py-3 rounded-xl font-bold text-lg hover:bg-green-600 transition-colors shadow-lg shadow-green-500/30 flex items-center justify-center gap-2"><Save size={20}/> Guardar Cambios</button>
+                    <button onClick={() => removePassenger(editFormData.id)} className="px-4 py-3 bg-red-100 text-red-600 rounded-xl font-bold hover:bg-red-200 transition-colors flex items-center justify-center" disabled={!canEdit(editFormData.bus_id)}>
+                        <Trash2 size={20}/>
+                    </button>
+                    <button onClick={handleSaveEdit} className="flex-1 bg-green-500 text-white py-3 rounded-xl font-bold text-lg hover:bg-green-600 transition-colors shadow-lg shadow-green-500/30 flex items-center justify-center gap-2" disabled={!canEdit(editFormData.bus_id)}>
+                        <Save size={20}/> Guardar Cambios
+                    </button>
                 </div>
              </div>
           </div>
@@ -1540,7 +1557,7 @@ const App = () => {
              <span className="text-xl font-black text-gray-800">{totalAdvance}</span>
           </div>
           
-          {/* Muestra la tarjeta de Pendientes solo si NO es coordinador (si es coordinador, se muestra el total MXN que ocupa el 4to espacio) */}
+          {/* Muestra la tarjeta de Pendientes si NO es coordinador (ocupando el 3er lugar) */}
           {!isCoordinator && (
             <div className="bg-white p-3 rounded-2xl shadow-lg border-b-4 border-red-500 flex flex-col items-center text-center transform hover:-translate-y-1 transition-transform">
                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Pendientes</span>
@@ -1548,6 +1565,7 @@ const App = () => {
             </div>
           )}
 
+          {/* Si es coordinador, se muestran Pendientes y Total MXN, por eso el grid-cols-4 */}
           {isCoordinator && (
             <div className="bg-white p-3 rounded-2xl shadow-lg border-b-4 border-red-500 flex flex-col items-center text-center transform hover:-translate-y-1 transition-transform">
                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Pendientes</span>
@@ -1678,6 +1696,7 @@ const App = () => {
             filteredPassengers.map((p) => {
               const busInfo = BUSES.find(b => b.id === (p.bus_id || 1));
               const docCount = p.documents ? p.documents.length : 0;
+              const canModify = canEdit(p.bus_id); // Verifica si el coordinador actual puede modificar este pasajero
 
               return (
               <div key={p.id} className="bg-white rounded-2xl shadow-sm hover:shadow-xl border border-orange-50/50 overflow-hidden transition-all duration-300 group relative flex flex-col w-full mx-auto">
@@ -1698,6 +1717,7 @@ const App = () => {
                                         onBlur={(e) => handleAmountBlur(p.id, e.target.value)}
                                         onKeyDown={(e) => { if(e.key === 'Enter') e.target.blur(); }}
                                         className={`w-14 text-xs font-extrabold bg-transparent outline-none text-right ${p.amount >= 480 ? 'text-green-700 placeholder-green-300' : 'text-yellow-700 placeholder-yellow-300'}`}
+                                        disabled={!canModify} // Deshabilitar si no es el coordinador de este camión
                                     />
                                 </div>
                             ) : (
@@ -1711,7 +1731,11 @@ const App = () => {
                         <h3 onClick={() => handleEditClick(p)} className={`font-bold text-sm leading-tight mb-2 transition-colors cursor-pointer hover:text-orange-600 text-gray-800 flex items-center gap-2 group-hover:underline select-none truncate pr-2`}>
                             {formatDisplayName(p.name)} 
                             {isCoordinator ? (
-                                <Edit2 size={12} className="text-gray-300 group-hover:text-orange-500 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0"/>
+                                canModify ? (
+                                    <Edit2 size={12} className="text-gray-300 group-hover:text-orange-500 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0"/>
+                                ) : (
+                                    <Eye size={12} className="text-gray-400 transition-all flex-shrink-0"/>
+                                )
                             ) : (
                                 <Lock size={12} className="text-gray-300 group-hover:text-orange-500 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0"/>
                             )}
@@ -1736,7 +1760,7 @@ const App = () => {
                                     <div key={index} className="flex items-center gap-2 p-2 rounded-lg text-xs font-medium border border-gray-100 bg-gray-50">
                                         <FileText size={14} className={`text-gray-500 ${doc.name.endsWith('.pdf') ? 'text-red-500' : 'text-blue-500'}`} />
                                         <a href={doc.url} target="_blank" rel="noreferrer" className="truncate text-gray-700 hover:underline flex-1">{doc.name}</a>
-                                        {isCoordinator && (
+                                        {canModify && ( // Solo el coordinador de este bus puede ver el botón de eliminar
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
@@ -1752,7 +1776,7 @@ const App = () => {
                                                 <Trash2 size={12} />
                                             </button>
                                         )}
-                                        {!isCoordinator && (
+                                        {!canModify && ( // Si no puede modificar, solo muestra el enlace externo
                                             <a href={doc.url} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-orange-500"><ExternalLink size={12}/></a>
                                         )}
                                     </div>
@@ -1783,7 +1807,7 @@ const App = () => {
                                             : 'bg-red-100 border-red-300 text-red-700 hover:bg-red-200'
                                         }`}
                                         title={p.ticket_released ? "Bloquear Boleto" : "Liberar Boleto"}
-                                        disabled={docCount === 0 && !p.ticket_released}
+                                        disabled={!canModify || (docCount === 0 && !p.ticket_released)} // Deshabilitar si no tiene permiso O si no hay documentos
                                     >
                                         {p.ticket_released ? <Unlock size={14} /> : <Lock size={14}/>} {p.ticket_released ? 'Liberado' : 'Bloqueado'}
                                     </button>
@@ -1813,7 +1837,12 @@ const App = () => {
                 {/* ... existing leg buttons ... */}
                 <div className="grid grid-cols-3 divide-x divide-gray-100 bg-gray-50/30 relative z-10 border-t border-gray-100 mt-auto">
                     {legs.map((leg, idx) => (
-                      <button key={idx} onClick={() => toggleCheck(p.id, idx)} className={`relative flex flex-col items-center justify-center py-2 transition-all duration-300 group/btn hover:bg-white ${p.checks && p.checks[idx] ? 'bg-green-500/5 text-green-700' : 'text-gray-400'}`}>
+                      <button 
+                        key={idx} 
+                        onClick={() => toggleCheck(p.id, idx)} 
+                        className={`relative flex flex-col items-center justify-center py-2 transition-all duration-300 group/btn hover:bg-white ${p.checks && p.checks[idx] ? 'bg-green-500/5 text-green-700' : 'text-gray-400'}`}
+                        disabled={!canModify} // Deshabilitar si no puede modificar
+                      >
                         <div className={`mb-1 p-1.5 rounded-full transition-all duration-300 shadow-sm ${p.checks && p.checks[idx] ? 'bg-green-500 text-white scale-110 shadow-green-500/40' : 'bg-white text-gray-300 group-hover/btn:text-orange-400 shadow-sm border border-gray-100'}`}>
                            {p.checks && p.checks[idx] ? <Check size={14} strokeWidth={4} /> : leg.icon}
                         </div>
