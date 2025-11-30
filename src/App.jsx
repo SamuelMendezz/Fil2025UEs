@@ -148,7 +148,7 @@ const OFFICIAL_LIST_C3 = [
     { name: "Nahomi Dayan Núñez Sánchez", phone: "3178734986", amount: 480, code: "224427129", nss: "35250950421", parent: "Ana Gabriela Sánchez Sánchez", parentPhone: "3173833784" },
     { name: "Milton Santiago López Guerrero", phone: "3171070966", amount: 480, code: "223443686", nss: "0401720401-9", parent: "Roberto López Cázares", parentPhone: "3173889949" },
     { name: "Iliana Valentina Rodríguez", phone: "3173851141", amount: 480, code: "223441608", nss: "25230806066", parent: "Gustavo Rodriguez Gómez", parentPhone: "3171049390" },
-    { name: "Diego Alejandro Mancilla García", phone: "3171128601", code: "225201213", amount: 480, nss: "54927417870", parent: "Alma Delia García torres", parentPhone: "3171079116" },
+    { name: "Diego Alejandro Mancilla García", phone: "3171128601", amount: 480, code: "225201213", nss: "54927417870", parent: "Alma Delia García torres", parentPhone: "3171079116" },
     { name: "Abner Enríquez Casillas", phone: "+1 8185248474", amount: 300, code: "N/A", nss: "N/A", parent: "N/A", parentPhone: "N/A" },
     { name: "Paola Sánchez Soltero", phone: "3171292143", code: "224430405", amount: 480, nss: "18240947020", parent: "Karla maravilla soltero mata", parentPhone: "3171292144" },
     { name: "Iker Steve Soltero Rodríguez", phone: "3171041444", code: "221003476", amount: 480, nss: "N/A", parent: "N/A", parentPhone: "N/A" }
@@ -1418,6 +1418,7 @@ const App = () => {
                                                     // FILTERING BY SEAT NUMBER & MODE
                                                     .filter(p => {
                                                         const matchesSearch = p.name.toLowerCase().includes(seatSearchTerm.toLowerCase()) || (p.code && p.code.includes(seatSearchTerm));
+                                                        // Filter only for passengers WITHOUT seat_number if mode is unassigned
                                                         const matchesMode = mapListMode === 'unassigned' ? !p.seat_number : p.seat_number;
                                                         return matchesSearch && matchesMode;
                                                     })
@@ -1540,7 +1541,7 @@ const App = () => {
                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                  <Lock className="text-orange-500" /> Acceso Coordinador
                </h3>
-               <button onClick={() => setShowLoginModal(false)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200"><X size={20}/></button>
+               <button onClick={() => setShowLoginModal(false)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"><X size={20}/></button>
              </div>
              
              <form onSubmit={handleLogin} className="space-y-4">
@@ -1864,6 +1865,15 @@ const App = () => {
                         <div className="flex flex-wrap gap-2 text-[10px] text-gray-500 mb-2">
                             <div className="flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-md border border-orange-100/50"><Phone size={10} className="text-orange-500" /><span className="font-medium">{p.phone}</span></div>
                             <div className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-md border border-gray-100/50"><GraduationCap size={12} className="text-gray-400" /><span>{isCoordinator ? p.code : '•••••'}</span></div>
+                            
+                            {/* NUEVO: Asiento apartado */}
+                            {p.seat_number && (
+                                <div className="flex items-center gap-1 bg-purple-100 px-2 py-1 rounded-md border border-purple-200 text-purple-700 font-bold">
+                                    <Armchair size={10} />
+                                    <span>Asiento: #{p.seat_number}</span>
+                                </div>
+                            )}
+
                             <div className={`flex items-center gap-1 px-2 py-1 rounded-md border border-gray-100/50 ${busInfo.bg} ${busInfo.text} font-bold`}>
                                 <Bus size={10} />
                                 <span>C{p.bus_id || 1}</span>
@@ -1953,12 +1963,12 @@ const App = () => {
                                         {isCoordinator ? (
                                             // COORDINADOR VE DIRECTAMENTE
                                             <button onClick={() => openTicketModal(p)} className="flex items-center gap-1.5 text-xs font-bold bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1.5 rounded-lg shadow-md hover:shadow-lg transition-all animate-pulse flex-1">
-                                                <Ticket size={14}/> VER BOLETO
+                                                <Ticket size={14}/> Ver Boleto
                                             </button>
                                         ) : (
                                             // PASAJERO DEBE VERIFICAR TELEFONO (Ahora con el MISMO diseño que coordinador)
                                             <button onClick={() => openAuthModal(p.id)} className="flex items-center gap-1.5 text-xs font-bold bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1.5 rounded-lg shadow-md hover:shadow-lg transition-all animate-pulse flex-1">
-                                                <Ticket size={14}/> VER BOLETO
+                                                <Ticket size={14}/> Ver Boleto
                                             </button>
                                         )}
                                     </>
