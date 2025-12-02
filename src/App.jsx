@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone, Edit2, Lock, LogOut, EyeOff, Crown, FileText, Users, GraduationCap, ListFilter, Save, ShieldAlert, CreditCard, Hash, User, Bell, ArrowUpDown, ArrowDownAZ, Armchair, LayoutGrid, UserPlus, Bath, Upload, FileCheck, Ticket, ExternalLink, Unlock, AlertTriangle, Eye, KeyRound, FileWarning } from 'lucide-react';
 
+// NOTA IMPORTANTE: Para una correcta visualización responsive en la web,
+// el HTML que embebe este componente debe incluir la siguiente etiqueta meta:
+// <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 // --- CONFIGURACIÓN DE SUPABASE ---
 const SUPABASE_URL = 'https://fgzegoflnkwkcztivila.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnemVnb2Zsbmt3a2N6dGl2aWxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzMzQyOTYsImV4cCI6MjA3OTkxMDI5Nn0.-u-NUiR5Eqitf4-zqvAAZhTKHc1_Cj3OKHAhGRHl8Xs';
@@ -143,12 +147,12 @@ const OFFICIAL_LIST_C3 = [
     { name: "Osmar Alejandro Méndez Ibarra", phone: "3173896781", amount: 480, code: "N/A", nss: "N/A", parent: "N/A", parentPhone: "N/A" },
     { name: "Baldwin Alexander Rodríguez Hernández", phone: "3173886218", amount: 480, code: "225201299", nss: "4027737156", parent: "Iván Rodríguez", parentPhone: "3171210596" },
     { name: "Marcos Zavalza Medina", phone: "N/A", amount: 480, code: "221431036", nss: "32110697854", parent: "José Salvador Zavalza", parentPhone: "3171041852" },
-    { name: "Camila Anahí Torres Montes", phone: "3171283203", amount: 480, code: "223443252", nss: "10230804048", parent: "Octavio César torres gomez", parentPhone: "3173883500" },
-    { name: "Karol Gabriela Robles Uribe", phone: "3171010251", amount: 480, code: "223443929", nss: "6023083445-3", parent: "Ricardo robles castillo", parentPhone: "3173886055" },
-    { name: "Nahomi Dayan Núñez Sánchez", phone: "3178734986", amount: 480, code: "224427129", nss: "35250950421", parent: "Ana Gabriela Sánchez Sánchez", parentPhone: "3173833784" },
-    { name: "Milton Santiago López Guerrero", phone: "3171070966", amount: 480, code: "223443686", nss: "0401720401-9", parent: "Roberto López Cázares", parentPhone: "3173889949" },
-    { name: "Iliana Valentina Rodríguez", phone: "3173851141", amount: 480, code: "223441608", nss: "25230806066", parent: "Gustavo Rodriguez Gómez", parentPhone: "3171049390" },
-    { name: "Diego Alejandro Mancilla García", phone: "3171128601", amount: 480, code: "225201213", nss: "54927417870", parent: "Alma Delia García torres", parentPhone: "3171079116" },
+    { name: "Camila Anahí Torres Montes", phone: "3171283203", code: "223443252", amount: 480, nss: "10230804048", parent: "Octavio César torres gomez", parentPhone: "3173883500" },
+    { name: "Karol Gabriela Robles Uribe", phone: "3171010251", code: "223443929", amount: 480, nss: "6023083445-3", parent: "Ricardo robles castillo", parentPhone: "3173886055" },
+    { name: "Nahomi Dayan Núñez Sánchez", phone: "3178734986", code: "224427129", amount: 480, nss: "35250950421", parent: "Ana Gabriela Sánchez Sánchez", parentPhone: "3173833784" },
+    { name: "Milton Santiago López Guerrero", phone: "3171070966", code: "223443686", amount: 480, nss: "0401720401-9", parent: "Roberto López Cázares", parentPhone: "3173889949" },
+    { name: "Iliana Valentina Rodríguez", phone: "3173851141", code: "223441608", amount: 480, nss: "25230806066", parent: "Gustavo Rodriguez Gómez", parentPhone: "3171049390" },
+    { name: "Diego Alejandro Mancilla García", phone: "3171128601", code: "225201213", amount: 480, nss: "54927417870", parent: "Alma Delia García torres", parentPhone: "3171079116" },
     { name: "Abner Enríquez Casillas", phone: "+1 8185248474", amount: 300, code: "N/A", nss: "N/A", parent: "N/A", parentPhone: "N/A" },
     { name: "Paola Sánchez Soltero", phone: "3171292143", code: "224430405", amount: 480, nss: "18240947020", parent: "Karla maravilla soltero mata", parentPhone: "3171292144" },
     { name: "Iker Steve Soltero Rodríguez", phone: "3171041444", code: "221003476", amount: 480, nss: "N/A", parent: "N/A", parentPhone: "N/A" }
@@ -1180,7 +1184,19 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-white font-sans pb-24 text-gray-800 overflow-x-hidden w-full">
-      
+      {/* Estilos CSS para el scrollbar (para los filtros y listas internas) */}
+      <style>
+          {`
+          .no-scrollbar::-webkit-scrollbar {
+              display: none;
+          }
+          .no-scrollbar {
+              -ms-overflow-style: none;  /* IE and Edge */
+              scrollbar-width: none;  /* Firefox */
+          }
+          `}
+      </style>
+
       {/* NOTIFICATION TOAST */}
       <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[60] transition-all duration-500 ease-in-out ${notification.visible ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0 pointer-events-none'}`}>
         <div className={`flex items-center gap-3 px-6 py-3 rounded-full shadow-2xl border ${notification.type === 'error' ? 'bg-white border-red-200 text-red-600' : 'bg-white border-green-200 text-green-700'}`}>
@@ -1332,7 +1348,7 @@ const App = () => {
           </div>
       )}
 
-      {/* BUS MAP MODAL */}
+      {/* BUS MAP MODAL - AJUSTADO PARA RESPONSIVE EN MÓVIL */}
       {showBusMap && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
             <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl border border-orange-200 relative max-h-[95vh] flex flex-col overflow-hidden">
@@ -1345,20 +1361,21 @@ const App = () => {
                 
                 <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-gray-100/50">
                     <div className="flex flex-col md:flex-row gap-8">
-                        {/* THE BUS */}
-                        <div className="flex-1">
-                            <div className="bg-white p-6 rounded-[3rem] shadow-xl border-4 border-gray-200 relative mx-auto max-w-sm">
+                        {/* THE BUS - Agregado min-w-0 para permitir que se encoja en móvil */}
+                        <div className="flex-1 min-w-0"> 
+                            {/* Reducción de padding y margen en móvil */}
+                            <div className="bg-white p-4 rounded-[3rem] shadow-xl border-4 border-gray-200 relative mx-auto max-w-sm">
                                 {/* Driver Area */}
-                                <div className="border-b-4 border-dashed border-gray-200 pb-4 mb-6 flex justify-between px-8 text-gray-300 font-bold uppercase tracking-widest text-xs">
+                                <div className="border-b-4 border-dashed border-gray-200 pb-4 mb-4 flex justify-between px-4 text-gray-300 font-bold uppercase tracking-widest text-xs">
                                     <span>Frente</span>
-                                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center border-2 border-gray-200"><User size={20}/></div>
+                                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center border-2 border-gray-200"><User size={18}/></div>
                                 </div>
 
                                 {/* Seats Grid */}
-                                <div className="space-y-3">
+                                <div className="space-y-2"> {/* Reducido espaciado vertical */}
                                     {/* Rows 1-10 (Standard 4 seats) */}
                                     {Array.from({ length: 10 }).map((_, rowIndex) => (
-                                        <div key={rowIndex} className="flex justify-between items-center gap-2 md:gap-4">
+                                        <div key={rowIndex} className="flex justify-between items-center gap-2">
                                             <div className="flex gap-2">
                                                 {[1, 2].map(offset => {
                                                     const seatNum = (rowIndex * 4) + offset;
@@ -1367,14 +1384,17 @@ const App = () => {
                                                         <button 
                                                             key={seatNum}
                                                             onClick={() => handleSeatClick(seatNum)}
-                                                            className={`w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center shadow-sm transition-all transform hover:scale-110 active:scale-95 border-b-4 ${occupant ? 'bg-red-500 border-red-700 text-white' : 'bg-green-400 border-green-600 text-white hover:bg-green-500'}`}
+                                                            // Asientos más pequeños en móvil (w-8 h-8)
+                                                            className={`w-8 h-8 md:w-12 md:h-12 rounded-lg flex items-center justify-center shadow-sm transition-all transform hover:scale-110 active:scale-95 border-b-4 ${occupant ? 'bg-red-500 border-red-700 text-white' : 'bg-green-400 border-green-600 text-white hover:bg-green-500'}`}
                                                         >
-                                                            {occupant ? <span className="text-[10px] font-bold leading-none overflow-hidden px-0.5">{getFirstName(occupant.name)}</span> : <span className="text-xs font-bold opacity-50">{seatNum}</span>}
+                                                            {/* Texto más pequeño para nombres en móvil */}
+                                                            {occupant ? <span className="text-[8px] font-bold leading-none overflow-hidden px-0.5">{getFirstName(occupant.name)}</span> : <span className="text-[10px] font-bold opacity-50">{seatNum}</span>}
                                                         </button>
                                                     );
                                                 })}
                                             </div>
-                                            <span className="text-[10px] font-bold text-gray-300 w-4 text-center">{rowIndex + 1}</span>
+                                            {/* Texto de fila más pequeño */}
+                                            <span className="text-[9px] font-bold text-gray-300 w-4 text-center">{rowIndex + 1}</span> 
                                             <div className="flex gap-2">
                                                 {[3, 4].map(offset => {
                                                     const seatNum = (rowIndex * 4) + offset;
@@ -1383,9 +1403,9 @@ const App = () => {
                                                         <button 
                                                             key={seatNum}
                                                             onClick={() => handleSeatClick(seatNum)}
-                                                            className={`w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center shadow-sm transition-all transform hover:scale-110 active:scale-95 border-b-4 ${occupant ? 'bg-red-500 border-red-700 text-white' : 'bg-green-400 border-green-600 text-white hover:bg-green-500'}`}
+                                                            className={`w-8 h-8 md:w-12 md:h-12 rounded-lg flex items-center justify-center shadow-sm transition-all transform hover:scale-110 active:scale-95 border-b-4 ${occupant ? 'bg-red-500 border-red-700 text-white' : 'bg-green-400 border-green-600 text-white hover:bg-green-500'}`}
                                                         >
-                                                            {occupant ? <span className="text-[10px] font-bold leading-none overflow-hidden px-0.5">{getFirstName(occupant.name)}</span> : <span className="text-xs font-bold opacity-50">{seatNum}</span>}
+                                                            {occupant ? <span className="text-[8px] font-bold leading-none overflow-hidden px-0.5">{getFirstName(occupant.name)}</span> : <span className="text-[10px] font-bold opacity-50">{seatNum}</span>}
                                                         </button>
                                                     );
                                                 })}
@@ -1394,7 +1414,7 @@ const App = () => {
                                     ))}
                                     
                                     {/* Row 11 (41, 42) & WC */}
-                                    <div className="flex justify-between items-center gap-2 md:gap-4 border-t-2 border-dashed border-gray-100 pt-3">
+                                    <div className="flex justify-between items-center gap-2 border-t-2 border-dashed border-gray-100 pt-2">
                                         {/* Left: 41, 42 */}
                                         <div className="flex gap-2">
                                             {[41, 42].map(seatNum => {
@@ -1403,9 +1423,9 @@ const App = () => {
                                                     <button 
                                                         key={seatNum}
                                                         onClick={() => handleSeatClick(seatNum)}
-                                                        className={`w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center shadow-sm transition-all transform hover:scale-110 active:scale-95 border-b-4 ${occupant ? 'bg-red-500 border-red-700 text-white' : 'bg-green-400 border-green-600 text-white hover:bg-green-500'}`}
+                                                        className={`w-8 h-8 md:w-12 md:h-12 rounded-lg flex items-center justify-center shadow-sm transition-all transform hover:scale-110 active:scale-95 border-b-4 ${occupant ? 'bg-red-500 border-red-700 text-white' : 'bg-green-400 border-green-600 text-white hover:bg-green-500'}`}
                                                     >
-                                                        {occupant ? <span className="text-[10px] font-bold leading-none overflow-hidden px-0.5">{getFirstName(occupant.name)}</span> : <span className="text-xs font-bold opacity-50">{seatNum}</span>}
+                                                        {occupant ? <span className="text-[8px] font-bold leading-none overflow-hidden px-0.5">{getFirstName(occupant.name)}</span> : <span className="text-[10px] font-bold opacity-50">{seatNum}</span>}
                                                     </button>
                                                 );
                                             })}
@@ -1413,15 +1433,15 @@ const App = () => {
                                         
                                         {/* Aisle & Right Side WC */}
                                         <div className="flex gap-2 items-center justify-end flex-1">
-                                            {/* WC Area (Takes space of seats 43-44 effectively or right side) */}
-                                            <div className="w-[104px] h-12 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400">
-                                                <span className="text-xl font-black">WC</span>
+                                            {/* WC Area: Usamos w-16 h-8 en móvil para que se encoja correctamente */}
+                                            <div className="w-16 h-8 md:w-[104px] md:h-12 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400">
+                                                <span className="text-sm font-black">WC</span>
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Row 12 (Back Left: 43, 44, 45) - Aligned with left and aisle */}
-                                    <div className="flex justify-start gap-2 md:gap-4 mt-1">
+                                    <div className="flex justify-start gap-2 mt-1"> 
                                         <div className="flex gap-2">
                                             {[43, 44].map(seatNum => {
                                                 const occupant = currentBusPassengers.find(p => p.seat_number == seatNum);
@@ -1429,9 +1449,9 @@ const App = () => {
                                                     <button 
                                                         key={seatNum}
                                                         onClick={() => handleSeatClick(seatNum)}
-                                                        className={`w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center shadow-sm transition-all transform hover:scale-110 active:scale-95 border-b-4 ${occupant ? 'bg-red-500 border-red-700 text-white' : 'bg-green-400 border-green-600 text-white hover:bg-green-500'}`}
+                                                        className={`w-8 h-8 md:w-12 md:h-12 rounded-lg flex items-center justify-center shadow-sm transition-all transform hover:scale-110 active:scale-95 border-b-4 ${occupant ? 'bg-red-500 border-red-700 text-white' : 'bg-green-400 border-green-600 text-white hover:bg-green-500'}`}
                                                     >
-                                                        {occupant ? <span className="text-[10px] font-bold leading-none overflow-hidden px-0.5">{getFirstName(occupant.name)}</span> : <span className="text-xs font-bold opacity-50">{seatNum}</span>}
+                                                        {occupant ? <span className="text-[8px] font-bold leading-none overflow-hidden px-0.5">{getFirstName(occupant.name)}</span> : <span className="text-[10px] font-bold opacity-50">{seatNum}</span>}
                                                     </button>
                                                 );
                                             })}
@@ -1444,9 +1464,9 @@ const App = () => {
                                                     <button 
                                                         key={seatNum}
                                                         onClick={() => handleSeatClick(seatNum)}
-                                                        className={`w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center shadow-sm transition-all transform hover:scale-110 active:scale-95 border-b-4 ${occupant ? 'bg-red-500 border-red-700 text-white' : 'bg-green-400 border-green-600 text-white hover:bg-green-500'}`}
+                                                        className={`w-8 h-8 md:w-12 md:h-12 rounded-lg flex items-center justify-center shadow-sm transition-all transform hover:scale-110 active:scale-95 border-b-4 ${occupant ? 'bg-red-500 border-red-700 text-white' : 'bg-green-400 border-green-600 text-white hover:bg-green-500'}`}
                                                     >
-                                                        {occupant ? <span className="text-[10px] font-bold leading-none overflow-hidden px-0.5">{getFirstName(occupant.name)}</span> : <span className="text-xs font-bold opacity-50">{seatNum}</span>}
+                                                        {occupant ? <span className="text-[8px] font-bold leading-none overflow-hidden px-0.5">{getFirstName(occupant.name)}</span> : <span className="text-[10px] font-bold opacity-50">{seatNum}</span>}
                                                     </button>
                                                 );
                                             })}
@@ -1870,6 +1890,7 @@ const App = () => {
         </div>
 
         {/* FILTERS & SORT */}
+        {/* Usamos no-scrollbar para ocultar la barra horizontal en móviles */}
         <div className="flex items-center gap-3 mb-6 w-full max-w-full overflow-x-auto pb-2 px-1 no-scrollbar justify-start">
            <div className="flex-shrink-0 bg-white p-2 rounded-full shadow-sm"><ListFilter size={16} className="text-orange-500"/></div>
            
