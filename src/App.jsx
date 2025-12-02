@@ -1243,7 +1243,7 @@ const App = () => {
                                                   setAuthCodeInput(e.target.value);
                                                   if(authError) setAuthError(''); // Clear error on type
                                               }}
-                                              className={`w-full p-4 bg-gray-50 border rounded-xl text-center font-bold text-lg focus:ring-2 focus:ring-orange-500 outline-none ${authError ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}
+                                              className={`w-full p-4 bg-gray-50 border rounded-xl text-left font-bold text-lg focus:ring-2 focus:ring-orange-500 outline-none ${authError ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}
                                               autoFocus
                                             />
                                        </div>
@@ -1259,7 +1259,7 @@ const App = () => {
                                              setAuthPhoneInput(e.target.value);
                                              if(authError) setAuthError(''); // Clear error on type
                                          }}
-                                         className={`w-full p-4 bg-gray-50 border rounded-xl text-center font-bold text-lg focus:ring-2 focus:ring-orange-500 outline-none ${authError ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}
+                                         className={`w-full p-4 bg-gray-50 border rounded-xl text-left font-bold text-lg focus:ring-2 focus:ring-orange-500 outline-none ${authError ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}
                                          autoFocus={!hasCode} // Autofocus en teléfono si no hay código
                                        />
                                    </div>
