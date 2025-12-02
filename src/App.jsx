@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone, Edit2, Lock, LogOut, EyeOff, Crown, FileText, Users, GraduationCap, ListFilter, Save, ShieldAlert, CreditCard, Hash, User, Bell, ArrowUpDown, ArrowDownAZ, Armchair, LayoutGrid, UserPlus, Bath, Upload, FileCheck, Ticket, ExternalLink, Unlock, AlertTriangle, Eye, KeyRound } from 'lucide-react';
+import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone, Edit2, Lock, LogOut, EyeOff, Crown, FileText, Users, GraduationCap, ListFilter, Save, ShieldAlert, CreditCard, Hash, User, Bell, ArrowUpDown, ArrowDownAZ, Armchair, LayoutGrid, UserPlus, Bath, Upload, FileCheck, Ticket, ExternalLink, Unlock, AlertTriangle, Eye, KeyRound, FileWarning } from 'lucide-react';
 
 // --- CONFIGURACIÓN DE SUPABASE ---
 const SUPABASE_URL = 'https://fgzegoflnkwkcztivila.supabase.co';
@@ -134,7 +134,7 @@ const OFFICIAL_LIST_C3 = [
     { name: "Cristina Itzel Pérez Pérez", phone: "3171205047", amount: 480, code: "224080943", nss: "0323088654-5", parent: "Miriam Elizabeth Pérez moran", parentPhone: "3173850876" },
     { name: "Evelyn Yoselin Vázquez Ortega", phone: "4491235827", amount: 480, code: "223441748", nss: "18230808497", parent: "María Azucena Ortega tapia", parentPhone: "4499061731" },
     { name: "Selene Ruby Téllez Baltazar", phone: "3317143526", amount: 480, code: "223441179", nss: "17230854956", parent: "Mariela Baltazar Zúñiga", parentPhone: "3173891593" },
-    { name: "Edna Citlalli Reyna Ayala", phone: "3171318696", amount: 480, code: "2234434406", nss: "5923082680", parent: "María Edith Ayala moran", parentPhone: "3171116076" },
+    { name: "Edna Citlalli Reyna Ayala", phone: "3171318696", amount: 480, code: "2234434406", nss: "5923082680", parent: "María Edith Ayala moran", parentPhone: "317116076" },
     { name: "Jorge Márquez Loera", phone: "3171234031", amount: 480, code: "224427951", nss: "19240903393", parent: "Ana Liliana Muñoz Pérez", parentPhone: "3171124191" },
     { name: "Lucio Isac Sandoval Quintero", phone: "3171055683", amount: 480, code: "224427137", nss: "0403750889-4", parent: "José Rogelio Sandoval Hernández", parentPhone: "3173884154" },
     { name: "Darío Gómez Rivera", phone: "3171215534", amount: 480, code: "224428532", nss: "7500823935", parent: "Nieva Teresita rivera hueso", parentPhone: "3171056618" },
@@ -1031,7 +1031,7 @@ const App = () => {
   const filteredPassengers = currentBusPassengers.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || (p.code && p.code.includes(searchTerm));
     
-    // NEW FILTER LOGIC: 'pending' vs 'reviewed' vs 'seated' vs leg index vs null
+    // NEW FILTER LOGIC: 'pending' vs 'reviewed' vs 'seated' vs 'no_docs' vs leg index vs null
     let matchesFilter = true;
     if (filterLeg === 'pending') {
         // Ahora verifica si hay documentos Y si el ticket NO ha sido liberado
@@ -1040,8 +1040,11 @@ const App = () => {
         // Verifica si hay documentos Y si el ticket YA fue liberado
         matchesFilter = (p.documents && p.documents.length > 0) && p.ticket_released;
     } else if (filterLeg === 'seated') {
-        // NUEVO: Verifica si tiene asiento asignado
+        // Verifica si tiene asiento asignado
         matchesFilter = p.seat_number !== null;
+    } else if (filterLeg === 'no_docs') {
+        // NUEVO: Verifica si NO tiene documentos subidos
+        matchesFilter = (!p.documents || p.documents.length === 0);
     } else if (filterLeg !== null) {
         matchesFilter = !p.checks[filterLeg];
     }
@@ -1073,6 +1076,8 @@ const App = () => {
   const countPendingCards = currentBusPassengers.filter(p => p.documents && p.documents.length > 0 && !p.ticket_released).length;
   const countReviewedCards = currentBusPassengers.filter(p => p.documents && p.documents.length > 0 && p.ticket_released).length;
   const countSeated = currentBusPassengers.filter(p => p.seat_number).length;
+  // NUEVO COUNT
+  const countNoDocs = currentBusPassengers.filter(p => !p.documents || p.documents.length === 0).length;
 
   const exportToCSV = () => {
     if (!isCoordinator) { triggerLogin(); return; }
@@ -1706,6 +1711,16 @@ const App = () => {
             <Search className="absolute left-4 top-3.5 text-orange-300 transition-colors group-focus-within:text-orange-500" size={18} />
             <input type="text" placeholder="Buscar estudiante (nombre o código)..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-11 pr-4 py-3 bg-white border-none rounded-2xl shadow-md text-sm font-medium focus:ring-4 focus:ring-orange-500/20 transition-all outline-none" />
           </div>
+
+          {/* BOTÓN MAPA (MÁS VISIBLE AHORA) */}
+          <button 
+            onClick={() => setShowBusMap(true)} 
+            className="p-3 bg-white text-orange-600 rounded-2xl shadow-md hover:bg-orange-50 hover:text-orange-700 transition-colors flex items-center justify-center gap-2 border border-orange-100 px-6 group"
+          >
+            <Armchair size={20} strokeWidth={2.5} className="group-hover:scale-110 transition-transform" /> 
+            <span className="font-bold text-sm whitespace-nowrap">Ver Mapa</span>
+          </button>
+
           <button onClick={exportToCSV} className="p-3 bg-white text-green-600 rounded-2xl shadow-md hover:bg-green-50 hover:text-green-700 transition-colors flex items-center justify-center gap-2">
             <Download size={20} strokeWidth={2.5} /> <span className="md:hidden font-bold text-sm">Descargar Excel</span>
           </button>
@@ -1715,15 +1730,15 @@ const App = () => {
         <div className="flex items-center gap-3 mb-6 w-full max-w-full overflow-x-auto pb-2 px-1 no-scrollbar justify-start">
            <div className="flex-shrink-0 bg-white p-2 rounded-full shadow-sm"><ListFilter size={16} className="text-orange-500"/></div>
            
-           {/* MAP BUTTON */}
-           <button onClick={() => setShowBusMap(true)} className="flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-sm bg-white text-gray-600 hover:bg-orange-50 flex items-center gap-2 border border-gray-100 hover:border-orange-200 group">
-              <Armchair size={14} className="text-orange-500 group-hover:scale-110 transition-transform"/>
-              <span className="group-hover:text-orange-600">Mapa</span>
+           {/* 1. TODOS (RESET) */}
+           <button 
+             onClick={() => setFilterLeg(null)} 
+             className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-sm ${filterLeg === null ? 'bg-gray-800 text-white scale-105 shadow-md' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+           >
+             Todos
            </button>
 
-           <div className="flex-shrink-0 w-px h-6 bg-gray-200 mx-1"></div>
-           
-           {/* SORT BUTTON */}
+           {/* 2. ORDEN (ORIGINAL/A-Z) */}
            <button onClick={cycleSortMode} className="flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-sm bg-white text-gray-600 hover:bg-gray-50 flex items-center gap-2 border border-gray-100">
               {sortMode === 'original' ? <ArrowUpDown size={14} className="text-gray-400"/> : <ArrowDownAZ size={14} className="text-orange-500"/>}
               {getSortLabel()}
@@ -1734,39 +1749,36 @@ const App = () => {
              <>
                <div className="flex-shrink-0 w-px h-6 bg-gray-200 mx-1"></div>
 
-               {/* FILTER: CARTAS PENDIENTES */}
+               {/* 3. CARTAS PENDIENTES */}
                <button 
                   onClick={() => setFilterLeg('pending')} 
                   className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 shadow-sm ${filterLeg === 'pending' ? 'bg-yellow-500 text-white scale-105 shadow-yellow-500/30' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
                >
                   <FileText size={14} /> Cartas Pendientes
-                  {/* Se actualizó el conteo para usar la nueva variable local (currentBusPassengers) */}
                   <span className="bg-white/20 px-1.5 py-0.5 rounded-md text-[10px]">{countPendingCards}</span>
                </button>
 
-               {/* FILTER: CARTAS REVISADAS (NUEVO) */}
+               {/* 4. CARTAS REVISADAS */}
                <button 
                   onClick={() => setFilterLeg('reviewed')} 
                   className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 shadow-sm ${filterLeg === 'reviewed' ? 'bg-green-500 text-white scale-105 shadow-green-500/30' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
                >
                   <FileCheck size={14} /> Cartas Revisadas
-                  {/* Se actualizó el conteo para usar la nueva variable local (currentBusPassengers) */}
                   <span className="bg-white/20 px-1.5 py-0.5 rounded-md text-[10px]">{countReviewedCards}</span>
                </button>
 
-               {/* FILTER: CON ASIENTO (NUEVO) */}
+               {/* 5. SIN DOCUMENTOS */}
                <button 
-                  onClick={() => setFilterLeg('seated')} 
-                  className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 shadow-sm ${filterLeg === 'seated' ? 'bg-purple-500 text-white scale-105 shadow-purple-500/30' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                  onClick={() => setFilterLeg('no_docs')} 
+                  className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 shadow-sm ${filterLeg === 'no_docs' ? 'bg-red-500 text-white scale-105 shadow-red-500/30' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
                >
-                  <Armchair size={14} /> Con Asiento
-                  {/* Se actualizó el conteo para usar la nueva variable local (currentBusPassengers) */}
-                  <span className="bg-white/20 px-1.5 py-0.5 rounded-md text-[10px]">{countSeated}</span>
+                  <FileWarning size={14} /> Sin Documentos
+                  <span className="bg-white/20 px-1.5 py-0.5 rounded-md text-[10px]">{countNoDocs}</span>
                </button>
 
                <div className="flex-shrink-0 w-px h-6 bg-gray-200 mx-1"></div>
 
-               <button onClick={() => setFilterLeg(null)} className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-sm ${filterLeg === null ? 'bg-gray-800 text-white scale-105 shadow-md' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>Todos</button>
+               {/* 6, 7, 8. ASISTENCIA (Ida, Inter, Regreso) */}
                {legs.map((leg) => (
                  <button key={leg.id} onClick={() => setFilterLeg(leg.id)} className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 shadow-sm ${filterLeg === leg.id ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white scale-105 shadow-orange-500/30' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>
                     <span className={filterLeg === leg.id ? 'text-white' : 'text-orange-400'}>{leg.icon}</span> {filterLeg === leg.id ? `Faltan ${leg.short}` : leg.short}
@@ -1803,7 +1815,7 @@ const App = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-20 max-w-7xl mx-auto">
           {filteredPassengers.length === 0 ? (
             <div className="col-span-full text-center py-12 px-6 bg-white/50 rounded-3xl border border-dashed border-gray-300 mt-4">
-               {filterLeg !== null && filterLeg !== 'pending' && filterLeg !== 'reviewed' && filterLeg !== 'seated' ? (
+               {filterLeg !== null && filterLeg !== 'pending' && filterLeg !== 'reviewed' && filterLeg !== 'seated' && filterLeg !== 'no_docs' ? (
                  <>
                    <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 shadow-inner"><Check size={32} className="text-green-600" strokeWidth={3} /></div>
                    <h3 className="text-lg font-bold text-gray-800">¡Zona Completada!</h3>
@@ -1815,6 +1827,7 @@ const App = () => {
                         {filterLeg === 'pending' ? 'No hay documentos pendientes de revisión' : 
                          filterLeg === 'reviewed' ? 'No hay cartas revisadas aún' : 
                          filterLeg === 'seated' ? 'Nadie ha apartado asiento aún' :
+                         filterLeg === 'no_docs' ? '¡Excelente! Todos han subido sus documentos' :
                          'No se encontraron resultados'}
                     </p>
                  </>
