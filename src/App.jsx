@@ -222,6 +222,9 @@ const App = () => {
   // States for double verification
   const [authCodeInput, setAuthCodeInput] = useState('');
   const [authPhoneInput, setAuthPhoneInput] = useState('');
+  
+  // NEW STATE: Authentication Error inside Modal
+  const [authError, setAuthError] = useState('');
 
   // DELETE DOCUMENT CONFIRMATION STATE (Reemplaza deleteLetterId)
   const [documentToDelete, setDocumentToDelete] = useState(null); // { passengerId, docUrl, docName }
@@ -859,16 +862,15 @@ const App = () => {
           if (codeMatch && phoneMatch) {
               isValid = true;
           } else {
-              // Mensaje genérico de error por seguridad
-              showNotification("Datos incorrectos. Por favor verifica tu información.", "error");
-              return; // Detener si falla alguno
+              setAuthError("Datos Incorrectos"); // SET ERROR INSIDE MODAL
+              return; 
           }
       } else {
           // Solo Teléfono (Fallback)
           if (phoneInputClean.length > 6 && phoneInputClean === targetPhoneClean) {
               isValid = true;
           } else {
-              showNotification("Datos incorrectos. Verifica el número.", "error");
+              setAuthError("Datos Incorrectos"); // SET ERROR INSIDE MODAL
               return;
           }
       }
@@ -880,6 +882,7 @@ const App = () => {
           showNotification(`¡Bienvenido ${target.name.split(' ')[0]}!`);
           setAuthCodeInput('');
           setAuthPhoneInput('');
+          setAuthError(''); // Clear error
       }
   };
 
@@ -887,6 +890,7 @@ const App = () => {
       setAuthTargetId(id);
       setAuthCodeInput('');
       setAuthPhoneInput('');
+      setAuthError(''); // RESET ERROR STATE
       setShowAuthModal(true);
   };
 
@@ -986,25 +990,42 @@ const App = () => {
 
   // --- SORTING LOGIC ---
   const getSurname = (fullName) => {
+    // Normalizar espacios y manejar casos vacíos
+    if (!fullName) return '';
     const parts = fullName.trim().split(/\s+/);
-    if (parts.length >= 4) return parts[2];
-    if (parts.length === 3) return parts[1];
-    return parts[0];
+    const len = parts.length;
+
+    // Lógica mejorada para apellidos:
+    // 1. Si son 2 palabras o menos: Tomamos la última como apellido.
+    // 2. Si son más de 2 palabras: Asumimos que las últimas 2 son apellidos (Paterno y Materno),
+    //    por lo tanto el apellido paterno (para ordenar) es el penúltimo.
+    
+    if (len <= 2) return parts[len - 1] || '';
+    
+    // Caso especial: Detectar apellidos compuestos comunes si es necesario, 
+    // pero la regla del penúltimo funciona mejor para "3 nombres + 2 apellidos" que la lógica anterior.
+    return parts[len - 2];
   };
 
   const formatDisplayName = (name) => {
     if (sortMode !== 'lastname') return name;
+    if (!name) return '';
+    
     const parts = name.trim().split(/\s+/);
-    if (parts.length >= 4) {
-       return `${parts.slice(2).join(' ')} ${parts.slice(0, 2).join(' ')}`;
+    const len = parts.length;
+
+    // Si tiene 2 palabras o menos (Ej: Juan Perez) -> Perez Juan
+    if (len <= 2) {
+        if (len === 2) return `${parts[1]} ${parts[0]}`;
+        return name;
     }
-    if (parts.length === 3) {
-       return `${parts.slice(1).join(' ')} ${parts[0]}`;
-    }
-    if (parts.length === 2) {
-       return `${parts[1]} ${parts[0]}`;
-    }
-    return name;
+
+    // Heurística estándar MX: Los últimos 2 son apellidos, el resto son nombres.
+    // Ej: "Jose de Jesús Orozco Garcia" -> Apellidos: Orozco Garcia | Nombres: Jose de Jesús
+    const surnames = parts.slice(len - 2).join(' ');
+    const names = parts.slice(0, len - 2).join(' ');
+    
+    return `${surnames} ${names}`;
   };
 
   const cycleSortMode = () => {
@@ -1107,7 +1128,27 @@ const App = () => {
       return bus ? bus.color : "from-gray-500 to-gray-600";
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-orange-50 text-orange-600 font-bold">Cargando datos...</div>;
+  // --- PANTALLA DE CARGA CORREGIDA ---
+  // Se usa 'fixed inset-0' para asegurar que cubra el 100% de la pantalla sin recortes
+  if (loading) {
+    return (
+      <div className="fixed inset-0 z-[100] bg-orange-50 flex flex-col items-center justify-center w-screen h-screen overflow-hidden">
+        {/* Spinner animado */}
+        <div className="relative mb-6">
+            <div className="animate-spin rounded-full h-20 w-20 border-4 border-orange-200 border-t-orange-600 shadow-xl"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+                <Bus size={24} className="text-orange-500/50" />
+            </div>
+        </div>
+        
+        {/* Texto de carga */}
+        <div className="text-center animate-in fade-in zoom-in duration-500 px-6">
+            <h2 className="text-3xl font-black text-orange-600 mb-1 tracking-tighter">UNIÓN ESTUDIANTIL</h2>
+            <p className="text-orange-400 font-bold text-xs uppercase tracking-[0.3em] animate-pulse">Cargando Sistema...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white font-sans pb-24 text-gray-800 overflow-x-hidden w-full max-w-[100vw]">
@@ -1144,6 +1185,13 @@ const App = () => {
            <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-orange-100 text-center relative">
                <button onClick={() => setShowAuthModal(false)} className="absolute top-4 right-4 bg-gray-100 p-2 rounded-full hover:bg-gray-200"><X size={20}/></button>
                
+               {/* NEW: ERROR MESSAGE INSIDE MODAL */}
+               {authError && (
+                   <div className="mb-4 p-3 bg-red-50 text-red-500 border border-red-100 rounded-xl font-bold text-sm animate-in fade-in slide-in-from-top-2 flex items-center justify-center gap-2">
+                       <AlertTriangle size={16}/> {authError}
+                   </div>
+               )}
+
                {(() => {
                    const target = passengers.find(p => p.id === authTargetId);
                    // Lógica para decidir qué pedir: Si tiene código válido, pide ambos. Si no, pide teléfono.
@@ -1167,8 +1215,11 @@ const App = () => {
                                      type="text"
                                      placeholder="Código de Estudiante"
                                      value={authCodeInput}
-                                     onChange={(e) => setAuthCodeInput(e.target.value)}
-                                     className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-center font-bold text-lg focus:ring-2 focus:ring-orange-500 outline-none" 
+                                     onChange={(e) => {
+                                         setAuthCodeInput(e.target.value);
+                                         if(authError) setAuthError(''); // Clear error on type
+                                     }}
+                                     className={`w-full p-4 bg-gray-50 border rounded-xl text-center font-bold text-lg focus:ring-2 focus:ring-orange-500 outline-none ${authError ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}
                                      autoFocus
                                    />
                                )}
@@ -1176,8 +1227,11 @@ const App = () => {
                                  type="tel"
                                  placeholder="Número de Teléfono"
                                  value={authPhoneInput}
-                                 onChange={(e) => setAuthPhoneInput(e.target.value)}
-                                 className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-center font-bold text-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                                 onChange={(e) => {
+                                     setAuthPhoneInput(e.target.value);
+                                     if(authError) setAuthError(''); // Clear error on type
+                                 }}
+                                 className={`w-full p-4 bg-gray-50 border rounded-xl text-center font-bold text-lg focus:ring-2 focus:ring-orange-500 outline-none ${authError ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}
                                  autoFocus={!hasCode} // Autofocus en teléfono si no hay código
                                />
                                <button type="submit" className="w-full py-3 rounded-xl font-bold text-white bg-orange-600 hover:bg-orange-700 transition-colors shadow-lg shadow-orange-500/30">
@@ -1546,27 +1600,57 @@ const App = () => {
       {/* LOGIN MODAL */}
       {showLoginModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-orange-200">
-             <div className="flex justify-between items-center mb-4">
-               <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                 <Lock className="text-orange-500" /> Acceso Coordinador
-               </h3>
-               <button onClick={() => setShowLoginModal(false)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"><X size={20}/></button>
-             </div>
+           {(() => {
+             // Obtener configuración del camión actual para estilos dinámicos
+             const busConfig = BUSES.find(b => b.id === currentBus);
              
-             <form onSubmit={handleLogin} className="space-y-4">
-                {loginError && <div className="p-3 bg-red-100 text-red-700 rounded-xl text-sm font-bold text-center">{loginError}</div>}
-                <div>
-                   <label className="text-xs font-bold text-gray-500 ml-1">USUARIO</label>
-                   <input type="text" value={loginUser} onChange={(e) => setLoginUser(e.target.value)} className="w-full p-3 bg-gray-50 rounded-xl font-medium focus:ring-2 focus:ring-orange-500 outline-none" placeholder="Código o Nombre" />
-                </div>
-                <div>
-                   <label className="text-xs font-bold text-gray-500 ml-1">CONTRASEÑA</label>
-                   <input type="password" value={loginPass} onChange={(e) => setLoginPass(e.target.value)} className="w-full p-3 bg-gray-50 rounded-xl font-medium focus:ring-2 focus:ring-orange-500 outline-none" placeholder="••••••" />
-                </div>
-                <button type="submit" className="w-full bg-orange-600 text-white py-3 rounded-xl font-bold text-lg hover:bg-orange-700 transition-colors">Iniciar Sesión</button>
-             </form>
-          </div>
+             // Derivar colores basados en la configuración del bus
+             // Bus 1 (Naranja), Bus 2 (Verde), Bus 3 (Rojo)
+             const borderColor = busConfig.id === 1 ? 'border-orange-200' : (busConfig.id === 2 ? 'border-green-200' : 'border-red-200');
+             const ringColor = busConfig.id === 1 ? 'focus:ring-orange-500' : (busConfig.id === 2 ? 'focus:ring-green-500' : 'focus:ring-red-500');
+             const iconColor = busConfig.text; // Ya viene como clase tailwind (ej: text-orange-600)
+             
+             return (
+              <div className={`bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border-2 ${borderColor}`}>
+                 <div className="flex justify-between items-center mb-4">
+                   <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                     <Lock className={iconColor} /> Acceso Coordinador C{currentBus}
+                   </h3>
+                   <button onClick={() => setShowLoginModal(false)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"><X size={20}/></button>
+                 </div>
+                 
+                 <form onSubmit={handleLogin} className="space-y-4">
+                    {loginError && <div className="p-3 bg-red-100 text-red-700 rounded-xl text-sm font-bold text-center">{loginError}</div>}
+                    <div>
+                       <label className="text-xs font-bold text-gray-500 ml-1">USUARIO</label>
+                       <input 
+                         type="text" 
+                         value={loginUser} 
+                         onChange={(e) => setLoginUser(e.target.value)} 
+                         className={`w-full p-3 bg-gray-50 rounded-xl font-medium focus:ring-2 ${ringColor} outline-none transition-all`} 
+                         placeholder="Código o Nombre" 
+                       />
+                    </div>
+                    <div>
+                       <label className="text-xs font-bold text-gray-500 ml-1">CONTRASEÑA</label>
+                       <input 
+                         type="password" 
+                         value={loginPass} 
+                         onChange={(e) => setLoginPass(e.target.value)} 
+                         className={`w-full p-3 bg-gray-50 rounded-xl font-medium focus:ring-2 ${ringColor} outline-none transition-all`} 
+                         placeholder="••••••" 
+                       />
+                    </div>
+                    <button 
+                      type="submit" 
+                      className={`w-full bg-gradient-to-r ${busConfig.color} text-white py-3 rounded-xl font-bold text-lg hover:opacity-90 transition-opacity shadow-lg`}
+                    >
+                      Iniciar Sesión
+                    </button>
+                 </form>
+              </div>
+             );
+           })()}
         </div>
       )}
       
