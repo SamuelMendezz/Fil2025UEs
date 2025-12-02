@@ -1,9 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone, Edit2, Lock, LogOut, EyeOff, Crown, FileText, Users, GraduationCap, ListFilter, Save, ShieldAlert, CreditCard, Hash, User, Bell, ArrowUpDown, ArrowDownAZ, Armchair, LayoutGrid, UserPlus, Bath, Upload, FileCheck, Ticket, ExternalLink, Unlock, AlertTriangle, Eye, KeyRound, FileWarning } from 'lucide-react';
-
-// NOTA IMPORTANTE: Para una correcta visualización responsive en la web,
-// el HTML que embebe este componente debe incluir la siguiente etiqueta meta:
-// <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 // --- CONFIGURACIÓN DE SUPABASE ---
 const SUPABASE_URL = 'https://fgzegoflnkwkcztivila.supabase.co';
@@ -147,12 +143,12 @@ const OFFICIAL_LIST_C3 = [
     { name: "Osmar Alejandro Méndez Ibarra", phone: "3173896781", amount: 480, code: "N/A", nss: "N/A", parent: "N/A", parentPhone: "N/A" },
     { name: "Baldwin Alexander Rodríguez Hernández", phone: "3173886218", amount: 480, code: "225201299", nss: "4027737156", parent: "Iván Rodríguez", parentPhone: "3171210596" },
     { name: "Marcos Zavalza Medina", phone: "N/A", amount: 480, code: "221431036", nss: "32110697854", parent: "José Salvador Zavalza", parentPhone: "3171041852" },
-    { name: "Camila Anahí Torres Montes", phone: "3171283203", code: "223443252", amount: 480, nss: "10230804048", parent: "Octavio César torres gomez", parentPhone: "3173883500" },
-    { name: "Karol Gabriela Robles Uribe", phone: "3171010251", code: "223443929", amount: 480, nss: "6023083445-3", parent: "Ricardo robles castillo", parentPhone: "3173886055" },
-    { name: "Nahomi Dayan Núñez Sánchez", phone: "3178734986", code: "224427129", amount: 480, nss: "35250950421", parent: "Ana Gabriela Sánchez Sánchez", parentPhone: "3173833784" },
-    { name: "Milton Santiago López Guerrero", phone: "3171070966", code: "223443686", amount: 480, nss: "0401720401-9", parent: "Roberto López Cázares", parentPhone: "3173889949" },
-    { name: "Iliana Valentina Rodríguez", phone: "3173851141", code: "223441608", amount: 480, nss: "25230806066", parent: "Gustavo Rodriguez Gómez", parentPhone: "3171049390" },
-    { name: "Diego Alejandro Mancilla García", phone: "3171128601", code: "225201213", amount: 480, nss: "54927417870", parent: "Alma Delia García torres", parentPhone: "3171079116" },
+    { name: "Camila Anahí Torres Montes", phone: "3171283203", amount: 480, code: "223443252", nss: "10230804048", parent: "Octavio César torres gomez", parentPhone: "3173883500" },
+    { name: "Karol Gabriela Robles Uribe", phone: "3171010251", amount: 480, code: "223443929", nss: "6023083445-3", parent: "Ricardo robles castillo", parentPhone: "3173886055" },
+    { name: "Nahomi Dayan Núñez Sánchez", phone: "3178734986", amount: 480, code: "224427129", nss: "35250950421", parent: "Ana Gabriela Sánchez Sánchez", parentPhone: "3173833784" },
+    { name: "Milton Santiago López Guerrero", phone: "3171070966", amount: 480, code: "223443686", nss: "0401720401-9", parent: "Roberto López Cázares", parentPhone: "3173889949" },
+    { name: "Iliana Valentina Rodríguez", phone: "3173851141", amount: 480, code: "223441608", nss: "25230806066", parent: "Gustavo Rodriguez Gómez", parentPhone: "3171049390" },
+    { name: "Diego Alejandro Mancilla García", phone: "3171128601", amount: 480, code: "225201213", nss: "54927417870", parent: "Alma Delia García torres", parentPhone: "3171079116" },
     { name: "Abner Enríquez Casillas", phone: "+1 8185248474", amount: 300, code: "N/A", nss: "N/A", parent: "N/A", parentPhone: "N/A" },
     { name: "Paola Sánchez Soltero", phone: "3171292143", code: "224430405", amount: 480, nss: "18240947020", parent: "Karla maravilla soltero mata", parentPhone: "3171292144" },
     { name: "Iker Steve Soltero Rodríguez", phone: "3171041444", code: "221003476", amount: 480, nss: "N/A", parent: "N/A", parentPhone: "N/A" }
@@ -211,7 +207,6 @@ const App = () => {
   const isCoordinator = !!currentUser;
 
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [isLoginModalClosing, setIsLoginModalClosing] = useState(false); // NEW STATE for close animation
   const [loginUser, setLoginUser] = useState('');
   const [loginPass, setLoginPass] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -222,7 +217,6 @@ const App = () => {
 
   // AUTH MODAL STATE
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [isAuthModalClosing, setIsAuthModalClosing] = useState(false); // NEW STATE for close animation
   const [authTargetId, setAuthTargetId] = useState(null);
   
   // States for double verification
@@ -247,15 +241,6 @@ const App = () => {
           setCurrentBus(userBusAccess);
       }
   }, [isCoordinator, userBusAccess]);
-
-  // Function to handle close animation and unmounting
-  const closeLoginModal = useCallback(() => {
-    setIsLoginModalClosing(true);
-    setTimeout(() => {
-      setShowLoginModal(false);
-      setIsLoginModalClosing(false);
-    }, 300); // Duration matches the transition in CSS
-  }, []);
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -296,7 +281,7 @@ const App = () => {
       localStorage.setItem('fil2025_user', name);
       localStorage.setItem('fil2025_bus_access', accessLevel);
       
-      closeLoginModal(); // Use the closing handler
+      setShowLoginModal(false);
       setLoginError('');
       setLoginUser(''); setLoginPass('');
       
@@ -319,15 +304,6 @@ const App = () => {
     setShowLoginModal(true);
     setLoginError('');
   };
-
-  // Function to handle close animation and unmounting for Auth Modal
-  const closeAuthModal = useCallback(() => {
-    setIsAuthModalClosing(true);
-    setTimeout(() => {
-      setShowAuthModal(false);
-      setIsAuthModalClosing(false);
-    }, 300); // Duration matches the transition in CSS
-  }, []);
 
   // Check Permission Helper
   // Un usuario SÓLO puede editar si es coordinador Y si el bus del pasajero es su bus asignado.
@@ -574,8 +550,7 @@ const App = () => {
 
   const legs = [
     { id: 0, label: "Salida Autlán", sub: "→ FIL", icon: <Bus size={14} />, short: "Ida" },
-    // CAMBIO APLICADO: Cambiamos MapPin por LayoutGrid para indicar el mapa/cuadrícula de asientos.
-    { id: 1, label: "Salida FIL", sub: "→ Plaza", icon: <LayoutGrid size={14} />, short: "Inter" },
+    { id: 1, label: "Salida FIL", sub: "→ Plaza", icon: <MapPin size={14} />, short: "Inter" },
     { id: 2, label: "Regreso Plaza", sub: "→ Autlán", icon: <RotateCcw size={14} />, short: "Regreso" }
   ];
 
@@ -904,7 +879,7 @@ const App = () => {
       }
 
       if (isValid) {
-          closeAuthModal(); // Use closing handler
+          setShowAuthModal(false);
           setTicketData(target);
           setShowTicketModal(true);
           showNotification(`¡Bienvenido ${target.name.split(' ')[0]}!`);
@@ -919,7 +894,6 @@ const App = () => {
       setAuthCodeInput('');
       setAuthPhoneInput('');
       setAuthError(''); // RESET ERROR STATE
-      setIsAuthModalClosing(false); // Ensure it's not closing
       setShowAuthModal(true);
   };
 
@@ -1184,19 +1158,7 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-white font-sans pb-24 text-gray-800 overflow-x-hidden w-full">
-      {/* Estilos CSS para el scrollbar (para los filtros y listas internas) */}
-      <style>
-          {`
-          .no-scrollbar::-webkit-scrollbar {
-              display: none;
-          }
-          .no-scrollbar {
-              -ms-overflow-style: none;  /* IE and Edge */
-              scrollbar-width: none;  /* Firefox */
-          }
-          `}
-      </style>
-
+      
       {/* NOTIFICATION TOAST */}
       <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[60] transition-all duration-500 ease-in-out ${notification.visible ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0 pointer-events-none'}`}>
         <div className={`flex items-center gap-3 px-6 py-3 rounded-full shadow-2xl border ${notification.type === 'error' ? 'bg-white border-red-200 text-red-600' : 'bg-white border-green-200 text-green-700'}`}>
@@ -1223,76 +1185,69 @@ const App = () => {
         </div>
       )}
 
-      {/* AUTH MODAL FOR PASSENGERS (DYNAMIC: CODE & PHONE) - MEJORADO CON ANIMACIONES */}
+      {/* AUTH MODAL FOR PASSENGERS (DYNAMIC: CODE & PHONE) */}
       {showAuthModal && (
-        // Contenedor principal: Controla el fade del fondo (opacidad)
-        <div className={`fixed inset-0 backdrop-blur-sm z-[80] flex items-center justify-center p-4 transition-opacity duration-300 bg-black/80
-                        ${isAuthModalClosing ? 'opacity-0' : 'opacity-100'}`}
-        >
-           {(() => {
-                const target = passengers.find(p => p.id === authTargetId);
-                const hasCode = target && target.code && target.code !== 'N/A' && target.code !== 'Pendiente';
-
-                // Modal Content: Controla el zoom/scale y el fade (opacidad)
-                const modalClasses = `
-                  bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-orange-200 text-center relative
-                  transform transition-all duration-300
-                  opacity-0 scale-90
-                  ${isAuthModalClosing ? '' : 'scale-100 opacity-100'}
-                `;
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[80] flex items-center justify-center p-4 animate-in fade-in">
+           <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-orange-100 text-center relative">
+               <button onClick={() => setShowAuthModal(false)} className="absolute top-4 right-4 bg-gray-100 p-2 rounded-full hover:bg-gray-200"><X size={20}/></button>
                
-               return (
-                  <div className={modalClasses}>
-                     <button onClick={closeAuthModal} className="absolute top-4 right-4 bg-gray-100 p-2 rounded-full hover:bg-gray-200 transition-colors"><X size={20}/></button>
-                      
-                      {authError && (
-                          <div className="mb-4 p-3 bg-red-50 text-red-500 border border-red-100 rounded-xl font-bold text-sm animate-in fade-in slide-in-from-top-2 flex items-center justify-center gap-2">
-                              <AlertTriangle size={16}/> {authError}
-                          </div>
-                      )}
+               {/* NEW: ERROR MESSAGE INSIDE MODAL */}
+               {authError && (
+                   <div className="mb-4 p-3 bg-red-50 text-red-500 border border-red-100 rounded-xl font-bold text-sm animate-in fade-in slide-in-from-top-2 flex items-center justify-center gap-2">
+                       <AlertTriangle size={16}/> {authError}
+                   </div>
+               )}
 
-                      <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 text-orange-600 shadow-md">
-                          <KeyRound size={32} strokeWidth={2.5}/>
-                      </div>
-                      <h3 className="text-xl font-black text-gray-800 mb-2">Verificación de Boleto</h3>
-                      <p className="text-sm text-gray-500 mb-6">
-                          {hasCode 
-                           ? "Ingresa tu Código de Estudiante y Teléfono registrado para ver tu pase." 
-                           : "Ingresa tu Número de Teléfono para verificar tu identidad."}
-                      </p>
-                      
-                      <form onSubmit={handleVerifyIdentity} className="space-y-4">
-                          {hasCode && (
-                              <input 
-                                type="text"
-                                placeholder="Código de Estudiante"
-                                value={authCodeInput}
-                                onChange={(e) => {
-                                    setAuthCodeInput(e.target.value);
-                                    if(authError) setAuthError(''); // Clear error on type
-                                }}
-                                className={`w-full p-4 bg-gray-50 border rounded-xl text-left font-bold text-lg focus:ring-2 focus:ring-orange-500 outline-none ${authError ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}
-                                autoFocus
-                              />
-                          )}
-                          <input 
-                            type="tel"
-                            placeholder="Número de Telefono"
-                            value={authPhoneInput}
-                            onChange={(e) => {
-                                setAuthPhoneInput(e.target.value);
-                                if(authError) setAuthError(''); // Clear error on type
-                            }}
-                            className={`w-full p-4 bg-gray-50 border rounded-xl text-left font-bold text-lg focus:ring-2 focus:ring-orange-500 outline-none ${authError ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}
-                            autoFocus={!hasCode} // Autofocus en teléfono si no hay código
-                          />
-                          <button type="submit" className="w-full py-3 rounded-xl font-bold text-white bg-orange-600 hover:bg-orange-700 transition-colors shadow-lg shadow-orange-500/30 active:scale-[0.98]">
-                            VER BOLETO
-                          </button>
-                      </form>
-                  </div>
-               );
-           })()}
+               {(() => {
+                   const target = passengers.find(p => p.id === authTargetId);
+                   // Lógica para decidir qué pedir: Si tiene código válido, pide ambos. Si no, pide teléfono.
+                   const hasCode = target && target.code && target.code !== 'N/A' && target.code !== 'Pendiente';
+                   
+                   return (
+                       <>
+                           <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 text-orange-500">
+                               <ShieldAlert size={32}/>
+                           </div>
+                           <h3 className="text-xl font-bold text-gray-800 mb-2">Verificación de Seguridad</h3>
+                           <p className="text-sm text-gray-500 mb-6">
+                               {hasCode 
+                                ? "Para proteger tu boleto, ingresa tu Código de Estudiante y tu Teléfono." 
+                                : "Ingresa tu Número de Teléfono registrado para ver tu boleto."}
+                           </p>
+                           
+                           <form onSubmit={handleVerifyIdentity} className="space-y-4">
+                               {hasCode && (
+                                   <input 
+                                     type="text"
+                                     placeholder="Código de Estudiante"
+                                     value={authCodeInput}
+                                     onChange={(e) => {
+                                         setAuthCodeInput(e.target.value);
+                                         if(authError) setAuthError(''); // Clear error on type
+                                     }}
+                                     className={`w-full p-4 bg-gray-50 border rounded-xl text-center font-bold text-lg focus:ring-2 focus:ring-orange-500 outline-none ${authError ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}
+                                     autoFocus
+                                   />
+                               )}
+                               <input 
+                                 type="tel"
+                                 placeholder="Número de Teléfono"
+                                 value={authPhoneInput}
+                                 onChange={(e) => {
+                                     setAuthPhoneInput(e.target.value);
+                                     if(authError) setAuthError(''); // Clear error on type
+                                 }}
+                                 className={`w-full p-4 bg-gray-50 border rounded-xl text-center font-bold text-lg focus:ring-2 focus:ring-orange-500 outline-none ${authError ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}
+                                 autoFocus={!hasCode} // Autofocus en teléfono si no hay código
+                               />
+                               <button type="submit" className="w-full py-3 rounded-xl font-bold text-white bg-orange-600 hover:bg-orange-700 transition-colors shadow-lg shadow-orange-500/30">
+                                 Ver mi Boleto
+                               </button>
+                           </form>
+                       </>
+                   );
+               })()}
+           </div>
         </div>
       )}
 
@@ -1348,7 +1303,7 @@ const App = () => {
           </div>
       )}
 
-      {/* BUS MAP MODAL - AJUSTADO PARA RESPONSIVE EN MÓVIL */}
+      {/* BUS MAP MODAL */}
       {showBusMap && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
             <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl border border-orange-200 relative max-h-[95vh] flex flex-col overflow-hidden">
@@ -1361,21 +1316,20 @@ const App = () => {
                 
                 <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-gray-100/50">
                     <div className="flex flex-col md:flex-row gap-8">
-                        {/* THE BUS - Agregado min-w-0 para permitir que se encoja en móvil */}
-                        <div className="flex-1 min-w-0"> 
-                            {/* Reducción de padding y margen en móvil */}
-                            <div className="bg-white p-4 rounded-[3rem] shadow-xl border-4 border-gray-200 relative mx-auto max-w-sm">
+                        {/* THE BUS */}
+                        <div className="flex-1">
+                            <div className="bg-white p-6 rounded-[3rem] shadow-xl border-4 border-gray-200 relative mx-auto max-w-sm">
                                 {/* Driver Area */}
-                                <div className="border-b-4 border-dashed border-gray-200 pb-4 mb-4 flex justify-between px-4 text-gray-300 font-bold uppercase tracking-widest text-xs">
+                                <div className="border-b-4 border-dashed border-gray-200 pb-4 mb-6 flex justify-between px-8 text-gray-300 font-bold uppercase tracking-widest text-xs">
                                     <span>Frente</span>
-                                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center border-2 border-gray-200"><User size={18}/></div>
+                                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center border-2 border-gray-200"><User size={20}/></div>
                                 </div>
 
                                 {/* Seats Grid */}
-                                <div className="space-y-2"> {/* Reducido espaciado vertical */}
+                                <div className="space-y-3">
                                     {/* Rows 1-10 (Standard 4 seats) */}
                                     {Array.from({ length: 10 }).map((_, rowIndex) => (
-                                        <div key={rowIndex} className="flex justify-between items-center gap-2">
+                                        <div key={rowIndex} className="flex justify-between items-center gap-2 md:gap-4">
                                             <div className="flex gap-2">
                                                 {[1, 2].map(offset => {
                                                     const seatNum = (rowIndex * 4) + offset;
@@ -1384,17 +1338,14 @@ const App = () => {
                                                         <button 
                                                             key={seatNum}
                                                             onClick={() => handleSeatClick(seatNum)}
-                                                            // Asientos más pequeños en móvil (w-8 h-8)
-                                                            className={`w-8 h-8 md:w-12 md:h-12 rounded-lg flex items-center justify-center shadow-sm transition-all transform hover:scale-110 active:scale-95 border-b-4 ${occupant ? 'bg-red-500 border-red-700 text-white' : 'bg-green-400 border-green-600 text-white hover:bg-green-500'}`}
+                                                            className={`w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center shadow-sm transition-all transform hover:scale-110 active:scale-95 border-b-4 ${occupant ? 'bg-red-500 border-red-700 text-white' : 'bg-green-400 border-green-600 text-white hover:bg-green-500'}`}
                                                         >
-                                                            {/* Texto más pequeño para nombres en móvil */}
-                                                            {occupant ? <span className="text-[8px] font-bold leading-none overflow-hidden px-0.5">{getFirstName(occupant.name)}</span> : <span className="text-[10px] font-bold opacity-50">{seatNum}</span>}
+                                                            {occupant ? <span className="text-[10px] font-bold leading-none overflow-hidden px-0.5">{getFirstName(occupant.name)}</span> : <span className="text-xs font-bold opacity-50">{seatNum}</span>}
                                                         </button>
                                                     );
                                                 })}
                                             </div>
-                                            {/* Texto de fila más pequeño */}
-                                            <span className="text-[9px] font-bold text-gray-300 w-4 text-center">{rowIndex + 1}</span> 
+                                            <span className="text-[10px] font-bold text-gray-300 w-4 text-center">{rowIndex + 1}</span>
                                             <div className="flex gap-2">
                                                 {[3, 4].map(offset => {
                                                     const seatNum = (rowIndex * 4) + offset;
@@ -1403,9 +1354,9 @@ const App = () => {
                                                         <button 
                                                             key={seatNum}
                                                             onClick={() => handleSeatClick(seatNum)}
-                                                            className={`w-8 h-8 md:w-12 md:h-12 rounded-lg flex items-center justify-center shadow-sm transition-all transform hover:scale-110 active:scale-95 border-b-4 ${occupant ? 'bg-red-500 border-red-700 text-white' : 'bg-green-400 border-green-600 text-white hover:bg-green-500'}`}
+                                                            className={`w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center shadow-sm transition-all transform hover:scale-110 active:scale-95 border-b-4 ${occupant ? 'bg-red-500 border-red-700 text-white' : 'bg-green-400 border-green-600 text-white hover:bg-green-500'}`}
                                                         >
-                                                            {occupant ? <span className="text-[8px] font-bold leading-none overflow-hidden px-0.5">{getFirstName(occupant.name)}</span> : <span className="text-[10px] font-bold opacity-50">{seatNum}</span>}
+                                                            {occupant ? <span className="text-[10px] font-bold leading-none overflow-hidden px-0.5">{getFirstName(occupant.name)}</span> : <span className="text-xs font-bold opacity-50">{seatNum}</span>}
                                                         </button>
                                                     );
                                                 })}
@@ -1414,7 +1365,7 @@ const App = () => {
                                     ))}
                                     
                                     {/* Row 11 (41, 42) & WC */}
-                                    <div className="flex justify-between items-center gap-2 border-t-2 border-dashed border-gray-100 pt-2">
+                                    <div className="flex justify-between items-center gap-2 md:gap-4 border-t-2 border-dashed border-gray-100 pt-3">
                                         {/* Left: 41, 42 */}
                                         <div className="flex gap-2">
                                             {[41, 42].map(seatNum => {
@@ -1423,9 +1374,9 @@ const App = () => {
                                                     <button 
                                                         key={seatNum}
                                                         onClick={() => handleSeatClick(seatNum)}
-                                                        className={`w-8 h-8 md:w-12 md:h-12 rounded-lg flex items-center justify-center shadow-sm transition-all transform hover:scale-110 active:scale-95 border-b-4 ${occupant ? 'bg-red-500 border-red-700 text-white' : 'bg-green-400 border-green-600 text-white hover:bg-green-500'}`}
+                                                        className={`w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center shadow-sm transition-all transform hover:scale-110 active:scale-95 border-b-4 ${occupant ? 'bg-red-500 border-red-700 text-white' : 'bg-green-400 border-green-600 text-white hover:bg-green-500'}`}
                                                     >
-                                                        {occupant ? <span className="text-[8px] font-bold leading-none overflow-hidden px-0.5">{getFirstName(occupant.name)}</span> : <span className="text-[10px] font-bold opacity-50">{seatNum}</span>}
+                                                        {occupant ? <span className="text-[10px] font-bold leading-none overflow-hidden px-0.5">{getFirstName(occupant.name)}</span> : <span className="text-xs font-bold opacity-50">{seatNum}</span>}
                                                     </button>
                                                 );
                                             })}
@@ -1433,15 +1384,15 @@ const App = () => {
                                         
                                         {/* Aisle & Right Side WC */}
                                         <div className="flex gap-2 items-center justify-end flex-1">
-                                            {/* WC Area: Usamos w-16 h-8 en móvil para que se encoja correctamente */}
-                                            <div className="w-16 h-8 md:w-[104px] md:h-12 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400">
-                                                <span className="text-sm font-black">WC</span>
+                                            {/* WC Area (Takes space of seats 43-44 effectively or right side) */}
+                                            <div className="w-[104px] h-12 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400">
+                                                <span className="text-xl font-black">WC</span>
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Row 12 (Back Left: 43, 44, 45) - Aligned with left and aisle */}
-                                    <div className="flex justify-start gap-2 mt-1"> 
+                                    <div className="flex justify-start gap-2 md:gap-4 mt-1">
                                         <div className="flex gap-2">
                                             {[43, 44].map(seatNum => {
                                                 const occupant = currentBusPassengers.find(p => p.seat_number == seatNum);
@@ -1449,9 +1400,9 @@ const App = () => {
                                                     <button 
                                                         key={seatNum}
                                                         onClick={() => handleSeatClick(seatNum)}
-                                                        className={`w-8 h-8 md:w-12 md:h-12 rounded-lg flex items-center justify-center shadow-sm transition-all transform hover:scale-110 active:scale-95 border-b-4 ${occupant ? 'bg-red-500 border-red-700 text-white' : 'bg-green-400 border-green-600 text-white hover:bg-green-500'}`}
+                                                        className={`w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center shadow-sm transition-all transform hover:scale-110 active:scale-95 border-b-4 ${occupant ? 'bg-red-500 border-red-700 text-white' : 'bg-green-400 border-green-600 text-white hover:bg-green-500'}`}
                                                     >
-                                                        {occupant ? <span className="text-[8px] font-bold leading-none overflow-hidden px-0.5">{getFirstName(occupant.name)}</span> : <span className="text-[10px] font-bold opacity-50">{seatNum}</span>}
+                                                        {occupant ? <span className="text-[10px] font-bold leading-none overflow-hidden px-0.5">{getFirstName(occupant.name)}</span> : <span className="text-xs font-bold opacity-50">{seatNum}</span>}
                                                     </button>
                                                 );
                                             })}
@@ -1464,9 +1415,9 @@ const App = () => {
                                                     <button 
                                                         key={seatNum}
                                                         onClick={() => handleSeatClick(seatNum)}
-                                                        className={`w-8 h-8 md:w-12 md:h-12 rounded-lg flex items-center justify-center shadow-sm transition-all transform hover:scale-110 active:scale-95 border-b-4 ${occupant ? 'bg-red-500 border-red-700 text-white' : 'bg-green-400 border-green-600 text-white hover:bg-green-500'}`}
+                                                        className={`w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center shadow-sm transition-all transform hover:scale-110 active:scale-95 border-b-4 ${occupant ? 'bg-red-500 border-red-700 text-white' : 'bg-green-400 border-green-600 text-white hover:bg-green-500'}`}
                                                     >
-                                                        {occupant ? <span className="text-[8px] font-bold leading-none overflow-hidden px-0.5">{getFirstName(occupant.name)}</span> : <span className="text-[10px] font-bold opacity-50">{seatNum}</span>}
+                                                        {occupant ? <span className="text-[10px] font-bold leading-none overflow-hidden px-0.5">{getFirstName(occupant.name)}</span> : <span className="text-xs font-bold opacity-50">{seatNum}</span>}
                                                     </button>
                                                 );
                                             })}
@@ -1652,12 +1603,9 @@ const App = () => {
         </div>
       )}
 
-      {/* LOGIN MODAL (MEJORADO CON ANIMACIÓN DE SALIDA) */}
+      {/* LOGIN MODAL */}
       {showLoginModal && (
-        // Contenedor principal: Controla el fade del fondo (opacidad)
-        <div className={`fixed inset-0 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity duration-300 bg-black/80
-                        ${isLoginModalClosing ? 'opacity-0' : 'opacity-100'}`}
-        >
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
            {(() => {
              // Obtener configuración del camión actual para estilos dinámicos
              const busConfig = BUSES.find(b => b.id === currentBus);
@@ -1666,19 +1614,9 @@ const App = () => {
              const shadowColor = busConfig.id === 1 ? 'shadow-orange-700/50' : (busConfig.id === 2 ? 'shadow-green-700/50' : 'shadow-red-700/50');
              const ringColor = busConfig.id === 1 ? 'focus:ring-orange-500' : (busConfig.id === 2 ? 'focus:ring-green-500' : 'focus:ring-red-500');
              const iconColor = busConfig.text; 
-
-             // Modal Content:
-             const modalClasses = `
-               bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border-2 border-gray-100 relative overflow-hidden
-               transform transition-all duration-300
-               opacity-0 scale-90
-               ${isLoginModalClosing ? '' : 'scale-100 opacity-100'}
-             `;
              
              return (
-              <div 
-                 className={modalClasses}
-              >
+              <div className={`bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border-2 border-gray-100 animate-in zoom-in-50 duration-300 relative overflow-hidden`}>
                  <div className="flex justify-between items-center mb-6">
                     <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center mr-3">
                         <Lock className={iconColor} size={20}/>
@@ -1686,8 +1624,7 @@ const App = () => {
                    <h3 className="text-xl font-black text-gray-800 flex-1">
                      Acceso Coordinador 
                    </h3>
-                   {/* Llama a la función que inicia la animación de cierre */}
-                   <button onClick={closeLoginModal} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"><X size={20}/></button>
+                   <button onClick={() => setShowLoginModal(false)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"><X size={20}/></button>
                  </div>
                  
                  <div className='mb-6'>
@@ -1700,13 +1637,13 @@ const App = () => {
                  <form onSubmit={handleLogin} className="space-y-4">
                     {loginError && <div className="p-3 bg-red-100 text-red-700 rounded-xl text-sm font-bold text-center border border-red-200 animate-in fade-in slide-in-from-top-2">{loginError}</div>}
                     <div>
-                       <label className="text-xs font-bold text-gray-500 ml-1">USUARIO</label>
+                       <label className="text-xs font-bold text-gray-500 ml-1">USUARIO (Código)</label>
                        <input 
                          type="text" 
                          value={loginUser} 
                          onChange={(e) => setLoginUser(e.target.value)} 
                          className={`w-full p-3 bg-gray-50 rounded-xl font-medium border border-gray-200 focus:ring-4 ${ringColor}/40 outline-none transition-all`} 
-                         placeholder="Usuario" 
+                         placeholder="Ej: 223440784" 
                        />
                     </div>
                     <div>
@@ -1724,7 +1661,7 @@ const App = () => {
                       className={`w-full bg-gradient-to-r ${busConfig.color} text-white py-3 rounded-xl font-black text-lg hover:opacity-95 transition-all shadow-lg ${shadowColor} transform active:scale-[0.98] animate-in pulse-once`}
                       style={{'--animation-duration': '3s', '--animation-delay': '1s'}}
                     >
-                      ACCEDER
+                      ACCEDER AL PANEL
                     </button>
                  </form>
               </div>
@@ -1875,12 +1812,12 @@ const App = () => {
             <input type="text" placeholder="Buscar estudiante (nombre o código)..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-11 pr-4 py-3 bg-white border-none rounded-2xl shadow-md text-sm font-medium focus:ring-4 focus:ring-orange-500/20 transition-all outline-none" />
           </div>
 
-          {/* BOTÓN MAPA (Cambiado a LayoutGrid) */}
+          {/* BOTÓN MAPA (MÁS VISIBLE AHORA) */}
           <button 
             onClick={() => setShowBusMap(true)} 
             className="p-3 bg-white text-orange-600 rounded-2xl shadow-md hover:bg-orange-50 hover:text-orange-700 transition-colors flex items-center justify-center gap-2 border border-orange-100 px-6 group"
           >
-            <LayoutGrid size={20} strokeWidth={2.5} className="group-hover:scale-110 transition-transform" /> 
+            <Armchair size={20} strokeWidth={2.5} className="group-hover:scale-110 transition-transform" /> 
             <span className="font-bold text-sm whitespace-nowrap">Ver Mapa</span>
           </button>
 
@@ -1890,7 +1827,6 @@ const App = () => {
         </div>
 
         {/* FILTERS & SORT */}
-        {/* Usamos no-scrollbar para ocultar la barra horizontal en móviles */}
         <div className="flex items-center gap-3 mb-6 w-full max-w-full overflow-x-auto pb-2 px-1 no-scrollbar justify-start">
            <div className="flex-shrink-0 bg-white p-2 rounded-full shadow-sm"><ListFilter size={16} className="text-orange-500"/></div>
            
