@@ -575,10 +575,7 @@ const App = () => {
     if (!verifyPermissionAction(currentBus)) return;
 
     if (!supabase) return;
-    if (!newName.trim()) {
-        showNotification("El nombre es obligatorio", "error");
-        return;
-    }
+    if (!newName.trim()) return;
 
     const newPassenger = {
       name: newName.trim(),
@@ -1131,14 +1128,11 @@ const App = () => {
       return bus ? bus.color : "from-gray-500 to-gray-600";
   };
 
-  // --- PANTALLA DE CARGA CORREGIDA (FULLSCREEN FORZADO) ---
-  // Se añaden estilos en línea para garantizar que width: 100vw y height: 100vh se respeten sobre cualquier CSS global
+  // --- PANTALLA DE CARGA CORREGIDA ---
+  // Se usa 'fixed inset-0' para asegurar que cubra el 100% de la pantalla sin recortes
   if (loading) {
     return (
-      <div 
-        className="fixed top-0 left-0 z-[9999] bg-orange-50 flex flex-col items-center justify-center overflow-hidden"
-        style={{ width: '100vw', height: '100vh', margin: 0, padding: 0 }}
-      >
+      <div className="fixed inset-0 z-[100] bg-orange-50 flex flex-col items-center justify-center w-screen h-screen overflow-hidden">
         {/* Spinner animado */}
         <div className="relative mb-6">
             <div className="animate-spin rounded-full h-20 w-20 border-4 border-orange-200 border-t-orange-600 shadow-xl"></div>
@@ -1157,7 +1151,7 @@ const App = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white font-sans pb-24 text-gray-800 overflow-x-hidden w-full">
+    <div className="min-h-screen bg-white font-sans pb-24 text-gray-800 overflow-x-hidden w-full max-w-[100vw]">
       
       {/* NOTIFICATION TOAST */}
       <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[60] transition-all duration-500 ease-in-out ${notification.visible ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0 pointer-events-none'}`}>
@@ -1606,67 +1600,27 @@ const App = () => {
       {/* LOGIN MODAL */}
       {showLoginModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
-           {(() => {
-             // Obtener configuración del camión actual para estilos dinámicos
-             const busConfig = BUSES.find(b => b.id === currentBus);
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-orange-200">
+             <div className="flex justify-between items-center mb-4">
+               <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                 <Lock className="text-orange-500" /> Acceso Coordinador
+               </h3>
+               <button onClick={() => setShowLoginModal(false)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"><X size={20}/></button>
+             </div>
              
-             // Derivar colores basados en la configuración del bus
-             const shadowColor = busConfig.id === 1 ? 'shadow-orange-700/50' : (busConfig.id === 2 ? 'shadow-green-700/50' : 'shadow-red-700/50');
-             const ringColor = busConfig.id === 1 ? 'focus:ring-orange-500' : (busConfig.id === 2 ? 'focus:ring-green-500' : 'focus:ring-red-500');
-             const iconColor = busConfig.text; 
-             
-             return (
-              <div className={`bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border-2 border-gray-100 animate-in zoom-in-50 duration-300 relative overflow-hidden`}>
-                 <div className="flex justify-between items-center mb-6">
-                    <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center mr-3">
-                        <Lock className={iconColor} size={20}/>
-                    </div>
-                   <h3 className="text-xl font-black text-gray-800 flex-1">
-                     Acceso Coordinador 
-                   </h3>
-                   <button onClick={() => setShowLoginModal(false)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"><X size={20}/></button>
-                 </div>
-                 
-                 <div className='mb-6'>
-                    <h4 className='text-sm font-bold text-gray-500 uppercase tracking-wider mb-1'>Iniciar Sesión en:</h4>
-                    <div className={`text-xl font-black ${iconColor} flex items-center gap-2`}>
-                        <Bus size={20}/> {busConfig.label}
-                    </div>
-                 </div>
-
-                 <form onSubmit={handleLogin} className="space-y-4">
-                    {loginError && <div className="p-3 bg-red-100 text-red-700 rounded-xl text-sm font-bold text-center border border-red-200 animate-in fade-in slide-in-from-top-2">{loginError}</div>}
-                    <div>
-                       <label className="text-xs font-bold text-gray-500 ml-1">USUARIO (Código)</label>
-                       <input 
-                         type="text" 
-                         value={loginUser} 
-                         onChange={(e) => setLoginUser(e.target.value)} 
-                         className={`w-full p-3 bg-gray-50 rounded-xl font-medium border border-gray-200 focus:ring-4 ${ringColor}/40 outline-none transition-all`} 
-                         placeholder="Ej: 223440784" 
-                       />
-                    </div>
-                    <div>
-                       <label className="text-xs font-bold text-gray-500 ml-1">CONTRASEÑA</label>
-                       <input 
-                         type="password" 
-                         value={loginPass} 
-                         onChange={(e) => setLoginPass(e.target.value)} 
-                         className={`w-full p-3 bg-gray-50 rounded-xl font-medium border border-gray-200 focus:ring-4 ${ringColor}/40 outline-none transition-all`} 
-                         placeholder="••••••" 
-                       />
-                    </div>
-                    <button 
-                      type="submit" 
-                      className={`w-full bg-gradient-to-r ${busConfig.color} text-white py-3 rounded-xl font-black text-lg hover:opacity-95 transition-all shadow-lg ${shadowColor} transform active:scale-[0.98] animate-in pulse-once`}
-                      style={{'--animation-duration': '3s', '--animation-delay': '1s'}}
-                    >
-                      ACCEDER AL PANEL
-                    </button>
-                 </form>
-              </div>
-             );
-           })()}
+             <form onSubmit={handleLogin} className="space-y-4">
+                {loginError && <div className="p-3 bg-red-100 text-red-700 rounded-xl text-sm font-bold text-center">{loginError}</div>}
+                <div>
+                   <label className="text-xs font-bold text-gray-500 ml-1">USUARIO</label>
+                   <input type="text" value={loginUser} onChange={(e) => setLoginUser(e.target.value)} className="w-full p-3 bg-gray-50 rounded-xl font-medium focus:ring-2 focus:ring-orange-500 outline-none" placeholder="Código o Nombre" />
+                </div>
+                <div>
+                   <label className="text-xs font-bold text-gray-500 ml-1">CONTRASEÑA</label>
+                   <input type="password" value={loginPass} onChange={(e) => setLoginPass(e.target.value)} className="w-full p-3 bg-gray-50 rounded-xl font-medium focus:ring-2 focus:ring-orange-500 outline-none" placeholder="••••••" />
+                </div>
+                <button type="submit" className="w-full bg-orange-600 text-white py-3 rounded-xl font-bold text-lg hover:bg-orange-700 transition-colors">Iniciar Sesión</button>
+             </form>
+          </div>
         </div>
       )}
       
@@ -1900,37 +1854,13 @@ const App = () => {
            </div>
         )}
 
-        {/* FORMULARIO AGREGAR - AHORA COMPLETO */}
+        {/* FORMULARIO AGREGAR */}
         {showAddForm && isCoordinator && (
           <div className="mb-6 bg-white p-5 rounded-3xl shadow-xl border border-orange-100 animate-in fade-in slide-in-from-top-4 max-w-2xl mx-auto">
-            <h3 className="font-bold text-gray-800 mb-4 text-sm uppercase tracking-wide flex items-center gap-2">
-                <span className="w-1 h-4 bg-orange-500 rounded-full"></span> Nuevo Pasajero al {BUSES.find(b=>b.id === currentBus).label}
-            </h3>
+            <h3 className="font-bold text-gray-800 mb-4 text-sm uppercase tracking-wide flex items-center gap-2"><span className="w-1 h-4 bg-orange-500 rounded-full"></span> Nuevo Pasajero al {BUSES.find(b=>b.id === currentBus).label}</h3>
             <form onSubmit={addPassenger} className="space-y-3">
-                <input type="text" placeholder="Nombre completo (OBLIGATORIO)" value={newName} onChange={(e) => setNewName(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-orange-500/20 outline-none font-medium" required/>
-                
-                <div className="grid grid-cols-2 gap-3">
-                    <input type="tel" placeholder="Teléfono" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-orange-500/20 outline-none text-sm"/>
-                    <input type="text" placeholder="Código UDG" value={newCode} onChange={(e) => setNewCode(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-orange-500/20 outline-none text-sm"/>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-3">
-                    <input type="number" placeholder="Monto Pagado ($)" value={newAmount} onChange={(e) => setNewAmount(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-orange-500/20 outline-none text-sm"/>
-                    <input type="text" placeholder="NSS (Seguro Social)" value={newNss} onChange={(e) => setNewNss(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-orange-500/20 outline-none text-sm"/>
-                </div>
-
-                <div className="pt-2">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Datos del Tutor</p>
-                    <div className="grid grid-cols-2 gap-3">
-                        <input type="text" placeholder="Nombre del Tutor" value={newParent} onChange={(e) => setNewParent(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-orange-500/20 outline-none text-sm"/>
-                        <input type="tel" placeholder="Teléfono del Tutor" value={newParentPhone} onChange={(e) => setNewParentPhone(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-orange-500/20 outline-none text-sm"/>
-                    </div>
-                </div>
-
-                <div className="flex gap-3 pt-2">
-                    <button type="button" onClick={() => setShowAddForm(false)} className="w-1/3 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300 transition-colors">Cancelar</button>
-                    <button type="submit" disabled={!newName.trim()} className="w-2/3 bg-orange-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-orange-500/30 active:scale-95 transition-transform disabled:bg-gray-400 disabled:shadow-none">Guardar Estudiante</button>
-                </div>
+              <input type="text" placeholder="Nombre completo" value={newName} onChange={(e) => setNewName(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-orange-500/20 outline-none font-medium"/>
+              <button type="submit" className="w-full bg-orange-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-orange-500/30 active:scale-95 transition-transform">Guardar Estudiante</button>
             </form>
           </div>
         )}
