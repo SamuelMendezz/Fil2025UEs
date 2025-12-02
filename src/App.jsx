@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone, Edit2, Lock, LogOut, EyeOff, Crown, FileText, Users, GraduationCap, ListFilter, Save, ShieldAlert, CreditCard, Hash, User, Bell, ArrowUpDown, ArrowDownAZ, Armchair, LayoutGrid, UserPlus, Bath, Upload, FileCheck, Ticket, ExternalLink, Unlock, AlertTriangle, Eye, KeyRound, FileWarning } from 'lucide-react';
 
 // --- CONFIGURACIÓN DE SUPABASE ---
@@ -207,6 +207,7 @@ const App = () => {
   const isCoordinator = !!currentUser;
 
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [isLoginModalClosing, setIsLoginModalClosing] = useState(false); // NEW STATE for close animation
   const [loginUser, setLoginUser] = useState('');
   const [loginPass, setLoginPass] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -217,6 +218,7 @@ const App = () => {
 
   // AUTH MODAL STATE
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isAuthModalClosing, setIsAuthModalClosing] = useState(false); // NEW STATE for close animation
   const [authTargetId, setAuthTargetId] = useState(null);
   
   // States for double verification
@@ -241,6 +243,15 @@ const App = () => {
           setCurrentBus(userBusAccess);
       }
   }, [isCoordinator, userBusAccess]);
+
+  // Function to handle close animation and unmounting
+  const closeLoginModal = useCallback(() => {
+    setIsLoginModalClosing(true);
+    setTimeout(() => {
+      setShowLoginModal(false);
+      setIsLoginModalClosing(false);
+    }, 300); // Duration matches the transition in CSS
+  }, []);
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -281,7 +292,7 @@ const App = () => {
       localStorage.setItem('fil2025_user', name);
       localStorage.setItem('fil2025_bus_access', accessLevel);
       
-      setShowLoginModal(false);
+      closeLoginModal(); // Use the closing handler
       setLoginError('');
       setLoginUser(''); setLoginPass('');
       
@@ -304,6 +315,15 @@ const App = () => {
     setShowLoginModal(true);
     setLoginError('');
   };
+
+  // Function to handle close animation and unmounting for Auth Modal
+  const closeAuthModal = useCallback(() => {
+    setIsAuthModalClosing(true);
+    setTimeout(() => {
+      setShowAuthModal(false);
+      setIsAuthModalClosing(false);
+    }, 300); // Duration matches the transition in CSS
+  }, []);
 
   // Check Permission Helper
   // Un usuario SÓLO puede editar si es coordinador Y si el bus del pasajero es su bus asignado.
@@ -550,7 +570,8 @@ const App = () => {
 
   const legs = [
     { id: 0, label: "Salida Autlán", sub: "→ FIL", icon: <Bus size={14} />, short: "Ida" },
-    { id: 1, label: "Salida FIL", sub: "→ Plaza", icon: <MapPin size={14} />, short: "Inter" },
+    // CAMBIO APLICADO: Cambiamos MapPin por LayoutGrid para indicar el mapa/cuadrícula de asientos.
+    { id: 1, label: "Salida FIL", sub: "→ Plaza", icon: <LayoutGrid size={14} />, short: "Inter" },
     { id: 2, label: "Regreso Plaza", sub: "→ Autlán", icon: <RotateCcw size={14} />, short: "Regreso" }
   ];
 
@@ -575,7 +596,10 @@ const App = () => {
     if (!verifyPermissionAction(currentBus)) return;
 
     if (!supabase) return;
-    if (!newName.trim()) return;
+    if (!newName.trim()) {
+        showNotification("El nombre es obligatorio", "error");
+        return;
+    }
 
     const newPassenger = {
       name: newName.trim(),
@@ -876,7 +900,7 @@ const App = () => {
       }
 
       if (isValid) {
-          setShowAuthModal(false);
+          closeAuthModal(); // Use closing handler
           setTicketData(target);
           setShowTicketModal(true);
           showNotification(`¡Bienvenido ${target.name.split(' ')[0]}!`);
@@ -891,6 +915,7 @@ const App = () => {
       setAuthCodeInput('');
       setAuthPhoneInput('');
       setAuthError(''); // RESET ERROR STATE
+      setIsAuthModalClosing(false); // Ensure it's not closing
       setShowAuthModal(true);
   };
 
@@ -1128,11 +1153,14 @@ const App = () => {
       return bus ? bus.color : "from-gray-500 to-gray-600";
   };
 
-  // --- PANTALLA DE CARGA CORREGIDA ---
-  // Se usa 'fixed inset-0' para asegurar que cubra el 100% de la pantalla sin recortes
+  // --- PANTALLA DE CARGA CORREGIDA (FULLSCREEN FORZADO) ---
+  // Se añaden estilos en línea para garantizar que width: 100vw y height: 100vh se respeten sobre cualquier CSS global
   if (loading) {
     return (
-      <div className="fixed inset-0 z-[100] bg-orange-50 flex flex-col items-center justify-center w-screen h-screen overflow-hidden">
+      <div 
+        className="fixed top-0 left-0 z-[9999] bg-orange-50 flex flex-col items-center justify-center overflow-hidden"
+        style={{ width: '100vw', height: '100vh', margin: 0, padding: 0 }}
+      >
         {/* Spinner animado */}
         <div className="relative mb-6">
             <div className="animate-spin rounded-full h-20 w-20 border-4 border-orange-200 border-t-orange-600 shadow-xl"></div>
@@ -1151,7 +1179,7 @@ const App = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white font-sans pb-24 text-gray-800 overflow-x-hidden w-full max-w-[100vw]">
+    <div className="min-h-screen bg-white font-sans pb-24 text-gray-800 overflow-x-hidden w-full">
       
       {/* NOTIFICATION TOAST */}
       <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[60] transition-all duration-500 ease-in-out ${notification.visible ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0 pointer-events-none'}`}>
@@ -1179,69 +1207,76 @@ const App = () => {
         </div>
       )}
 
-      {/* AUTH MODAL FOR PASSENGERS (DYNAMIC: CODE & PHONE) */}
+      {/* AUTH MODAL FOR PASSENGERS (DYNAMIC: CODE & PHONE) - MEJORADO CON ANIMACIONES */}
       {showAuthModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[80] flex items-center justify-center p-4 animate-in fade-in">
-           <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-orange-100 text-center relative">
-               <button onClick={() => setShowAuthModal(false)} className="absolute top-4 right-4 bg-gray-100 p-2 rounded-full hover:bg-gray-200"><X size={20}/></button>
-               
-               {/* NEW: ERROR MESSAGE INSIDE MODAL */}
-               {authError && (
-                   <div className="mb-4 p-3 bg-red-50 text-red-500 border border-red-100 rounded-xl font-bold text-sm animate-in fade-in slide-in-from-top-2 flex items-center justify-center gap-2">
-                       <AlertTriangle size={16}/> {authError}
-                   </div>
-               )}
+        // Contenedor principal: Controla el fade del fondo (opacidad)
+        <div className={`fixed inset-0 backdrop-blur-sm z-[80] flex items-center justify-center p-4 transition-opacity duration-300 bg-black/80
+                        ${isAuthModalClosing ? 'opacity-0' : 'opacity-100'}`}
+        >
+           {(() => {
+                const target = passengers.find(p => p.id === authTargetId);
+                const hasCode = target && target.code && target.code !== 'N/A' && target.code !== 'Pendiente';
 
-               {(() => {
-                   const target = passengers.find(p => p.id === authTargetId);
-                   // Lógica para decidir qué pedir: Si tiene código válido, pide ambos. Si no, pide teléfono.
-                   const hasCode = target && target.code && target.code !== 'N/A' && target.code !== 'Pendiente';
-                   
-                   return (
-                       <>
-                           <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 text-orange-500">
-                               <ShieldAlert size={32}/>
-                           </div>
-                           <h3 className="text-xl font-bold text-gray-800 mb-2">Verificación de Seguridad</h3>
-                           <p className="text-sm text-gray-500 mb-6">
-                               {hasCode 
-                                ? "Para proteger tu boleto, ingresa tu Código de Estudiante y tu Teléfono." 
-                                : "Ingresa tu Número de Teléfono registrado para ver tu boleto."}
-                           </p>
-                           
-                           <form onSubmit={handleVerifyIdentity} className="space-y-4">
-                               {hasCode && (
-                                   <input 
-                                     type="text"
-                                     placeholder="Código de Estudiante"
-                                     value={authCodeInput}
-                                     onChange={(e) => {
-                                         setAuthCodeInput(e.target.value);
-                                         if(authError) setAuthError(''); // Clear error on type
-                                     }}
-                                     className={`w-full p-4 bg-gray-50 border rounded-xl text-center font-bold text-lg focus:ring-2 focus:ring-orange-500 outline-none ${authError ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}
-                                     autoFocus
-                                   />
-                               )}
-                               <input 
-                                 type="tel"
-                                 placeholder="Número de Teléfono"
-                                 value={authPhoneInput}
-                                 onChange={(e) => {
-                                     setAuthPhoneInput(e.target.value);
-                                     if(authError) setAuthError(''); // Clear error on type
-                                 }}
-                                 className={`w-full p-4 bg-gray-50 border rounded-xl text-center font-bold text-lg focus:ring-2 focus:ring-orange-500 outline-none ${authError ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}
-                                 autoFocus={!hasCode} // Autofocus en teléfono si no hay código
-                               />
-                               <button type="submit" className="w-full py-3 rounded-xl font-bold text-white bg-orange-600 hover:bg-orange-700 transition-colors shadow-lg shadow-orange-500/30">
-                                 Ver mi Boleto
-                               </button>
-                           </form>
-                       </>
-                   );
-               })()}
-           </div>
+                // Modal Content: Controla el zoom/scale y el fade (opacidad)
+                const modalClasses = `
+                  bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-orange-200 text-center relative
+                  transform transition-all duration-300
+                  opacity-0 scale-90
+                  ${isAuthModalClosing ? '' : 'scale-100 opacity-100'}
+                `;
+               
+               return (
+                  <div className={modalClasses}>
+                     <button onClick={closeAuthModal} className="absolute top-4 right-4 bg-gray-100 p-2 rounded-full hover:bg-gray-200 transition-colors"><X size={20}/></button>
+                      
+                      {authError && (
+                          <div className="mb-4 p-3 bg-red-50 text-red-500 border border-red-100 rounded-xl font-bold text-sm animate-in fade-in slide-in-from-top-2 flex items-center justify-center gap-2">
+                              <AlertTriangle size={16}/> {authError}
+                          </div>
+                      )}
+
+                      <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 text-orange-600 shadow-md">
+                          <KeyRound size={32} strokeWidth={2.5}/>
+                      </div>
+                      <h3 className="text-xl font-black text-gray-800 mb-2">Verificación de Boleto</h3>
+                      <p className="text-sm text-gray-500 mb-6">
+                          {hasCode 
+                           ? "Ingresa tu Código de Estudiante y Teléfono registrado para ver tu pase." 
+                           : "Ingresa tu Número de Teléfono para verificar tu identidad."}
+                      </p>
+                      
+                      <form onSubmit={handleVerifyIdentity} className="space-y-4">
+                          {hasCode && (
+                              <input 
+                                type="text"
+                                placeholder="CÓDIGO"
+                                value={authCodeInput}
+                                onChange={(e) => {
+                                    setAuthCodeInput(e.target.value);
+                                    if(authError) setAuthError(''); // Clear error on type
+                                }}
+                                className={`w-full p-4 bg-gray-50 border rounded-xl text-center font-bold text-lg focus:ring-2 focus:ring-orange-500 outline-none ${authError ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}
+                                autoFocus
+                              />
+                          )}
+                          <input 
+                            type="tel"
+                            placeholder="NÚMERO"
+                            value={authPhoneInput}
+                            onChange={(e) => {
+                                setAuthPhoneInput(e.target.value);
+                                if(authError) setAuthError(''); // Clear error on type
+                            }}
+                            className={`w-full p-4 bg-gray-50 border rounded-xl text-center font-bold text-lg focus:ring-2 focus:ring-orange-500 outline-none ${authError ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}
+                            autoFocus={!hasCode} // Autofocus en teléfono si no hay código
+                          />
+                          <button type="submit" className="w-full py-3 rounded-xl font-bold text-white bg-orange-600 hover:bg-orange-700 transition-colors shadow-lg shadow-orange-500/30 active:scale-[0.98]">
+                            VER BOLETO
+                          </button>
+                      </form>
+                  </div>
+               );
+           })()}
         </div>
       )}
 
@@ -1597,38 +1632,61 @@ const App = () => {
         </div>
       )}
 
-      {/* LOGIN MODAL */}
+      {/* LOGIN MODAL (MEJORADO CON ANIMACIÓN DE SALIDA) */}
       {showLoginModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+        // Contenedor principal: Controla el fade del fondo (opacidad)
+        <div className={`fixed inset-0 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity duration-300 bg-black/80
+                        ${isLoginModalClosing ? 'opacity-0' : 'opacity-100'}`}
+        >
            {(() => {
              // Obtener configuración del camión actual para estilos dinámicos
              const busConfig = BUSES.find(b => b.id === currentBus);
              
              // Derivar colores basados en la configuración del bus
-             // Bus 1 (Naranja), Bus 2 (Verde), Bus 3 (Rojo)
-             const borderColor = busConfig.id === 1 ? 'border-orange-200' : (busConfig.id === 2 ? 'border-green-200' : 'border-red-200');
+             const shadowColor = busConfig.id === 1 ? 'shadow-orange-700/50' : (busConfig.id === 2 ? 'shadow-green-700/50' : 'shadow-red-700/50');
              const ringColor = busConfig.id === 1 ? 'focus:ring-orange-500' : (busConfig.id === 2 ? 'focus:ring-green-500' : 'focus:ring-red-500');
-             const iconColor = busConfig.text; // Ya viene como clase tailwind (ej: text-orange-600)
+             const iconColor = busConfig.text; 
+
+             // Modal Content:
+             const modalClasses = `
+               bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border-2 border-gray-100 relative overflow-hidden
+               transform transition-all duration-300
+               opacity-0 scale-90
+               ${isLoginModalClosing ? '' : 'scale-100 opacity-100'}
+             `;
              
              return (
-              <div className={`bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border-2 ${borderColor}`}>
-                 <div className="flex justify-between items-center mb-4">
-                   <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                     <Lock className={iconColor} /> Acceso Coordinador C{currentBus}
+              <div 
+                 className={modalClasses}
+              >
+                 <div className="flex justify-between items-center mb-6">
+                    <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center mr-3">
+                        <Lock className={iconColor} size={20}/>
+                    </div>
+                   <h3 className="text-xl font-black text-gray-800 flex-1">
+                     Acceso Coordinador 
                    </h3>
-                   <button onClick={() => setShowLoginModal(false)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"><X size={20}/></button>
+                   {/* Llama a la función que inicia la animación de cierre */}
+                   <button onClick={closeLoginModal} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"><X size={20}/></button>
                  </div>
                  
+                 <div className='mb-6'>
+                    <h4 className='text-sm font-bold text-gray-500 uppercase tracking-wider mb-1'>Iniciar Sesión en:</h4>
+                    <div className={`text-xl font-black ${iconColor} flex items-center gap-2`}>
+                        <Bus size={20}/> {busConfig.label}
+                    </div>
+                 </div>
+
                  <form onSubmit={handleLogin} className="space-y-4">
-                    {loginError && <div className="p-3 bg-red-100 text-red-700 rounded-xl text-sm font-bold text-center">{loginError}</div>}
+                    {loginError && <div className="p-3 bg-red-100 text-red-700 rounded-xl text-sm font-bold text-center border border-red-200 animate-in fade-in slide-in-from-top-2">{loginError}</div>}
                     <div>
                        <label className="text-xs font-bold text-gray-500 ml-1">USUARIO</label>
                        <input 
                          type="text" 
                          value={loginUser} 
                          onChange={(e) => setLoginUser(e.target.value)} 
-                         className={`w-full p-3 bg-gray-50 rounded-xl font-medium focus:ring-2 ${ringColor} outline-none transition-all`} 
-                         placeholder="Código o Nombre" 
+                         className={`w-full p-3 bg-gray-50 rounded-xl font-medium border border-gray-200 focus:ring-4 ${ringColor}/40 outline-none transition-all`} 
+                         placeholder="Usuario" 
                        />
                     </div>
                     <div>
@@ -1637,15 +1695,16 @@ const App = () => {
                          type="password" 
                          value={loginPass} 
                          onChange={(e) => setLoginPass(e.target.value)} 
-                         className={`w-full p-3 bg-gray-50 rounded-xl font-medium focus:ring-2 ${ringColor} outline-none transition-all`} 
+                         className={`w-full p-3 bg-gray-50 rounded-xl font-medium border border-gray-200 focus:ring-4 ${ringColor}/40 outline-none transition-all`} 
                          placeholder="••••••" 
                        />
                     </div>
                     <button 
                       type="submit" 
-                      className={`w-full bg-gradient-to-r ${busConfig.color} text-white py-3 rounded-xl font-bold text-lg hover:opacity-90 transition-opacity shadow-lg`}
+                      className={`w-full bg-gradient-to-r ${busConfig.color} text-white py-3 rounded-xl font-black text-lg hover:opacity-95 transition-all shadow-lg ${shadowColor} transform active:scale-[0.98] animate-in pulse-once`}
+                      style={{'--animation-duration': '3s', '--animation-delay': '1s'}}
                     >
-                      Iniciar Sesión
+                      ACCEDER
                     </button>
                  </form>
               </div>
@@ -1796,12 +1855,12 @@ const App = () => {
             <input type="text" placeholder="Buscar estudiante (nombre o código)..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-11 pr-4 py-3 bg-white border-none rounded-2xl shadow-md text-sm font-medium focus:ring-4 focus:ring-orange-500/20 transition-all outline-none" />
           </div>
 
-          {/* BOTÓN MAPA (MÁS VISIBLE AHORA) */}
+          {/* BOTÓN MAPA (Cambiado a LayoutGrid) */}
           <button 
             onClick={() => setShowBusMap(true)} 
             className="p-3 bg-white text-orange-600 rounded-2xl shadow-md hover:bg-orange-50 hover:text-orange-700 transition-colors flex items-center justify-center gap-2 border border-orange-100 px-6 group"
           >
-            <Armchair size={20} strokeWidth={2.5} className="group-hover:scale-110 transition-transform" /> 
+            <LayoutGrid size={20} strokeWidth={2.5} className="group-hover:scale-110 transition-transform" /> 
             <span className="font-bold text-sm whitespace-nowrap">Ver Mapa</span>
           </button>
 
@@ -1884,13 +1943,37 @@ const App = () => {
            </div>
         )}
 
-        {/* FORMULARIO AGREGAR */}
+        {/* FORMULARIO AGREGAR - AHORA COMPLETO */}
         {showAddForm && isCoordinator && (
           <div className="mb-6 bg-white p-5 rounded-3xl shadow-xl border border-orange-100 animate-in fade-in slide-in-from-top-4 max-w-2xl mx-auto">
-            <h3 className="font-bold text-gray-800 mb-4 text-sm uppercase tracking-wide flex items-center gap-2"><span className="w-1 h-4 bg-orange-500 rounded-full"></span> Nuevo Pasajero al {BUSES.find(b=>b.id === currentBus).label}</h3>
+            <h3 className="font-bold text-gray-800 mb-4 text-sm uppercase tracking-wide flex items-center gap-2">
+                <span className="w-1 h-4 bg-orange-500 rounded-full"></span> Nuevo Pasajero al {BUSES.find(b=>b.id === currentBus).label}
+            </h3>
             <form onSubmit={addPassenger} className="space-y-3">
-              <input type="text" placeholder="Nombre completo" value={newName} onChange={(e) => setNewName(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-orange-500/20 outline-none font-medium"/>
-              <button type="submit" className="w-full bg-orange-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-orange-500/30 active:scale-95 transition-transform">Guardar Estudiante</button>
+                <input type="text" placeholder="Nombre completo (OBLIGATORIO)" value={newName} onChange={(e) => setNewName(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-orange-500/20 outline-none font-medium" required/>
+                
+                <div className="grid grid-cols-2 gap-3">
+                    <input type="tel" placeholder="Teléfono" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-orange-500/20 outline-none text-sm"/>
+                    <input type="text" placeholder="Código UDG" value={newCode} onChange={(e) => setNewCode(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-orange-500/20 outline-none text-sm"/>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                    <input type="number" placeholder="Monto Pagado ($)" value={newAmount} onChange={(e) => setNewAmount(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-orange-500/20 outline-none text-sm"/>
+                    <input type="text" placeholder="NSS (Seguro Social)" value={newNss} onChange={(e) => setNewNss(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-orange-500/20 outline-none text-sm"/>
+                </div>
+
+                <div className="pt-2">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Datos del Tutor</p>
+                    <div className="grid grid-cols-2 gap-3">
+                        <input type="text" placeholder="Nombre del Tutor" value={newParent} onChange={(e) => setNewParent(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-orange-500/20 outline-none text-sm"/>
+                        <input type="tel" placeholder="Teléfono del Tutor" value={newParentPhone} onChange={(e) => setNewParentPhone(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-orange-500/20 outline-none text-sm"/>
+                    </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                    <button type="button" onClick={() => setShowAddForm(false)} className="w-1/3 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300 transition-colors">Cancelar</button>
+                    <button type="submit" disabled={!newName.trim()} className="w-2/3 bg-orange-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-orange-500/30 active:scale-95 transition-transform disabled:bg-gray-400 disabled:shadow-none">Guardar Estudiante</button>
+                </div>
             </form>
           </div>
         )}
