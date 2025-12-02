@@ -1128,14 +1128,11 @@ const App = () => {
       return bus ? bus.color : "from-gray-500 to-gray-600";
   };
 
-  // --- PANTALLA DE CARGA CORREGIDA (FULLSCREEN FORZADO) ---
-  // Se añaden estilos en línea para garantizar que width: 100vw y height: 100vh se respeten sobre cualquier CSS global
+  // --- PANTALLA DE CARGA CORREGIDA ---
+  // Se usa 'fixed inset-0' para asegurar que cubra el 100% de la pantalla sin recortes
   if (loading) {
     return (
-      <div 
-        className="fixed top-0 left-0 z-[9999] bg-orange-50 flex flex-col items-center justify-center overflow-hidden"
-        style={{ width: '100vw', height: '100vh', margin: 0, padding: 0 }}
-      >
+      <div className="fixed inset-0 z-[100] bg-orange-50 flex flex-col items-center justify-center w-screen h-screen overflow-hidden">
         {/* Spinner animado */}
         <div className="relative mb-6">
             <div className="animate-spin rounded-full h-20 w-20 border-4 border-orange-200 border-t-orange-600 shadow-xl"></div>
@@ -1154,7 +1151,7 @@ const App = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white font-sans pb-24 text-gray-800 overflow-x-hidden w-full">
+    <div className="min-h-screen bg-white font-sans pb-24 text-gray-800 overflow-x-hidden w-full max-w-[100vw]">
       
       {/* NOTIFICATION TOAST */}
       <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[60] transition-all duration-500 ease-in-out ${notification.visible ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0 pointer-events-none'}`}>
