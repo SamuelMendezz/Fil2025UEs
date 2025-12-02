@@ -1268,7 +1268,7 @@ const App = () => {
                                       type="submit" 
                                       className="w-full py-3 rounded-xl font-bold text-white bg-green-500 hover:bg-green-600 transition-colors shadow-lg shadow-green-500/30 active:scale-95 flex items-center justify-center gap-2"
                                    >
-                                     <Ticket size={20}/> ¡Ver mi Pase!
+                                     <Ticket size={20}/> ¡Ver mi Boleto!
                                    </button>
                                </form>
                                <p className="text-center text-[10px] text-gray-400 mt-4">
