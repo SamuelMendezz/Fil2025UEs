@@ -1249,7 +1249,7 @@ const App = () => {
                           {hasCode && (
                               <input 
                                 type="text"
-                                placeholder="CÓDIGO"
+                                placeholder="Código de Estudiane"
                                 value={authCodeInput}
                                 onChange={(e) => {
                                     setAuthCodeInput(e.target.value);
@@ -1261,7 +1261,7 @@ const App = () => {
                           )}
                           <input 
                             type="tel"
-                            placeholder="NÚMERO"
+                            placeholder="Número de Telefono"
                             value={authPhoneInput}
                             onChange={(e) => {
                                 setAuthPhoneInput(e.target.value);
