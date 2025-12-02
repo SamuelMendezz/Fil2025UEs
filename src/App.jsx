@@ -575,7 +575,10 @@ const App = () => {
     if (!verifyPermissionAction(currentBus)) return;
 
     if (!supabase) return;
-    if (!newName.trim()) return;
+    if (!newName.trim()) {
+        showNotification("El nombre del pasajero es obligatorio.", "error");
+        return;
+    }
 
     const newPassenger = {
       name: newName.trim(),
@@ -597,6 +600,18 @@ const App = () => {
     if (!error) showNotification(`Pasajero agregado al Camión ${currentBus}`);
     
     setNewName(''); setNewPhone(''); setNewCode(''); setNewAmount(''); setNewNss(''); setNewParent(''); setNewParentPhone('');
+    setShowAddForm(false);
+  };
+
+  // Function to reset the form
+  const handleCancelAdd = () => {
+    setNewName('');
+    setNewPhone('');
+    setNewCode('');
+    setNewAmount('');
+    setNewNss('');
+    setNewParent('');
+    setNewParentPhone('');
     setShowAddForm(false);
   };
 
@@ -1179,68 +1194,90 @@ const App = () => {
         </div>
       )}
 
-      {/* AUTH MODAL FOR PASSENGERS (DYNAMIC: CODE & PHONE) */}
+      {/* AUTH MODAL FOR PASSENGERS (MEJORADO) */}
       {showAuthModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[80] flex items-center justify-center p-4 animate-in fade-in">
-           <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-orange-100 text-center relative">
-               <button onClick={() => setShowAuthModal(false)} className="absolute top-4 right-4 bg-gray-100 p-2 rounded-full hover:bg-gray-200"><X size={20}/></button>
+           <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl border border-orange-100 relative overflow-hidden">
+                <button onClick={() => setShowAuthModal(false)} className="absolute top-4 right-4 bg-black/20 hover:bg-black/30 p-2 rounded-full transition-colors text-white z-10"><X size={20}/></button>
                
-               {/* NEW: ERROR MESSAGE INSIDE MODAL */}
-               {authError && (
-                   <div className="mb-4 p-3 bg-red-50 text-red-500 border border-red-100 rounded-xl font-bold text-sm animate-in fade-in slide-in-from-top-2 flex items-center justify-center gap-2">
-                       <AlertTriangle size={16}/> {authError}
-                   </div>
-               )}
+                {/* HEADER VISUAL */}
+                <div className="bg-gradient-to-r from-orange-500 to-yellow-600 p-8 text-white text-center relative shadow-lg">
+                    <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                    <div className="w-16 h-16 bg-white/20 border-2 border-white/50 rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-sm shadow-xl">
+                       <ShieldAlert size={32} strokeWidth={2} className="text-white drop-shadow-md" />
+                    </div>
+                    <h3 className="text-2xl font-black tracking-wider drop-shadow-md">Verifica tu Identidad</h3>
+                    <p className="text-xs font-medium opacity-80 mt-1">Accede a tu Boleto Digital.</p>
+                </div>
 
-               {(() => {
-                   const target = passengers.find(p => p.id === authTargetId);
-                   // Lógica para decidir qué pedir: Si tiene código válido, pide ambos. Si no, pide teléfono.
-                   const hasCode = target && target.code && target.code !== 'N/A' && target.code !== 'Pendiente';
-                   
-                   return (
-                       <>
-                           <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 text-orange-500">
-                               <ShieldAlert size={32}/>
-                           </div>
-                           <h3 className="text-xl font-bold text-gray-800 mb-2">Verificación de Seguridad</h3>
-                           <p className="text-sm text-gray-500 mb-6">
-                               {hasCode 
-                                ? "Para proteger tu boleto, ingresa tu Código de Estudiante y tu Teléfono." 
-                                : "Ingresa tu Número de Teléfono registrado para ver tu boleto."}
-                           </p>
-                           
-                           <form onSubmit={handleVerifyIdentity} className="space-y-4">
-                               {hasCode && (
-                                   <input 
-                                     type="text"
-                                     placeholder="Código de Estudiante"
-                                     value={authCodeInput}
-                                     onChange={(e) => {
-                                         setAuthCodeInput(e.target.value);
-                                         if(authError) setAuthError(''); // Clear error on type
-                                     }}
-                                     className={`w-full p-4 bg-gray-50 border rounded-xl text-center font-bold text-lg focus:ring-2 focus:ring-orange-500 outline-none ${authError ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}
-                                     autoFocus
-                                   />
-                               )}
-                               <input 
-                                 type="tel"
-                                 placeholder="Número de Teléfono"
-                                 value={authPhoneInput}
-                                 onChange={(e) => {
-                                     setAuthPhoneInput(e.target.value);
-                                     if(authError) setAuthError(''); // Clear error on type
-                                 }}
-                                 className={`w-full p-4 bg-gray-50 border rounded-xl text-center font-bold text-lg focus:ring-2 focus:ring-orange-500 outline-none ${authError ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}
-                                 autoFocus={!hasCode} // Autofocus en teléfono si no hay código
-                               />
-                               <button type="submit" className="w-full py-3 rounded-xl font-bold text-white bg-orange-600 hover:bg-orange-700 transition-colors shadow-lg shadow-orange-500/30">
-                                 Ver mi Boleto
-                               </button>
-                           </form>
-                       </>
-                   );
-               })()}
+               <div className="p-6">
+                   {/* NEW: ERROR MESSAGE INSIDE MODAL */}
+                   {authError && (
+                       <div className="mb-4 p-3 bg-red-50 text-red-500 border border-red-100 rounded-xl font-bold text-sm animate-in fade-in slide-in-from-top-2 flex items-center justify-center gap-2">
+                           <AlertTriangle size={16}/> {authError}
+                       </div>
+                   )}
+
+                   {(() => {
+                       const target = passengers.find(p => p.id === authTargetId);
+                       // Lógica para decidir qué pedir: Si tiene código válido, pide ambos. Si no, pide teléfono.
+                       const hasCode = target && target.code && target.code !== 'N/A' && target.code !== 'Pendiente';
+                       
+                       return (
+                           <>
+                               <p className="text-sm text-gray-500 mb-6 text-center">
+                                   {hasCode 
+                                   ? "Por seguridad, ingresa tu Código de Estudiante y el Teléfono registrado." 
+                                   : "Ingresa el Número de Teléfono registrado para continuar."}
+                               </p>
+                               
+                               <form onSubmit={handleVerifyIdentity} className="space-y-4">
+                                   {hasCode && (
+                                       <div>
+                                            <label className="text-xs font-bold text-gray-500 ml-1 flex items-center gap-1"><GraduationCap size={12}/> CÓDIGO DE ESTUDIANTE</label>
+                                            <input 
+                                              type="text"
+                                              placeholder="Ingresa tu código"
+                                              value={authCodeInput}
+                                              onChange={(e) => {
+                                                  setAuthCodeInput(e.target.value);
+                                                  if(authError) setAuthError(''); // Clear error on type
+                                              }}
+                                              className={`w-full p-4 bg-gray-50 border rounded-xl text-center font-bold text-lg focus:ring-2 focus:ring-orange-500 outline-none ${authError ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}
+                                              autoFocus
+                                            />
+                                       </div>
+                                   )}
+                                   
+                                   <div>
+                                       <label className="text-xs font-bold text-gray-500 ml-1 flex items-center gap-1"><Phone size={12}/> TELÉFONO REGISTRADO</label>
+                                       <input 
+                                         type="tel"
+                                         placeholder="Ej. 3171234567"
+                                         value={authPhoneInput}
+                                         onChange={(e) => {
+                                             setAuthPhoneInput(e.target.value);
+                                             if(authError) setAuthError(''); // Clear error on type
+                                         }}
+                                         className={`w-full p-4 bg-gray-50 border rounded-xl text-center font-bold text-lg focus:ring-2 focus:ring-orange-500 outline-none ${authError ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}
+                                         autoFocus={!hasCode} // Autofocus en teléfono si no hay código
+                                       />
+                                   </div>
+                                   
+                                   <button 
+                                      type="submit" 
+                                      className="w-full py-3 rounded-xl font-bold text-white bg-green-500 hover:bg-green-600 transition-colors shadow-lg shadow-green-500/30 active:scale-95 flex items-center justify-center gap-2"
+                                   >
+                                     <Ticket size={20}/> ¡Ver mi Pase!
+                                   </button>
+                               </form>
+                               <p className="text-center text-[10px] text-gray-400 mt-4">
+                                   Asegúrate de usar los datos que proporcionaste al inscribirte.
+                               </p>
+                           </>
+                       );
+                   })()}
+               </div>
            </div>
         </div>
       )}
@@ -1597,29 +1634,62 @@ const App = () => {
         </div>
       )}
 
-      {/* LOGIN MODAL */}
+      {/* LOGIN MODAL (MEJORADO) */}
       {showLoginModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-orange-200">
-             <div className="flex justify-between items-center mb-4">
-               <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                 <Lock className="text-orange-500" /> Acceso Coordinador
-               </h3>
-               <button onClick={() => setShowLoginModal(false)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"><X size={20}/></button>
+          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl border border-orange-200 relative overflow-hidden">
+             
+             {/* HEADER VISUAL */}
+             <div className="bg-gradient-to-r from-orange-600 to-red-500 p-8 text-white text-center relative shadow-lg">
+                <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                <div className="w-16 h-16 bg-white/20 border-2 border-white/50 rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-sm shadow-xl">
+                   <Lock size={32} strokeWidth={2} className="text-white drop-shadow-md" />
+                </div>
+                <h3 className="text-2xl font-black tracking-wider drop-shadow-md">Acceso Coordinador</h3>
+                <p className="text-xs font-medium opacity-80 mt-1">Usa tus credenciales de Camión.</p>
+                <button onClick={() => setShowLoginModal(false)} className="absolute top-4 right-4 bg-black/20 hover:bg-black/30 p-2 rounded-full transition-colors text-white"><X size={20}/></button>
              </div>
              
-             <form onSubmit={handleLogin} className="space-y-4">
-                {loginError && <div className="p-3 bg-red-100 text-red-700 rounded-xl text-sm font-bold text-center">{loginError}</div>}
-                <div>
-                   <label className="text-xs font-bold text-gray-500 ml-1">USUARIO</label>
-                   <input type="text" value={loginUser} onChange={(e) => setLoginUser(e.target.value)} className="w-full p-3 bg-gray-50 rounded-xl font-medium focus:ring-2 focus:ring-orange-500 outline-none" placeholder="Código o Nombre" />
-                </div>
-                <div>
-                   <label className="text-xs font-bold text-gray-500 ml-1">CONTRASEÑA</label>
-                   <input type="password" value={loginPass} onChange={(e) => setLoginPass(e.target.value)} className="w-full p-3 bg-gray-50 rounded-xl font-medium focus:ring-2 focus:ring-orange-500 outline-none" placeholder="••••••" />
-                </div>
-                <button type="submit" className="w-full bg-orange-600 text-white py-3 rounded-xl font-bold text-lg hover:bg-orange-700 transition-colors">Iniciar Sesión</button>
-             </form>
+             <div className="p-6">
+                <form onSubmit={handleLogin} className="space-y-4">
+                   {loginError && <div className="p-3 bg-red-100 text-red-700 rounded-xl text-sm font-bold text-center border border-red-200">{loginError}</div>}
+                   
+                   <div>
+                      <label className="text-xs font-bold text-gray-500 ml-1 flex items-center gap-1"><GraduationCap size={12}/> USUARIO</label>
+                      <input 
+                         type="text" 
+                         value={loginUser} 
+                         onChange={(e) => setLoginUser(e.target.value)} 
+                         className="w-full p-3 bg-gray-50 rounded-xl font-medium focus:ring-2 focus:ring-orange-500/50 outline-none border border-gray-200" 
+                         placeholder="Ej. 223344556" 
+                         autoFocus
+                      />
+                   </div>
+                   
+                   <div>
+                      <label className="text-xs font-bold text-gray-500 ml-1 flex items-center gap-1"><KeyRound size={12}/> CONTRASEÑA</label>
+                      <input 
+                         type="password" 
+                         value={loginPass} 
+                         onChange={(e) => setLoginPass(e.target.value)} 
+                         className="w-full p-3 bg-gray-50 rounded-xl font-medium focus:ring-2 focus:ring-orange-500/50 outline-none border border-gray-200" 
+                         placeholder="••••••" 
+                      />
+                   </div>
+                   
+                   <button 
+                      type="submit" 
+                      className="w-full bg-orange-600 text-white py-3 rounded-xl font-bold text-lg hover:bg-orange-700 transition-colors shadow-lg shadow-orange-500/30 active:scale-95 flex items-center justify-center gap-2"
+                   >
+                      <Unlock size={20}/> Iniciar Sesión
+                   </button>
+                   
+                   {/* Mensaje de ayuda */}
+                   <p className="text-center text-[10px] text-gray-400 mt-4">
+                        
+                   </p>
+                </form>
+             </div>
           </div>
         </div>
       )}
@@ -1854,13 +1924,48 @@ const App = () => {
            </div>
         )}
 
-        {/* FORMULARIO AGREGAR */}
+        {/* FORMULARIO AGREGAR (MEJORADO) */}
         {showAddForm && isCoordinator && (
           <div className="mb-6 bg-white p-5 rounded-3xl shadow-xl border border-orange-100 animate-in fade-in slide-in-from-top-4 max-w-2xl mx-auto">
             <h3 className="font-bold text-gray-800 mb-4 text-sm uppercase tracking-wide flex items-center gap-2"><span className="w-1 h-4 bg-orange-500 rounded-full"></span> Nuevo Pasajero al {BUSES.find(b=>b.id === currentBus).label}</h3>
-            <form onSubmit={addPassenger} className="space-y-3">
-              <input type="text" placeholder="Nombre completo" value={newName} onChange={(e) => setNewName(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-orange-500/20 outline-none font-medium"/>
-              <button type="submit" className="w-full bg-orange-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-orange-500/30 active:scale-95 transition-transform">Guardar Estudiante</button>
+            <form onSubmit={addPassenger} className="space-y-4">
+                
+                {/* GRUPO INFORMACIÓN GENERAL */}
+                <div className="bg-gray-50 p-4 rounded-xl space-y-3">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Información Básica</label>
+                    <input type="text" placeholder="Nombre completo (Obligatorio)" value={newName} onChange={(e) => setNewName(e.target.value)} className="w-full p-3 bg-white border border-gray-200 rounded-xl font-bold text-gray-800 focus:ring-2 focus:ring-orange-500/50 outline-none"/>
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                        <input type="tel" placeholder="Teléfono" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} className="w-full p-3 bg-white border border-gray-200 rounded-xl font-medium focus:ring-2 focus:ring-orange-500/50 outline-none"/>
+                        <input type="text" placeholder="Código UDG" value={newCode} onChange={(e) => setNewCode(e.target.value)} className="w-full p-3 bg-white border border-gray-200 rounded-xl font-medium focus:ring-2 focus:ring-orange-500/50 outline-none"/>
+                    </div>
+                    
+                    <div>
+                        <input type="number" placeholder="Monto Pagado ($)" value={newAmount} onChange={(e) => setNewAmount(e.target.value)} className="w-full p-3 bg-white border border-gray-200 rounded-xl font-medium focus:ring-2 focus:ring-orange-500/50 outline-none"/>
+                    </div>
+                </div>
+
+                {/* GRUPO INFORMACIÓN TUTOR / NSS */}
+                <div className="bg-red-50/50 p-4 rounded-xl space-y-3 border border-red-100">
+                    <label className="text-[10px] font-bold text-red-400 uppercase tracking-wider block mb-1 flex items-center gap-1"><ShieldAlert size={12}/> Información Tutor / NSS (Opcional)</label>
+                    <input type="text" placeholder="Nombre del Tutor" value={newParent} onChange={(e) => setNewParent(e.target.value)} className="w-full p-3 bg-white border border-red-100 rounded-xl font-medium text-gray-700 focus:ring-2 focus:ring-red-200 outline-none"/>
+                    <div className="grid grid-cols-2 gap-3">
+                        <input type="tel" placeholder="Teléfono del Tutor" value={newParentPhone} onChange={(e) => setNewParentPhone(e.target.value)} className="w-full p-3 bg-white border border-red-100 rounded-xl font-medium text-gray-700 focus:ring-2 focus:ring-red-200 outline-none"/>
+                        <input type="text" placeholder="NSS (Seguro Social)" value={newNss} onChange={(e) => setNewNss(e.target.value)} className="w-full p-3 bg-white border border-red-100 rounded-xl font-medium text-gray-700 focus:ring-2 focus:ring-red-200 outline-none"/>
+                    </div>
+                </div>
+
+
+                {/* BOTONES */}
+                <div className="flex gap-3 pt-2">
+                    <button type="button" onClick={handleCancelAdd} className="px-4 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition-colors flex items-center justify-center flex-1">
+                        <X size={20}/> Cancelar
+                    </button>
+                    <button type="submit" className="flex-1 bg-green-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-green-600/30 active:scale-95 transition-transform flex items-center justify-center gap-2">
+                        <UserPlus size={20}/> Añadir Pasajero
+                    </button>
+                </div>
+
             </form>
           </div>
         )}
@@ -2096,7 +2201,7 @@ const App = () => {
                 </button>
             )}
 
-            <button onClick={isCoordinator ? () => setShowAddForm(true) : triggerLogin} className="bg-gray-900 text-white p-4 rounded-full shadow-2xl shadow-gray-900/40 hover:scale-105 active:scale-95 transition-all border-4 border-white/20">
+            <button onClick={isCoordinator ? () => setShowAddForm(prev => !prev) : triggerLogin} className="bg-gray-900 text-white p-4 rounded-full shadow-2xl shadow-gray-900/40 hover:scale-105 active:scale-95 transition-all border-4 border-white/20">
                 {isCoordinator ? <Plus size={24} strokeWidth={3} /> : <Lock size={24} />}
             </button>
         </div>
