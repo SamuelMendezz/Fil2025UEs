@@ -800,13 +800,13 @@ const App = () => {
           <div className="relative flex-1 group">
             <Search className="absolute left-4 top-3.5 text-orange-300 transition-colors group-focus-within:text-orange-500" size={18} />
             <input 
-              type="text" 
+              type="text"
+              inputMode="search"
               placeholder="Buscar estudiante (nombre o código)..." 
               value={searchTerm} 
               onChange={(e) => setSearchTerm(e.target.value)} 
               className="w-full pl-11 pr-4 py-3 bg-white border-none rounded-2xl shadow-md text-sm font-medium focus:ring-4 focus:ring-orange-500/20 transition-all outline-none"
               autoComplete="off"
-              autoFocus={false}
             />
           </div>
 
