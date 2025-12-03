@@ -19,7 +19,7 @@ const TRIP_ITINERARY = [
     { time: "13:30 PM", title: "Llegada a Plaza", icon: ShoppingBag, desc: "Tiempo para comer y pasear.", location: "Plaza La Perla" },
     { time: "16:30 PM", title: "Opción: Plaza Galerías", icon: Milestone, desc: "Visita a Galerías Santa Anita (A consideración de tiempo de todos).", location: "Santa Anita" },
     { time: "18:30 PM", title: "Encuentro Regreso", icon: Users, desc: "Reunión final para lista de asistencia.", location: "Punto de Reunión Acordado" },
-    { time: "19:00 PM", title: "Regreso a Autlán", icon: RotateCcw, desc: "Salida de regreso a casa.", location: "Rumbo a CUCSur" }
+    { time: "19:00 PM", title: "Regreso a Autlán", icon: RotateCcw, desc: "Salida de regreso a casa.", location: "Rumbo a Autlán" }
 ];
 
 // --- COMPONENTE DE CONFETI ---
