@@ -164,6 +164,23 @@ const App = () => {
   // --- NEW: ITINERARY MODAL STATE ---
   const [showItinerary, setShowItinerary] = useState(false);
 
+  // REF para el input de búsqueda (Solución definitiva teclado móvil)
+  const searchInputRef = useRef(null);
+
+  useEffect(() => {
+    // Intento 1: Inmediato al montar
+    if (searchInputRef.current) {
+        searchInputRef.current.blur();
+    }
+    
+    // Intento 2: Retrasado para sobreescribir la restauración de estado del navegador
+    const timer = setTimeout(() => {
+        if (searchInputRef.current) searchInputRef.current.blur();
+    }, 800);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => { if (isCoordinator && userBusAccess) setCurrentBus(userBusAccess); }, [isCoordinator, userBusAccess]);
   
   const closeAnimated = (modalName, setShowState) => {
@@ -800,6 +817,7 @@ const App = () => {
           <div className="relative flex-1 group">
             <Search className="absolute left-4 top-3.5 text-orange-300 transition-colors group-focus-within:text-orange-500" size={18} />
             <input 
+              ref={searchInputRef}
               type="text"
               inputMode="search"
               placeholder="Buscar estudiante (nombre o código)..." 
@@ -807,6 +825,7 @@ const App = () => {
               onChange={(e) => setSearchTerm(e.target.value)} 
               className="w-full pl-11 pr-4 py-3 bg-white border-none rounded-2xl shadow-md text-sm font-medium focus:ring-4 focus:ring-orange-500/20 transition-all outline-none"
               autoComplete="off"
+              autoFocus={false}
             />
           </div>
 
