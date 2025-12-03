@@ -8,7 +8,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // --- FECHA DE SALIDA ---
 const DEPARTURE_DATE = '2025-12-04T04:30:00'; 
 
-// --- DATOS DEL ITINERARIO ACTUALIZADOS ---
+// --- DATOS DEL ITINERARIO ---
 const TRIP_ITINERARY = [
     { time: "04:10 AM", title: "Cita de Encuentro", icon: Users, desc: "Favor de estar 20 minutos antes de la salida.", location: "Estacionamiento Farmacias GDL (Frente a CUCSur)" },
     { time: "04:30 AM", title: "Salida de Autlán", icon: Bus, desc: "Salida puntual del autobús.", location: "Autlán de Navarro" },
@@ -159,6 +159,8 @@ const App = () => {
   const [showLoader, setShowLoader] = useState(true);
   const [showConfetti, setShowConfetti] = useState(false);
 
+  const [isAdding, setIsAdding] = useState(false); // Nuevo estado para carga de añadir
+
   // --- NEW: ITINERARY MODAL STATE ---
   const [showItinerary, setShowItinerary] = useState(false);
 
@@ -171,6 +173,7 @@ const App = () => {
 
   const triggerConfetti = () => { setShowConfetti(true); setTimeout(() => setShowConfetti(false), 5000); };
 
+  const [showAddForm, setShowAddForm] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editFormData, setEditFormData] = useState({ name: '', phone: '', code: '', amount: 0, nss: '', parent: '', parent_phone: '' });
 
@@ -217,7 +220,7 @@ const App = () => {
   const [newParent, setNewParent] = useState('');
   const [newParentPhone, setNewParentPhone] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [showAddForm, setShowAddForm] = useState(false);
+  
   const [sortMode, setSortMode] = useState('original');
   const [showBusMap, setShowBusMap] = useState(false);
   const [selectedSeat, setSelectedSeat] = useState(null);
@@ -271,7 +274,43 @@ const App = () => {
   const showNotification = (message, type = 'success') => { setNotification({ message, type, visible: true }); setTimeout(() => { setNotification(prev => ({ ...prev, visible: false })); }, 3000); };
   const saveLocalSeat = (passengerId, seatNum) => { const localSeats = JSON.parse(localStorage.getItem('fil2025_local_seats') || '{}'); if (seatNum === null) delete localSeats[passengerId]; else localSeats[passengerId] = seatNum; localStorage.setItem('fil2025_local_seats', JSON.stringify(localSeats)); };
   
-  const addPassenger = async (e) => { e.preventDefault(); if (!isCoordinator) { triggerLogin(); return; } if (!verifyPermissionAction(currentBus)) return; if (!supabase) return; if (!newName.trim()) { showNotification("El nombre del pasajero es obligatorio.", "error"); return; } const newPassenger = { name: newName.trim(), phone: newPhone.trim() || 'N/A', code: newCode.trim() || 'N/A', amount: newAmount ? parseFloat(newAmount) : 0, nss: newNss.trim() || 'N/A', parent: newParent.trim() || 'N/A', parent_phone: newParentPhone.trim() || 'N/A', checks: [false, false, false], times: [null, null, null], letter_url: JSON.stringify([]), ticket_released: false, bus_id: currentBus }; const { error } = await supabase.from('passengers').insert([newPassenger]); if (!error) showNotification(`Pasajero agregado al Camión ${currentBus}`); setNewName(''); setNewPhone(''); setNewCode(''); setNewAmount(''); setNewNss(''); setNewParent(''); setNewParentPhone(''); closeAnimated('add_form', setShowAddForm); };
+  const addPassenger = async (e) => { 
+      e.preventDefault(); 
+      if (!isCoordinator) { triggerLogin(); return; } 
+      if (!verifyPermissionAction(currentBus)) return; 
+      if (!supabase) return; 
+      if (!newName.trim()) { showNotification("El nombre del pasajero es obligatorio.", "error"); return; } 
+      
+      setIsAdding(true); // Activar carga
+
+      const newPassenger = { 
+          name: newName.trim(), 
+          phone: newPhone.trim() || 'N/A', 
+          code: newCode.trim() || 'N/A', 
+          amount: newAmount ? parseFloat(newAmount) : 0, 
+          nss: newNss.trim() || 'N/A', 
+          parent: newParent.trim() || 'N/A', 
+          parent_phone: newParentPhone.trim() || 'N/A', 
+          checks: [false, false, false], 
+          times: [null, null, null], 
+          letter_url: JSON.stringify([]), 
+          ticket_released: false, 
+          bus_id: currentBus 
+      }; 
+
+      const { error } = await supabase.from('passengers').insert([newPassenger]); 
+      
+      setIsAdding(false); // Desactivar carga
+
+      if (!error) {
+          showNotification(`Pasajero agregado al Camión ${currentBus}`); 
+          setNewName(''); setNewPhone(''); setNewCode(''); setNewAmount(''); setNewNss(''); setNewParent(''); setNewParentPhone(''); 
+          closeAnimated('add_form', setShowAddForm); 
+      } else {
+          showNotification("Error al agregar pasajero: " + error.message, "error");
+      }
+  };
+
   const handleCancelAdd = () => { setNewName(''); setNewPhone(''); setNewCode(''); setNewAmount(''); setNewNss(''); setNewParent(''); setNewParentPhone(''); closeAnimated('add_form', setShowAddForm); };
   const removePassenger = async (id) => { if (!isCoordinator) { triggerLogin(); return; } const passenger = passengers.find(p => p.id === id); if (!passenger || !verifyPermissionAction(passenger.bus_id || 1)) return; if (!supabase) return; if (window.confirm('¿Seguro que quieres eliminar a esta persona?')) { await supabase.from('passengers').delete().eq('id', id); showNotification("Pasajero eliminado", "error"); closeAnimated('edit', setShowEditModal); } };
   const handleEditClick = (passenger) => { if (!isCoordinator) { showNotification("Acceso denegado. Solo coordinadores.", "error"); return; } if (!canEdit(passenger.bus_id)) { showNotification(`Solo tienes permiso para editar el Camión ${userBusAccess}`, 'error'); } setEditFormData({ ...passenger, letter_url: JSON.stringify(passenger.documents || []) }); setShowEditModal(true); };
@@ -395,6 +434,56 @@ const App = () => {
             <span className="font-bold text-sm">{notification.message}</span>
         </div>
       </div>
+
+      {/* --- FORMULARIO AGREGAR (CONVERTIDO A MODAL) --- */}
+      {(showAddForm || exitingModal === 'add_form') && isCoordinator && (
+        <div className={getAnimationClasses('add_form')}>
+           <div className="bg-white rounded-3xl p-6 w-full max-w-lg shadow-2xl border border-orange-200 relative max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6 border-b pb-4">
+                  <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                      <UserPlus className="text-orange-500" /> Nuevo Pasajero
+                  </h3>
+                  <button onClick={() => closeAnimated('add_form', setShowAddForm)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"><X size={20}/></button>
+              </div>
+              
+              <div className="mb-4 p-3 bg-orange-50 border border-orange-100 rounded-xl flex items-center gap-2 text-xs text-orange-800 font-medium">
+                  <Bus size={16} /> Agregando a: <span className="font-black">{BUSES.find(b=>b.id === currentBus)?.label}</span>
+              </div>
+
+              <form onSubmit={addPassenger} className="space-y-4">
+                  <div className="bg-gray-50 p-4 rounded-xl space-y-3">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Información Básica</label>
+                      <input type="text" placeholder="Nombre completo (Obligatorio)" value={newName} onChange={(e) => setNewName(e.target.value)} className="w-full p-3 bg-white border border-gray-200 rounded-xl font-bold text-gray-800 focus:ring-2 focus:ring-orange-500/50 outline-none"/>
+                      <div className="grid grid-cols-2 gap-3">
+                          <input type="tel" placeholder="Teléfono" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} className="w-full p-3 bg-white border border-gray-200 rounded-xl font-medium focus:ring-2 focus:ring-orange-500/50 outline-none"/>
+                          <input type="text" placeholder="Código UDG" value={newCode} onChange={(e) => setNewCode(e.target.value)} className="w-full p-3 bg-white border border-gray-200 rounded-xl font-medium focus:ring-2 focus:ring-orange-500/50 outline-none"/>
+                      </div>
+                      <div>
+                          <input type="number" placeholder="Monto Pagado ($)" value={newAmount} onChange={(e) => setNewAmount(e.target.value)} className="w-full p-3 bg-white border border-gray-200 rounded-xl font-medium focus:ring-2 focus:ring-orange-500/50 outline-none"/>
+                      </div>
+                  </div>
+
+                  <div className="bg-red-50/50 p-4 rounded-xl space-y-3 border border-red-100">
+                      <label className="text-[10px] font-bold text-red-400 uppercase tracking-wider block mb-1 flex items-center gap-1"><ShieldAlert size={12}/> Información Tutor / NSS (Opcional)</label>
+                      <input type="text" placeholder="Nombre del Tutor" value={newParent} onChange={(e) => setNewParent(e.target.value)} className="w-full p-3 bg-white border border-red-100 rounded-xl font-medium text-gray-700 focus:ring-2 focus:ring-red-200 outline-none"/>
+                      <div className="grid grid-cols-2 gap-3">
+                          <input type="tel" placeholder="Teléfono del Tutor" value={newParentPhone} onChange={(e) => setNewParentPhone(e.target.value)} className="w-full p-3 bg-white border border-red-100 rounded-xl font-medium text-gray-700 focus:ring-2 focus:ring-red-200 outline-none"/>
+                          <input type="text" placeholder="NSS (Seguro Social)" value={newNss} onChange={(e) => setNewNss(e.target.value)} className="w-full p-3 bg-white border border-red-100 rounded-xl font-medium text-gray-700 focus:ring-2 focus:ring-red-200 outline-none"/>
+                      </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                      <button type="button" onClick={handleCancelAdd} className="px-4 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition-colors flex items-center justify-center flex-1">
+                          <X size={20}/> Cancelar
+                      </button>
+                      <button type="submit" disabled={isAdding} className="flex-1 bg-green-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-green-600/30 active:scale-95 transition-transform flex items-center justify-center gap-2">
+                          {isAdding ? <Loader2 size={20} className="animate-spin" /> : <><UserPlus size={20}/> Añadir Pasajero</>}
+                      </button>
+                  </div>
+              </form>
+           </div>
+        </div>
+      )}
 
       {/* --- ITINERARY MODAL (NUEVO) --- */}
       {(showItinerary || exitingModal === 'itinerary') && (
@@ -694,25 +783,13 @@ const App = () => {
 
       <div className="max-w-7xl mx-auto px-4 -mt-6 relative z-30">
         
-        {/* STATS CARDS - SOLO COORDINADORES */}
+        {/* ... (Stats Cards - same as before) ... */}
         {isCoordinator && (
             <div className="grid gap-3 mb-6 grid-cols-2 sm:grid-cols-4">
-              <div className="bg-white p-3 rounded-2xl shadow-lg border-b-4 border-green-500 flex flex-col items-center text-center transform hover:-translate-y-1 transition-transform">
-                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Pagados</span>
-                 <span className="text-xl font-black text-gray-800">{totalPaidFull}</span>
-              </div>
-              <div className="bg-white p-3 rounded-2xl shadow-lg border-b-4 border-yellow-400 flex flex-col items-center text-center transform hover:-translate-y-1 transition-transform">
-                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Anticipos</span>
-                 <span className="text-xl font-black text-gray-800">{totalAdvance}</span>
-              </div>
-              <div className="bg-white p-3 rounded-2xl shadow-lg border-b-4 border-red-500 flex flex-col items-center text-center transform hover:-translate-y-1 transition-transform">
-                   <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Pendientes</span>
-                   <span className="text-xl font-black text-gray-800">{currentBusPassengers.length - totalPaidFull - totalAdvance}</span>
-              </div>
-              <div className="bg-white p-3 rounded-2xl shadow-lg border-b-4 border-orange-500 flex flex-col items-center text-center transform hover:-translate-y-1 transition-transform">
-                   <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Total MXN</span>
-                   <span className="text-lg font-black text-orange-600 tracking-tight">${totalMoney.toLocaleString()}</span>
-              </div>
+              <div className="bg-white p-3 rounded-2xl shadow-lg border-b-4 border-green-500 flex flex-col items-center text-center transform hover:-translate-y-1 transition-transform"><span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Pagados</span><span className="text-xl font-black text-gray-800">{totalPaidFull}</span></div>
+              <div className="bg-white p-3 rounded-2xl shadow-lg border-b-4 border-yellow-400 flex flex-col items-center text-center transform hover:-translate-y-1 transition-transform"><span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Anticipos</span><span className="text-xl font-black text-gray-800">{totalAdvance}</span></div>
+              <div className="bg-white p-3 rounded-2xl shadow-lg border-b-4 border-red-500 flex flex-col items-center text-center transform hover:-translate-y-1 transition-transform"><span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Pendientes</span><span className="text-xl font-black text-gray-800">{currentBusPassengers.length - totalPaidFull - totalAdvance}</span></div>
+              <div className="bg-white p-3 rounded-2xl shadow-lg border-b-4 border-orange-500 flex flex-col items-center text-center transform hover:-translate-y-1 transition-transform"><span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Total MXN</span><span className="text-lg font-black text-orange-600 tracking-tight">${totalMoney.toLocaleString()}</span></div>
             </div>
         )}
 
@@ -780,7 +857,30 @@ const App = () => {
           )}
         </div>
         
-        <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3">{isCoordinator && currentBusPassengers.length === 0 && (<button onClick={handleRestoreList} disabled={uploading} className="bg-red-600 text-white p-3 rounded-full shadow-2xl shadow-red-900/40 hover:scale-105 active:scale-95 transition-all border-2 border-white flex items-center gap-2 font-bold text-xs">{uploading ? 'Subiendo...' : `⚠️ RESTAURAR LISTA C${currentBus}`}</button>)}<button onClick={isCoordinator ? () => setShowAddForm(prev => !prev) : triggerLogin} className="bg-gray-900 text-white p-4 rounded-full shadow-2xl shadow-gray-900/40 hover:scale-105 active:scale-95 transition-all border-4 border-white/20">{isCoordinator ? <Plus size={24} strokeWidth={3} /> : <Lock size={24} />}</button></div>
+        <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3">
+            {isCoordinator && currentBusPassengers.length === 0 && (
+                <button 
+                    onClick={handleRestoreList} 
+                    disabled={uploading}
+                    className="bg-red-600 text-white p-3 rounded-full shadow-2xl shadow-red-900/40 hover:scale-105 active:scale-95 transition-all border-2 border-white flex items-center gap-2 font-bold text-xs"
+                >
+                    {uploading ? 'Subiendo...' : `⚠️ RESTAURAR LISTA C${currentBus}`}
+                </button>
+            )}
+
+            {/* LOGIC UPDATE: Only show Add Button if Coordinator AND can edit current bus */}
+            {isCoordinator ? (
+                canEdit(currentBus) && (
+                    <button onClick={() => setShowAddForm(prev => !prev)} className="bg-gray-900 text-white p-4 rounded-full shadow-2xl shadow-gray-900/40 hover:scale-105 active:scale-95 transition-all border-4 border-white/20">
+                        <Plus size={24} strokeWidth={3} />
+                    </button>
+                )
+            ) : (
+                <button onClick={triggerLogin} className="bg-gray-900 text-white p-4 rounded-full shadow-2xl shadow-gray-900/40 hover:scale-105 active:scale-95 transition-all border-4 border-white/20">
+                    <Lock size={24} />
+                </button>
+            )}
+        </div>
       </div>
     </div>
   );
