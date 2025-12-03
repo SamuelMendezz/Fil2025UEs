@@ -130,6 +130,44 @@ const App = () => {
 
   useEffect(() => { document.title = "Unión Estudiantil - FIL 2025"; }, []);
 
+  // --- BLOQUEO DE ZOOM (NUEVO) ---
+  useEffect(() => {
+    // 1. Forzar meta tag para prohibir escalado
+    const meta = document.querySelector('meta[name="viewport"]');
+    const content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+    if (meta) {
+        meta.content = content;
+    } else {
+        const newMeta = document.createElement('meta');
+        newMeta.name = 'viewport';
+        newMeta.content = content;
+        document.head.appendChild(newMeta);
+    }
+
+    // 2. Bloquear gestos de trackpad/pantalla (Pinch to zoom) en Safari/iOS
+    const preventDefault = (e) => e.preventDefault();
+    document.addEventListener('gesturestart', preventDefault);
+    document.addEventListener('gesturechange', preventDefault);
+
+    // 3. Bloquear doble toque y pellizco táctil
+    const handleTouch = (e) => {
+        if (e.touches.length > 1) {
+            e.preventDefault(); // Bloquear si hay más de 1 dedo (zoom)
+        }
+    };
+    
+    // passive: false es crucial para poder usar preventDefault
+    document.addEventListener('touchstart', handleTouch, { passive: false });
+    document.addEventListener('touchmove', handleTouch, { passive: false });
+
+    return () => {
+        document.removeEventListener('gesturestart', preventDefault);
+        document.removeEventListener('gesturechange', preventDefault);
+        document.removeEventListener('touchstart', handleTouch);
+        document.removeEventListener('touchmove', handleTouch);
+    };
+  }, []);
+
   // --- AUTH & STATE ---
   const [currentUser, setCurrentUser] = useState(() => localStorage.getItem('fil2025_user') || null);
   const [userBusAccess, setUserBusAccess] = useState(() => { const stored = localStorage.getItem('fil2025_bus_access'); return stored ? parseInt(stored) : null; });
