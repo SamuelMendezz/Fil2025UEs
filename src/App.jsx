@@ -19,7 +19,7 @@ const TRIP_ITINERARY = [
     { time: "13:30 PM", title: "Llegada a Plaza", icon: ShoppingBag, desc: "Tiempo para comer y pasear.", location: "Plaza La Perla" },
     { time: "16:30 PM", title: "Opción: Plaza Galerías", icon: Milestone, desc: "Visita a Galerías Santa Anita (A consideración de tiempo de todos).", location: "Santa Anita" },
     { time: "18:30 PM", title: "Encuentro Regreso", icon: Users, desc: "Reunión final para lista de asistencia.", location: "Punto de Reunión Acordado" },
-    { time: "19:00 PM", title: "Regreso a Autlán", icon: RotateCcw, desc: "Salida de regreso a casa.", location: "Rumbo a Autlán" }
+    { time: "19:00 PM", title: "Regreso a Autlán", icon: RotateCcw, desc: "Salida de regreso a casa.", location: "Rumbo a CUCSur" }
 ];
 
 // --- COMPONENTE DE CONFETI ---
@@ -310,7 +310,61 @@ const App = () => {
   const countPendingCards = currentBusPassengers.filter(p => p.documents && p.documents.length > 0 && !p.ticket_released).length; const countReviewedCards = currentBusPassengers.filter(p => p.documents && p.documents.length > 0 && p.ticket_released).length; const countSeated = currentBusPassengers.filter(p => p.seat_number).length; const countNoDocs = currentBusPassengers.filter(p => !p.documents || p.documents.length === 0).length;
   const getAnimationClasses = (modalName) => { const baseClass = "fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 ease-out"; if (exitingModal === modalName) { return `${baseClass} animate-leave`; } return `${baseClass} animate-enter`; };
 
-  const exportToCSV = () => { if (!isCoordinator) { triggerLogin(); return; } let csvContent = "data:text/csv;charset=utf-8,"; csvContent += "Camion,Nombre,Monto,Teléfono,Código,NSS,Tutor,Tel. Tutor,Asiento,Documentos URL,Boleto Liberado,Autlan->FIL (Hora),FIL->Plaza (Hora),Plaza->Autlan (Hora)\n"; passengers.sort((a,b) => (a.bus_id||1) - (b.bus_id||1)).forEach(p => { const c1 = p.checks[0] ? `SI (${p.times[0]})` : 'NO'; const c2 = p.checks[1] ? `SI (${p.times[1]})` : 'NO'; const c3 = p.checks[2] ? `SI (${p.times[2]})` : 'NO'; const docUrls = (p.documents || []).map(d => d.url).join(' | '); const row = `C${p.bus_id||1},${p.name.replace(/,/g, '')},${p.amount||0},${p.phone||'N/A'},${p.code||'N/A'},${p.nss||'N/A'},${p.parent ? p.parent.replace(/,/g, '') : 'N/A'},${p.parent_phone||'N/A'},${p.seat_number || 'N/A'},"${docUrls}",${p.ticket_released ? 'SI' : 'NO'},${c1},${c2},${c3}`; csvContent += row + "\n"; }); const link = document.createElement("a"); link.setAttribute("href", encodeURI(csvContent)); link.setAttribute("download", `asistencia_fil_2025_completo.csv`); document.body.appendChild(link); link.click(); document.body.removeChild(link); };
+  const exportToCSV = () => {
+    if (!isCoordinator) { triggerLogin(); return; }
+    
+    // Helper para escapar comas y comillas para CSV válido
+    const escapeCsv = (val) => {
+        if (val === null || val === undefined) return 'N/A';
+        const str = String(val);
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+            return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+    };
+
+    const headers = ["Camion", "Nombre", "Monto", "Teléfono", "Código", "NSS", "Tutor", "Tel. Tutor", "Asiento", "Documentos URL", "Boleto Liberado", "Autlan->FIL (Hora)", "FIL->Plaza (Hora)", "Plaza->Autlan (Hora)"];
+    
+    const rows = passengers
+        .sort((a,b) => (a.bus_id||1) - (b.bus_id||1))
+        .map(p => {
+            const c1 = p.checks?.[0] ? `SI (${p.times?.[0] || ''})` : 'NO';
+            const c2 = p.checks?.[1] ? `SI (${p.times?.[1] || ''})` : 'NO';
+            const c3 = p.checks?.[2] ? `SI (${p.times?.[2] || ''})` : 'NO';
+            const docUrls = (p.documents || []).map(d => d.url).join(' | '); 
+
+            return [
+                `C${p.bus_id||1}`,
+                escapeCsv(p.name),
+                p.amount || 0,
+                escapeCsv(p.phone),
+                escapeCsv(p.code),
+                escapeCsv(p.nss),
+                escapeCsv(p.parent),
+                escapeCsv(p.parent_phone),
+                escapeCsv(p.seat_number),
+                escapeCsv(docUrls),
+                p.ticket_released ? 'SI' : 'NO',
+                escapeCsv(c1),
+                escapeCsv(c2),
+                escapeCsv(c3)
+            ].join(',');
+        });
+
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    
+    // Usar Blob con BOM para UTF-8 (importante para acentos en Excel)
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "asistencia_fil_2025_completo.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="min-h-screen bg-white font-sans pb-24 text-gray-800 overflow-x-hidden w-full max-w-[100vw]">
@@ -459,7 +513,7 @@ const App = () => {
                             <div className="bg-white p-2 rounded-xl border-2 border-dashed border-gray-300">
                                 <img src={qrUrl} alt="QR Boleto" className="w-32 h-32 opacity-90 mix-blend-multiply" />
                             </div>
-                            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Escanear al abordar</p>
+                            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold"></p>
 
                             <div className="w-full border-t border-gray-100"></div>
                             
@@ -482,17 +536,83 @@ const App = () => {
           </div>
       )}
 
-      {/* LOGIN & MAP MODALS (Kept same logic) */}
+      {/* LOGIN MODAL (MEJORADO) */}
       {(showLoginModal || exitingModal === 'login') && (
         <div className={getAnimationClasses('login')}>
-          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl border border-orange-200 relative overflow-hidden">
-             <div className={`bg-gradient-to-r ${currentBusColorClass} p-8 text-white text-center relative shadow-lg`}>
-                <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-                <div className="w-16 h-16 bg-white/20 border-2 border-white/50 rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-sm shadow-xl"><Lock size={32} strokeWidth={2} className="text-white drop-shadow-md" /></div>
-                <h3 className="text-2xl font-black tracking-wider drop-shadow-md">Acceso Coordinador</h3>
-                <button onClick={() => closeAnimated('login', setShowLoginModal)} className="absolute top-4 right-4 bg-black/20 hover:bg-black/30 p-2 rounded-full transition-colors text-white"><X size={20}/></button>
+          <div className="bg-white rounded-[2rem] w-full max-w-sm shadow-2xl border border-gray-100 relative overflow-hidden transform transition-all">
+             
+             {/* HEADER VISUAL DINÁMICO */}
+             <div className={`bg-gradient-to-br ${currentBusColorClass} p-10 text-white text-center relative overflow-hidden`}>
+                {/* Decorative Circles */}
+                <div className="absolute top-[-50%] left-[-50%] w-full h-full rounded-full bg-white/10 blur-3xl"></div>
+                <div className="absolute bottom-[-50%] right-[-50%] w-full h-full rounded-full bg-black/10 blur-3xl"></div>
+                
+                <div className="relative z-10 flex flex-col items-center">
+                    <div className="w-20 h-20 bg-white/20 border-4 border-white/30 rounded-full flex items-center justify-center mb-4 backdrop-blur-md shadow-lg ring-4 ring-white/10">
+                       <Lock size={36} strokeWidth={2.5} className="text-white drop-shadow-lg" />
+                    </div>
+                    <h3 className="text-3xl font-black tracking-tight drop-shadow-md">Bienvenido</h3>
+                    <p className="text-sm font-medium opacity-90 mt-1 tracking-wide">Acceso exclusivo para Coordinadores</p>
+                </div>
+
+                <button onClick={() => closeAnimated('login', setShowLoginModal)} className="absolute top-4 right-4 bg-black/20 hover:bg-black/30 p-2 rounded-full transition-all text-white/80 hover:text-white z-20 backdrop-blur-sm"><X size={20}/></button>
              </div>
-             <div className="p-6"><form onSubmit={handleLogin} className="space-y-4">{loginError && <div className="p-3 bg-red-100 text-red-700 rounded-xl text-sm font-bold text-center border border-red-200">{loginError}</div>}<div><label className="text-xs font-bold text-gray-500 ml-1 flex items-center gap-1"><GraduationCap size={12}/> USUARIO</label><input type="text" value={loginUser} onChange={(e) => setLoginUser(e.target.value)} className="w-full p-3 bg-gray-50 rounded-xl font-medium focus:ring-2 focus:ring-orange-500/50 outline-none border border-gray-200" autoFocus/></div><div><label className="text-xs font-bold text-gray-500 ml-1 flex items-center gap-1"><KeyRound size={12}/> CONTRASEÑA</label><input type="password" value={loginPass} onChange={(e) => setLoginPass(e.target.value)} className="w-full p-3 bg-gray-50 rounded-xl font-medium focus:ring-2 focus:ring-orange-500/50 outline-none border border-gray-200"/></div><button type="submit" disabled={isLoggingIn} className={`w-full ${getPrimaryButtonClass(currentBus)} flex items-center justify-center gap-2 ${isLoggingIn ? 'opacity-80 cursor-not-allowed' : ''}`}>{isLoggingIn ? <Loader2 size={20} className="animate-spin" /> : <><Unlock size={20}/> Iniciar Sesión</>}</button></form></div>
+             
+             <div className="p-8 pt-10">
+                <form onSubmit={handleLogin} className="space-y-6">
+                   {loginError && (
+                       <div className="p-4 bg-red-50 text-red-600 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 border border-red-100 animate-in shake">
+                           <AlertTriangle size={16} className="flex-shrink-0"/> {loginError}
+                       </div>
+                   )}
+                   
+                   <div className="space-y-4">
+                       {/* Input Usuario */}
+                       <div className="group relative">
+                          <div className="absolute left-4 top-3.5 text-gray-400 group-focus-within:text-indigo-500 transition-colors">
+                              <GraduationCap size={20} />
+                          </div>
+                          <input 
+                             type="text" 
+                             value={loginUser} 
+                             onChange={(e) => setLoginUser(e.target.value)} 
+                             className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl font-bold text-gray-700 focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all placeholder:text-gray-400 placeholder:font-medium" 
+                             placeholder="Código de Coordinador" 
+                             autoFocus
+                          />
+                       </div>
+                       
+                       {/* Input Contraseña */}
+                       <div className="group relative">
+                          <div className="absolute left-4 top-3.5 text-gray-400 group-focus-within:text-indigo-500 transition-colors">
+                              <KeyRound size={20} />
+                          </div>
+                          <input 
+                             type="password" 
+                             value={loginPass} 
+                             onChange={(e) => setLoginPass(e.target.value)} 
+                             className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl font-bold text-gray-700 focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all placeholder:text-gray-400 placeholder:font-medium" 
+                             placeholder="Contraseña de Acceso" 
+                          />
+                       </div>
+                   </div>
+                   
+                   <button 
+                      type="submit" 
+                      disabled={isLoggingIn}
+                      className={`w-full ${getPrimaryButtonClass(currentBus)} py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-3 shadow-xl transform transition-all active:scale-[0.98] hover:-translate-y-1 ${isLoggingIn ? 'opacity-80 cursor-not-allowed' : ''}`}
+                   >
+                      {isLoggingIn ? <Loader2 size={24} className="animate-spin" /> : <><Unlock size={24} strokeWidth={2.5}/> Iniciar Sesión</>}
+                   </button>
+                   
+                   {/* Footer Links */}
+                   <div className="text-center pt-2">
+                       <button type="button" className="text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors">
+                           ¿Olvidaste tus credenciales? Contacta a Soporte.
+                       </button>
+                   </div>
+                </form>
+             </div>
           </div>
         </div>
       )}
