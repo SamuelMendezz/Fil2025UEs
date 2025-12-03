@@ -1,9 +1,131 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone, Edit2, Lock, LogOut, EyeOff, Crown, FileText, Users, GraduationCap, ListFilter, Save, ShieldAlert, CreditCard, Hash, User, Bell, ArrowUpDown, ArrowDownAZ, Armchair, LayoutGrid, UserPlus, Bath, Upload, FileCheck, Ticket, ExternalLink, Unlock, AlertTriangle, Eye, KeyRound, FileWarning } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone, Edit2, Lock, LogOut, EyeOff, Crown, FileText, Users, GraduationCap, ListFilter, Save, ShieldAlert, CreditCard, Hash, User, Bell, ArrowUpDown, ArrowDownAZ, Armchair, LayoutGrid, UserPlus, Bath, Upload, FileCheck, Ticket, ExternalLink, Unlock, AlertTriangle, Eye, KeyRound, FileWarning, Clock, Zap, Loader2 } from 'lucide-react';
 
 // --- CONFIGURACIÓN DE SUPABASE ---
 const SUPABASE_URL = 'https://fgzegoflnkwkcztivila.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnemVnb2Zsbmt3a2N6dGl2aWxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzMzQyOTYsImV4cCI6MjA3OTkxMDI5Nn0.-u-NUiR5Eqitf4-zqvAAZhTKHc1_Cj3OKHAhGRHl8Xs';
+
+// --- FECHA DE SALIDA (CAMBIAR AQUÍ LA FECHA REAL DEL VIAJE) ---
+// Formato: AAAA-MM-DDTHH:mm:ss
+const DEPARTURE_DATE = '2025-12-04T04:30:00'; 
+
+// --- COMPONENTE DE CONFETI (CSS PURO LIGERO) ---
+const Confetti = () => {
+  const [particles, setParticles] = useState([]);
+
+  useEffect(() => {
+    // Generar 50 partículas con propiedades aleatorias
+    const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+    const newParticles = Array.from({ length: 50 }).map((_, i) => ({
+      id: i,
+      x: Math.random() * 100, // Posición horizontal %
+      y: -10 - Math.random() * 20, // Empezar arriba de la pantalla
+      color: colors[Math.floor(Math.random() * colors.length)],
+      size: 5 + Math.random() * 10,
+      rotation: Math.random() * 360,
+      duration: 1 + Math.random() * 2, // Segundos cayendo
+      delay: Math.random() * 0.5
+    }));
+    setParticles(newParticles);
+  }, []);
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[100] overflow-hidden">
+      {particles.map((p) => (
+        <div
+          key={p.id}
+          className="absolute animate-fall"
+          style={{
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            width: `${p.size}px`,
+            height: `${p.size}px`,
+            backgroundColor: p.color,
+            transform: `rotate(${p.rotation}deg)`,
+            animationDuration: `${p.duration}s`,
+            animationDelay: `${p.delay}s`,
+            animationName: 'fall'
+          }}
+        />
+      ))}
+      <style>{`
+        @keyframes fall {
+          to {
+            transform: translateY(110vh) rotate(720deg);
+            opacity: 0;
+          }
+        }
+        .animate-fall {
+          animation-timing-function: linear;
+          animation-fill-mode: forwards;
+        }
+      `}</style>
+    </div>
+  );
+};
+
+// --- COMPONENTE CUENTA REGRESIVA ---
+// Ahora acepta una prop 'onComplete' para lanzar eventos al terminar
+const Countdown = ({ onComplete }) => {
+  const calculateTimeLeft = () => {
+    const difference = +new Date(DEPARTURE_DATE) - +new Date();
+    let timeLeft = {};
+
+    if (difference > 0) {
+      timeLeft = {
+        dias: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        horas: Math.floor((difference / (1000 * 60 * 60)) % 24),
+        min: Math.floor((difference / 1000 / 60) % 60),
+        seg: Math.floor((difference / 1000) % 60),
+      };
+    }
+    return timeLeft;
+  };
+
+  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
+  // Ref para asegurar que la acción solo se dispare una vez
+  const hasTriggeredRef = useRef(false);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const tl = calculateTimeLeft();
+      setTimeLeft(tl);
+
+      // Comprobar si el tiempo ha terminado y aún no hemos disparado la acción
+      const difference = +new Date(DEPARTURE_DATE) - +new Date();
+      if (difference <= 0 && !hasTriggeredRef.current) {
+          hasTriggeredRef.current = true;
+          if (onComplete) onComplete();
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [onComplete]);
+
+  const timerComponents = [];
+  Object.keys(timeLeft).forEach((interval) => {
+    timerComponents.push(
+      <div key={interval} className="flex flex-col items-center mx-1 md:mx-3">
+        <span className="text-xl md:text-3xl font-black tabular-nums tracking-tight leading-none">
+          {timeLeft[interval] !== undefined ? timeLeft[interval].toString().padStart(2, '0') : '00'}
+        </span>
+        <span className="text-[8px] md:text-[10px] uppercase font-bold text-white/60 tracking-wider mt-1">{interval}</span>
+      </div>
+    );
+  });
+
+  return (
+    <div className="flex items-center justify-center bg-black/20 backdrop-blur-sm border border-white/10 rounded-2xl py-3 px-4 md:px-8 shadow-inner animate-in fade-in zoom-in duration-700">
+        <div className="mr-4 hidden md:block">
+            <div className="bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full mb-1 w-fit animate-pulse">PRÓXIMA SALIDA</div>
+            <div className="text-xs font-medium text-white/80 flex items-center gap-1"><Clock size={12}/> 4:30 AM</div>
+        </div>
+        <div className="flex divide-x divide-white/10">
+            {timerComponents.length ? timerComponents : <span className="font-bold text-xl animate-bounce">¡ES HOY! 🚌💨</span>}
+        </div>
+    </div>
+  );
+};
 
 // --- LISTAS OFICIALES POR CAMIÓN (DATOS ESTÁTICOS) ---
 
@@ -217,6 +339,8 @@ const App = () => {
   const [loginUser, setLoginUser] = useState('');
   const [loginPass, setLoginPass] = useState('');
   const [loginError, setLoginError] = useState('');
+  // Loading state for login
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // TICKET MODAL STATE
   const [showTicketModal, setShowTicketModal] = useState(false);
@@ -229,9 +353,10 @@ const App = () => {
   // States for double verification
   const [authCodeInput, setAuthCodeInput] = useState('');
   const [authPhoneInput, setAuthPhoneInput] = useState('');
-  
   // Authentication Error inside Modal
   const [authError, setAuthError] = useState('');
+  // Loading state for verification
+  const [isVerifying, setIsVerifying] = useState(false);
 
   // DELETE DOCUMENT CONFIRMATION STATE
   const [documentToDelete, setDocumentToDelete] = useState(null); 
@@ -245,8 +370,11 @@ const App = () => {
   // --- ANIMATION STATES ---
   const [exitingModal, setExitingModal] = useState(null); 
   
-  // --- LOADER STATE (NEW) ---
+  // --- LOADER STATE ---
   const [showLoader, setShowLoader] = useState(true);
+
+  // --- CONFETTI STATE ---
+  const [showConfetti, setShowConfetti] = useState(false);
 
   // Force Bus View on Login
   useEffect(() => {
@@ -264,6 +392,12 @@ const App = () => {
       }, ANIMATION_DURATION);
   };
 
+  // --- TRIGGER CONFETTI HELPER ---
+  const triggerConfetti = () => {
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 5000); // Stop after 5 seconds
+  };
+
   // --- FORM DATA STATE (INITIALIZED SAFELY) ---
   const [showEditModal, setShowEditModal] = useState(false);
   const [editFormData, setEditFormData] = useState({
@@ -272,47 +406,55 @@ const App = () => {
 
   const handleLogin = (e) => {
     e.preventDefault();
+    setIsLoggingIn(true); // Start loading spinner
+    setLoginError('');
     
-    let name = '';
-    let accessLevel = null;
-    let valid = false;
+    // Simulate slight network delay for better UX
+    setTimeout(() => {
+        let name = '';
+        let accessLevel = null;
+        let valid = false;
 
-    if (loginUser === '223440784' && loginPass === 'samumv367') {
-        name = "Samuel M.";
-        accessLevel = 1;
-        valid = true;
-    }
-    else if (loginUser === '221430749' && loginPass === 'Prinsess123') {
-        name = "Aylin R.";
-        accessLevel = 2;
-        valid = true;
-    }
-    else if (loginUser === '221003476' && loginPass === 'Iker0202') {
-        name = "Iker S.";
-        accessLevel = 3;
-        valid = true;
-    }
-    else if (loginUser.toLowerCase() === 'francisco' && loginPass === 'fil2025') {
-        name = "Francisco P.";
-        accessLevel = 1;
-        valid = true;
-    }
+        if (loginUser === '223440784' && loginPass === 'samumv367') {
+            name = "Samuel M.";
+            accessLevel = 1;
+            valid = true;
+        }
+        else if (loginUser === '221430749' && loginPass === 'Prinsess123') {
+            name = "Aylin R.";
+            accessLevel = 2;
+            valid = true;
+        }
+        else if (loginUser === '221003476' && loginPass === 'Iker0202') {
+            name = "Iker S.";
+            accessLevel = 3;
+            valid = true;
+        }
+        else if (loginUser.toLowerCase() === 'francisco' && loginPass === 'fil2025') {
+            name = "Francisco P.";
+            accessLevel = 1;
+            valid = true;
+        }
 
-    if (valid) {
-      setCurrentUser(name);
-      setUserBusAccess(accessLevel);
-      localStorage.setItem('fil2025_user', name);
-      localStorage.setItem('fil2025_bus_access', accessLevel);
-      
-      closeAnimated('login', setShowLoginModal); 
-      setLoginError('');
-      setLoginUser(''); setLoginPass('');
-      
-      setCurrentBus(accessLevel);
-      showNotification(`Bienvenido, ${name}. Acceso al Camión ${accessLevel}`);
-    } else {
-      setLoginError('Credenciales incorrectas');
-    }
+        if (valid) {
+            setCurrentUser(name);
+            setUserBusAccess(accessLevel);
+            localStorage.setItem('fil2025_user', name);
+            localStorage.setItem('fil2025_bus_access', accessLevel);
+            
+            closeAnimated('login', setShowLoginModal); 
+            setLoginError('');
+            setLoginUser(''); setLoginPass('');
+            
+            setCurrentBus(accessLevel);
+            showNotification(`Bienvenido, ${name}. Acceso al Camión ${accessLevel}`);
+            // Reset loading state slightly after closing to prevent jump
+            setTimeout(() => setIsLoggingIn(false), ANIMATION_DURATION);
+        } else {
+            setLoginError('Credenciales incorrectas');
+            setIsLoggingIn(false); // Stop loading on error
+        }
+    }, 800);
   };
 
   const handleLogout = () => {
@@ -793,6 +935,9 @@ const App = () => {
         .eq('id', passengerId);
 
       if(!error) {
+          // Trigger confetti if status is changing TO released (!currentStatus is true)
+          if (!currentStatus) triggerConfetti();
+          
           showNotification(!currentStatus ? "Boleto LIBERADO" : "Boleto BLOQUEADO");
       }
   };
@@ -804,32 +949,48 @@ const App = () => {
 
   const handleVerifyIdentity = (e) => {
       e.preventDefault();
-      const target = passengers.find(p => p.id === authTargetId);
-      if (!target) return;
+      setIsVerifying(true); // Start loading spinner
+      setAuthError('');
 
-      const hasCode = target.code && target.code !== 'N/A' && target.code !== 'Pendiente';
-      let isValid = false;
+      // Simulate network delay for verification
+      setTimeout(() => {
+          const target = passengers.find(p => p.id === authTargetId);
+          if (!target) {
+              setIsVerifying(false);
+              return;
+          }
 
-      const phoneInputClean = authPhoneInput.replace(/\D/g, '');
-      const targetPhoneClean = (target.phone || '').replace(/\D/g, '');
+          const hasCode = target.code && target.code !== 'N/A' && target.code !== 'Pendiente';
+          let isValid = false;
 
-      if (hasCode) {
-          const codeMatch = authCodeInput.trim().toLowerCase() === target.code.trim().toLowerCase();
-          const phoneMatch = phoneInputClean.length > 6 && phoneInputClean === targetPhoneClean;
-          if (codeMatch && phoneMatch) isValid = true;
-          else { setAuthError("Datos Incorrectos"); return; }
-      } else {
-          if (phoneInputClean.length > 6 && phoneInputClean === targetPhoneClean) isValid = true;
-          else { setAuthError("Datos Incorrectos"); return; }
-      }
+          const phoneInputClean = authPhoneInput.replace(/\D/g, '');
+          const targetPhoneClean = (target.phone || '').replace(/\D/g, '');
 
-      if (isValid) {
-          closeAnimated('auth', setShowAuthModal);
-          setTicketData(target);
-          setShowTicketModal(true);
-          showNotification(`¡Bienvenido ${target.name.split(' ')[0]}!`);
-          setAuthCodeInput(''); setAuthPhoneInput(''); setAuthError('');
-      }
+          if (hasCode) {
+              const codeMatch = authCodeInput.trim().toLowerCase() === target.code.trim().toLowerCase();
+              const phoneMatch = phoneInputClean.length > 6 && phoneInputClean === targetPhoneClean;
+              if (codeMatch && phoneMatch) isValid = true;
+              else { setAuthError("Datos Incorrectos"); setIsVerifying(false); return; }
+          } else {
+              if (phoneInputClean.length > 6 && phoneInputClean === targetPhoneClean) isValid = true;
+              else { setAuthError("Datos Incorrectos"); setIsVerifying(false); return; }
+          }
+
+          if (isValid) {
+              closeAnimated('auth', setShowAuthModal);
+              triggerConfetti(); // Trigger confetti on success
+              setTicketData(target);
+              setShowTicketModal(true);
+              showNotification(`¡Bienvenido ${target.name.split(' ')[0]}!`);
+              setAuthCodeInput(''); setAuthPhoneInput(''); setAuthError('');
+              // Reset loading state after animation
+              setTimeout(() => setIsVerifying(false), ANIMATION_DURATION);
+          } else {
+              // Should have been handled above, but double check
+              setAuthError("Datos Incorrectos");
+              setIsVerifying(false);
+          }
+      }, 800);
   };
 
   const openAuthModal = (id) => {
@@ -1055,6 +1216,9 @@ const App = () => {
         }
       `}</style>
 
+      {/* --- CONFETTI OVERLAY --- */}
+      {showConfetti && <Confetti />}
+
       {/* --- LOADER OVERLAY (ALWAYS MOUNTED BUT ANIMATED OUT) --- */}
       {showLoader && (
         <div className={`fixed inset-0 z-[100] bg-orange-50 flex flex-col items-center justify-center w-screen h-screen overflow-hidden ${!loading ? 'animate-leave' : ''}`}>
@@ -1128,7 +1292,7 @@ const App = () => {
                            <>
                                {target && (
                                    <div className="text-center mb-6">
-                                       <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Pasajero</p>
+                                       <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Pasajero Verificado</p>
                                        <h4 className="text-xl font-extrabold text-gray-800 leading-tight">
                                            {target.name}
                                        </h4>
@@ -1176,9 +1340,10 @@ const App = () => {
                                    
                                    <button 
                                       type="submit" 
-                                      className="w-full py-3 rounded-xl font-bold text-white bg-green-500 hover:bg-green-600 transition-colors shadow-lg shadow-green-500/30 active:scale-95 flex items-center justify-center gap-2"
+                                      disabled={isVerifying}
+                                      className={`w-full py-3 rounded-xl font-bold text-white bg-green-500 hover:bg-green-600 transition-colors shadow-lg shadow-green-500/30 active:scale-95 flex items-center justify-center gap-2 ${isVerifying ? 'opacity-80 cursor-not-allowed' : ''}`}
                                    >
-                                     <Ticket size={20}/> ¡Ver mi Boleto!
+                                     {isVerifying ? <Loader2 size={20} className="animate-spin" /> : <><Ticket size={20}/> ¡Ver mi Boleto!</>}
                                    </button>
                                </form>
                                <p className="text-center text-[10px] text-gray-400 mt-4">
@@ -1565,9 +1730,10 @@ const App = () => {
                    
                    <button 
                       type="submit" 
-                      className={`w-full ${getPrimaryButtonClass(currentBus)} flex items-center justify-center gap-2`}
+                      disabled={isLoggingIn}
+                      className={`w-full ${getPrimaryButtonClass(currentBus)} flex items-center justify-center gap-2 ${isLoggingIn ? 'opacity-80 cursor-not-allowed' : ''}`}
                    >
-                      <Unlock size={20}/> Iniciar Sesión
+                      {isLoggingIn ? <Loader2 size={20} className="animate-spin" /> : <><Unlock size={20}/> Iniciar Sesión</>}
                    </button>
                 </form>
              </div>
@@ -1577,41 +1743,55 @@ const App = () => {
       
       {/* HEADER */}
       <div className={`bg-gradient-to-br ${currentBusColorClass} text-white p-6 pb-12 shadow-2xl shadow-orange-900/50 rounded-b-[2.5rem] relative z-20 transition-all duration-500 overflow-hidden`}>
+        {/* ... (contenido del header igual) ... */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/5 pointer-events-none"></div>
         <div className="absolute -top-20 -right-20 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="max-w-7xl mx-auto relative">
             <div className="flex justify-between items-start mb-4">
-            <div className="flex flex-col">
-                <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-orange-100/90 mb-1 drop-shadow-md">Planilla</span>
                 <div className="flex flex-col">
-                    <h1 className="text-2xl md:text-3xl font-black flex items-center gap-2 drop-shadow-xl filter">UNIÓN ESTUDIANTIL</h1>
-                    <span className="text-sm font-bold text-orange-100 opacity-90 -mt-1 drop-shadow-md">FIL 2025</span>
-                </div>
-                
-                <div className="flex items-center gap-2 text-xs text-orange-50 font-medium mt-2 flex-nowrap"> 
-                    {currentUser ? (
-                        <div className="bg-yellow-400/90 text-yellow-900 px-3 py-1 rounded-full font-bold flex items-center gap-1 shadow-lg shadow-yellow-900/20 animate-in fade-in slide-in-from-left-2 backdrop-blur-sm border border-yellow-300/50 whitespace-nowrap"> 
-                            👋 Hola {currentUser}
+                    <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-orange-100/90 mb-1 drop-shadow-md">Planilla</span>
+                    <div className="flex flex-col">
+                        <h1 className="text-2xl md:text-3xl font-black flex items-center gap-2 drop-shadow-xl filter">UNIÓN ESTUDIANTIL</h1>
+                        <span className="text-sm font-bold text-orange-100 opacity-90 -mt-1 drop-shadow-md">FIL 2025</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 text-xs text-orange-50 font-medium mt-2 flex-nowrap"> 
+                        {currentUser ? (
+                            <div className="bg-yellow-400/90 text-yellow-900 px-3 py-1 rounded-full font-bold flex items-center gap-1 shadow-lg shadow-yellow-900/20 animate-in fade-in slide-in-from-left-2 backdrop-blur-sm border border-yellow-300/50 whitespace-nowrap"> 
+                                👋 Hola {currentUser}
+                            </div>
+                        ) : (
+                        <div className="bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm border border-white/10 whitespace-nowrap"> 
+                            <Bus size={12} className="text-yellow-300 drop-shadow-sm"/> {BUSES.find(b => b.id === currentBus)?.label}
                         </div>
-                    ) : (
-                       <div className="bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm border border-white/10 whitespace-nowrap"> 
-                           <Bus size={12} className="text-yellow-300 drop-shadow-sm"/> {BUSES.find(b => b.id === currentBus)?.label}
-                       </div>
-                    )}
-                    {isCoordinator && (
-                        <div className="bg-green-500/80 backdrop-blur-md px-2 py-0.5 rounded-md flex items-center gap-1 text-white shadow-sm border border-green-400/30 whitespace-nowrap"> 
-                            <Lock size={10} className="drop-shadow-sm" /> Coord. Activo
-                        </div>
-                    )}
+                        )}
+                        {isCoordinator && (
+                            <div className="bg-green-500/80 backdrop-blur-md px-2 py-0.5 rounded-md flex items-center gap-1 text-white shadow-sm border border-green-400/30 whitespace-nowrap"> 
+                                <Lock size={10} className="drop-shadow-sm" /> Coord. Activo
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </div>
             
-            <div className="flex gap-2">
-                <button onClick={isCoordinator ? handleLogout : triggerLogin} className={`p-2 rounded-2xl backdrop-blur-md border border-white/20 shadow-lg transition-all ${isCoordinator ? 'bg-red-500/80 hover:bg-red-600 shadow-red-900/20' : 'bg-white/20 hover:bg-white/30 shadow-black/10'}`}>
-                    {isCoordinator ? <LogOut size={20} className="drop-shadow-sm" /> : <Lock size={20} className="drop-shadow-sm" />}
-                </button>
+                {/* --- CONTADOR A LA DERECHA DEL HEADER --- */}
+                <div className="hidden md:flex gap-4 items-center">
+                    <Countdown onComplete={triggerConfetti} />
+                    <button onClick={isCoordinator ? handleLogout : triggerLogin} className={`p-2 rounded-2xl backdrop-blur-md border border-white/20 shadow-lg transition-all ${isCoordinator ? 'bg-red-500/80 hover:bg-red-600 shadow-red-900/20' : 'bg-white/20 hover:bg-white/30 shadow-black/10'}`}>
+                        {isCoordinator ? <LogOut size={20} className="drop-shadow-sm" /> : <Lock size={20} className="drop-shadow-sm" />}
+                    </button>
+                </div>
+                {/* Para móvil, mostramos el botón de login normal */}
+                <div className="flex md:hidden gap-2">
+                    <button onClick={isCoordinator ? handleLogout : triggerLogin} className={`p-2 rounded-2xl backdrop-blur-md border border-white/20 shadow-lg transition-all ${isCoordinator ? 'bg-red-500/80 hover:bg-red-600 shadow-red-900/20' : 'bg-white/20 hover:bg-white/30 shadow-black/10'}`}>
+                        {isCoordinator ? <LogOut size={20} className="drop-shadow-sm" /> : <Lock size={20} className="drop-shadow-sm" />}
+                    </button>
+                </div>
             </div>
+
+            {/* CONTADOR EN MÓVIL (APARECE DEBAJO DEL TÍTULO) */}
+            <div className="md:hidden mb-6">
+                <Countdown onComplete={triggerConfetti} />
             </div>
 
             <div className="flex justify-between bg-black/20 backdrop-blur-md rounded-2xl p-1 mb-6 border border-white/10 shadow-inner">
@@ -1787,6 +1967,11 @@ const App = () => {
            </div>
         )}
 
+        {/* ... (Formulario Agregar y Lista de Pasajeros - Sin cambios) ... */}
+        {/* Para mantener el código manejable, asumo que el resto se mantiene igual, 
+            pero asegúrate de que el cierre del archivo sea correcto. */}
+        
+        {/* FORMULARIO AGREGAR (MEJORADO) */}
         {(showAddForm || exitingModal === 'add_form') && isCoordinator && (
           <div className={`mb-6 bg-white p-5 rounded-3xl shadow-xl border border-orange-100 max-w-2xl mx-auto ${exitingModal === 'add_form' ? 'animate-leave' : 'animate-enter'}`}>
             <h3 className="font-bold text-gray-800 mb-4 text-sm uppercase tracking-wide flex items-center gap-2"><span className="w-1 h-4 bg-orange-500 rounded-full"></span> Nuevo Pasajero al {BUSES.find(b=>b.id === currentBus)?.label}</h3>
