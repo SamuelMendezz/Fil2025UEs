@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone, Edit2, Lock, LogOut, EyeOff, Crown, FileText, Users, GraduationCap, ListFilter, Save, ShieldAlert, CreditCard, Hash, User, Bell, ArrowUpDown, ArrowDownAZ, Armchair, LayoutGrid, UserPlus, Bath, Upload, FileCheck, Ticket, ExternalLink, Unlock, AlertTriangle, Eye, KeyRound, FileWarning } from 'lucide-react';
 
 // --- CONFIGURACIÓN DE SUPABASE ---
 const SUPABASE_URL = 'https://fgzegoflnkwkcztivila.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnemVnb2Zsbmt3a2N6dGl2aWxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzMzQyOTYsImV4cCI6MjA3OTkxMDI5Nn0.-u-NUiR5Eqitf4-zqvAAZhTKHc1_Cj3OKHAhGRHl8Xs';
 
-// --- LISTAS OFICIALES POR CAMIÓN ---
+// --- LISTAS OFICIALES POR CAMIÓN (DATOS ESTÁTICOS) ---
 
-// CAMIÓN 1 (SAMUEL)
 const OFFICIAL_LIST_C1 = [
   { name: "Joseph Yancarlo Avalos Canales", phone: "3171325247", code: "225519213", amount: 480, nss: "5251056577", parent: "Lenis Alejandra Canales Castro", parentPhone: "3171048798" },
   { name: "Daira Athziri Saldaña Dávila", phone: "3171284644", code: "225521072", amount: 480, nss: "4927321887", parent: "María Luisa Dávila Muñoz", parentPhone: "3171146753" },
@@ -56,7 +55,6 @@ const OFFICIAL_LIST_C1 = [
   { name: "Samuel Méndez Vidrio", phone: "3125950081", code: "223440784", amount: 480, nss: "N/A", parent: "N/A", parentPhone: "N/A" }
 ];
 
-// CAMIÓN 2 (AYLIN)
 const OFFICIAL_LIST_C2 = [
     { name: "Ian Raphael Aguilar Gonzales", phone: "3171281276", code: "1A matutino", amount: 480, nss: "4047901592", parent: "Antonia González franco", parentPhone: "3173836225" },
     { name: "Joselin Liset Gómez Macías", phone: "3171292705", code: "2C matutino", amount: 480, nss: "19240969204", parent: "Jorge Armando Gómez Guzmán", parentPhone: "3411604229" },
@@ -105,7 +103,6 @@ const OFFICIAL_LIST_C2 = [
     { name: "Aylin Roberta Ramos Mejía", phone: "3171282184", code: "221430749", amount: 480, nss: "N/A", parent: "N/A", parentPhone: "N/A" }
 ];
 
-// CAMIÓN 3 (IKER)
 const OFFICIAL_LIST_C3 = [
     { name: "Akeimy Yeraldi Mancilla Isidro", phone: "3171067689", amount: 480, code: "225519169", nss: "26251059940", parent: "Martha Angélica Isidro Medina", parentPhone: "3173877188" },
     { name: "Kimberly Mileny Nolasco García", phone: "3171131744", amount: 480, code: "225520416", nss: "8251099696", parent: "Mayra Lizbeth García boyzo", parentPhone: "3171123507" },
@@ -114,79 +111,91 @@ const OFFICIAL_LIST_C3 = [
     { name: "Camila Dévora", phone: "3339117462", amount: 480, code: "223442264", nss: "0323082708-5", parent: "Gloria Lorena Quintana flores", parentPhone: "3171312067" },
     { name: "Dylan Gael Corona Méndez", phone: "3173896894", amount: 480, code: "223441764", nss: "2230808665", parent: "Patricia Méndez Ortega", parentPhone: "317104836" },
     { name: "Helena García Martínez", phone: "3171297602", amount: 480, code: "223440156", nss: "10230890922", parent: "Cecilia Martínez Velazco", parentPhone: "3211007752" },
-    { name: "Sebastián García Martínez", phone: "3171124602", amount: 480, code: "223440164", nss: "10230890914", parent: "Celia Martínez Velasco", parentPhone: "3211007752" },
-    { name: "Dana Isabel Pérez Santana", phone: "3411771355", amount: 480, code: "223441632", nss: "5923080464", parent: "María Isabel Santana Pérez", parentPhone: "3171039329" },
-    { name: "Miriam Judith Cisneros Reyes", phone: "3173891418", amount: 480, code: "223442663", nss: "60230859443", parent: "Miriam reyes hernandez", parentPhone: "3171059591" },
-    { name: "Jonathan Emmanuel González Gálvez", phone: "3171043835", amount: 480, code: "223013681", nss: "18220735247", parent: "Fabiola Gálvez", parentPhone: "3171003498" },
-    { name: "María Esther Chávez Sandoval", phone: "3171287144", amount: 480, code: "223011972", nss: "3220781961", parent: "Esther Sandoval", parentPhone: "3171047081" },
-    { name: "Angélica Ariadna Gómez Moranchel", phone: "3171072106", amount: 480, code: "223014068", nss: "823076425", parent: "Esmeralda Nohemí moranchel ruiz", parentPhone: "3173836056" },
-    { name: "Fátima Moreno de Jesús", phone: "3171286643", amount: 480, code: "223014653", nss: "12160758079", parent: "Ana María de Jesús Vite", parentPhone: "3171282540" },
-    { name: "José Manuel Arreola Díaz", phone: "3173872370", amount: 480, code: "223441985", nss: "54826278456", parent: "José Luis Arreloa Zavalza", parentPhone: "3173871028" },
-    { name: "Renata Luna Ureña", phone: "3325109440", amount: 480, code: "N/A", nss: "N/A", parent: "N/A", parentPhone: "N/A" },
-    { name: "Zeus irán Lara Gabriel", phone: "3171084384", amount: 480, code: "223441667", nss: "60230870218", parent: "Guadalupe Gabriel Pérez", parentPhone: "3172886313" },
-    { name: "Christian Daniel Ruiz Saldaña", phone: "3171205135", amount: 480, code: "223443414", nss: "823083379", parent: "Alma Griselda Saldaña moreno", parentPhone: "3171113311" },
-    { name: "Rubi Castellón Pérez", phone: "3171093801", amount: 480, code: "224429318", nss: "44250992201", parent: "Azucena Pérez", parentPhone: "3171193258" },
-    { name: "Hanna Kareli Yamilet López Hernández", phone: "3178731120", amount: 480, code: "224430952", nss: "5240989482", parent: "Miguel Ángel López Gómez", parentPhone: "3171314469" },
-    { name: "Alondra María García Sánchez", phone: "3171283147", amount: 480, code: "224865134", nss: "17240936769", parent: "Rosa lidia Sánchez Ortega", parentPhone: "3171008352" },
-    { name: "Astrid Martínez Beltrán", phone: "3171058492", amount: 480, code: "224427072", nss: "31007609154", parent: "Isela Beltrán leon", parentPhone: "3171022355" },
-    { name: "Jesús López Campos", phone: "3320190233", amount: 480, code: "223442728", nss: "8230836333", parent: "Felipa Leticia campos Gutiérrez", parentPhone: "3171052000" },
-    { name: "Kimberly Fátima Rodríguez Trujillo", phone: "3171066325", amount: 480, code: "223443619", nss: "60230835633", parent: "Irma Verónica Trujillo castro", parentPhone: "3173886817" },
-    { name: "Cristina Itzel Pérez Pérez", phone: "3171205047", amount: 480, code: "224080943", nss: "0323088654-5", parent: "Miriam Elizabeth Pérez moran", parentPhone: "3173850876" },
-    { name: "Evelyn Yoselin Vázquez Ortega", phone: "4491235827", amount: 480, code: "223441748", nss: "18230808497", parent: "María Azucena Ortega tapia", parentPhone: "4499061731" },
-    { name: "Selene Ruby Téllez Baltazar", phone: "3317143526", amount: 480, code: "223441179", nss: "17230854956", parent: "Mariela Baltazar Zúñiga", parentPhone: "3173891593" },
-    { name: "Edna Citlalli Reyna Ayala", phone: "3171318696", amount: 480, code: "2234434406", nss: "5923082680", parent: "María Edith Ayala moran", parentPhone: "317116076" },
-    { name: "Jorge Márquez Loera", phone: "3171234031", amount: 480, code: "224427951", nss: "19240903393", parent: "Ana Liliana Muñoz Pérez", parentPhone: "3171124191" },
-    { name: "Lucio Isac Sandoval Quintero", phone: "3171055683", amount: 480, code: "224427137", nss: "0403750889-4", parent: "José Rogelio Sandoval Hernández", parentPhone: "3173884154" },
-    { name: "Darío Gómez Rivera", phone: "3171215534", amount: 480, code: "224428532", nss: "7500823935", parent: "Nieva Teresita rivera hueso", parentPhone: "3171056618" },
-    { name: "Juan Pablo Rodríguez Pelayo", phone: "3171318561", amount: 480, code: "224428524", nss: "30250990816", parent: "María Isabel Pelayo cobian", parentPhone: "3178732644" },
-    { name: "Dante Sedano", phone: "3171038271", amount: 480, code: "225198603", nss: "75977501560", parent: "Elizabeth García rojas", parentPhone: "3171085242" },
-    { name: "Osmar Alejandro Méndez Ibarra", phone: "3173896781", amount: 480, code: "N/A", nss: "N/A", parent: "N/A", parentPhone: "N/A" },
-    { name: "Baldwin Alexander Rodríguez Hernández", phone: "3173886218", amount: 480, code: "225201299", nss: "4027737156", parent: "Iván Rodríguez", parentPhone: "3171210596" },
-    { name: "Marcos Zavalza Medina", phone: "N/A", amount: 480, code: "221431036", nss: "32110697854", parent: "José Salvador Zavalza", parentPhone: "3171041852" },
-    { name: "Camila Anahí Torres Montes", phone: "3171283203", amount: 480, code: "223443252", nss: "10230804048", parent: "Octavio César torres gomez", parentPhone: "3173883500" },
-    { name: "Karol Gabriela Robles Uribe", phone: "3171010251", amount: 480, code: "223443929", nss: "6023083445-3", parent: "Ricardo robles castillo", parentPhone: "3173886055" },
-    { name: "Nahomi Dayan Núñez Sánchez", phone: "3178734986", amount: 480, code: "224427129", nss: "35250950421", parent: "Ana Gabriela Sánchez Sánchez", parentPhone: "3173833784" },
-    { name: "Milton Santiago López Guerrero", phone: "3171070966", amount: 480, code: "223443686", nss: "0401720401-9", parent: "Roberto López Cázares", parentPhone: "3173889949" },
-    { name: "Iliana Valentina Rodríguez", phone: "3173851141", amount: 480, code: "223441608", nss: "25230806066", parent: "Gustavo Rodriguez Gómez", parentPhone: "3171049390" },
-    { name: "Diego Alejandro Mancilla García", phone: "3171128601", amount: 480, code: "225201213", nss: "54927417870", parent: "Alma Delia García torres", parentPhone: "3171079116" },
+    { name: "Sebastián García Martínez", phone: "3171124602", code: "223440164", amount: 480, nss: "10230890914", parent: "Celia Martínez Velasco", parentPhone: "3211007752" },
+    { name: "Dana Isabel Pérez Santana", phone: "3411771355", code: "223441632", amount: 480, nss: "5923080464", parent: "María Isabel Santana Pérez", parentPhone: "3171039329" },
+    { name: "Miriam Judith Cisneros Reyes", phone: "3173891418", code: "223442663", amount: 480, nss: "60230859443", parent: "Miriam reyes hernandez", parentPhone: "3171059591" },
+    { name: "Jonathan Emmanuel González Gálvez", phone: "3171043835", code: "223013681", amount: 480, nss: "18220735247", parent: "Fabiola Gálvez", parentPhone: "3171003498" },
+    { name: "María Esther Chávez Sandoval", phone: "3171287144", code: "223011972", amount: 480, nss: "3220781961", parent: "Esther Sandoval", parentPhone: "3171047081" },
+    { name: "Angélica Ariadna Gómez Moranchel", phone: "3171072106", code: "223014068", amount: 480, nss: "823076425", parent: "Esmeralda Nohemí moranchel ruiz", parentPhone: "3173836056" },
+    { name: "Fátima Moreno de Jesús", phone: "3171286643", code: "223014653", amount: 480, nss: "12160758079", parent: "Ana María de Jesús Vite", parentPhone: "3171282540" },
+    { name: "José Manuel Arreola Díaz", phone: "3173872370", code: "223441985", amount: 480, nss: "54826278456", parent: "José Luis Arreloa Zavalza", parentPhone: "3173871028" },
+    { name: "Renata Luna Ureña", phone: "3325109440", code: "N/A", amount: 480, nss: "N/A", parent: "N/A", parentPhone: "N/A" },
+    { name: "Zeus irán Lara Gabriel", phone: "3171084384", code: "223441667", amount: 480, nss: "60230870218", parent: "Guadalupe Gabriel Pérez", parentPhone: "3172886313" },
+    { name: "Christian Daniel Ruiz Saldaña", phone: "3171205135", code: "223443414", amount: 480, nss: "823083379", parent: "Alma Griselda Saldaña moreno", parentPhone: "3171113311" },
+    { name: "Rubi Castellón Pérez", phone: "3171093801", code: "224429318", amount: 480, nss: "44250992201", parent: "Azucena Pérez", parentPhone: "3171193258" },
+    { name: "Hanna Kareli Yamilet López Hernández", phone: "3178731120", code: "224430952", amount: 480, nss: "5240989482", parent: "Miguel Ángel López Gómez", parentPhone: "3171314469" },
+    { name: "Alondra María García Sánchez", phone: "3171283147", code: "224865134", amount: 480, nss: "17240936769", parent: "Rosa lidia Sánchez Ortega", parentPhone: "3171008352" },
+    { name: "Astrid Martínez Beltrán", phone: "3171058492", code: "224427072", amount: 480, nss: "31007609154", parent: "Isela Beltrán leon", parentPhone: "3171022355" },
+    { name: "Jesús López Campos", phone: "3320190233", code: "223442728", amount: 480, nss: "8230836333", parent: "Felipa Leticia campos Gutiérrez", parentPhone: "3171052000" },
+    { name: "Kimberly Fátima Rodríguez Trujillo", phone: "3171066325", code: "223443619", amount: 480, nss: "60230835633", parent: "Irma Verónica Trujillo castro", parentPhone: "3173886817" },
+    { name: "Cristina Itzel Pérez Pérez", phone: "3171205047", code: "224080943", amount: 480, nss: "0323088654-5", parent: "Miriam Elizabeth Pérez moran", parentPhone: "3173850876" },
+    { name: "Evelyn Yoselin Vázquez Ortega", phone: "4491235827", code: "223441748", amount: 480, nss: "18230808497", parent: "María Azucena Ortega tapia", parentPhone: "4499061731" },
+    { name: "Selene Ruby Téllez Baltazar", phone: "3317143526", code: "223441179", amount: 480, nss: "17230854956", parent: "Mariela Baltazar Zúñiga", parentPhone: "3173891593" },
+    { name: "Edna Citlalli Reyna Ayala", phone: "3171318696", code: "2234434406", amount: 480, nss: "5923082680", parent: "María Edith Ayala moran", parentPhone: "317116076" },
+    { name: "Jorge Márquez Loera", phone: "3171234031", code: "224427951", amount: 480, nss: "19240903393", parent: "Ana Liliana Muñoz Pérez", parentPhone: "3171124191" },
+    { name: "Lucio Isac Sandoval Quintero", phone: "3171055683", code: "224427137", amount: 480, nss: "0403750889-4", parent: "José Rogelio Sandoval Hernández", parentPhone: "3173884154" },
+    { name: "Darío Gómez Rivera", phone: "3171215534", code: "224428532", amount: 480, nss: "7500823935", parent: "Nieva Teresita rivera hueso", parentPhone: "3171056618" },
+    { name: "Juan Pablo Rodríguez Pelayo", phone: "3171318561", code: "224428524", amount: 480, nss: "30250990816", parent: "María Isabel Pelayo cobian", parentPhone: "3178732644" },
+    { name: "Dante Sedano", phone: "3171038271", code: "225198603", amount: 480, nss: "75977501560", parent: "Elizabeth García rojas", parentPhone: "3171085242" },
+    { name: "Osmar Alejandro Méndez Ibarra", phone: "3173896781", code: "N/A", amount: 480, nss: "N/A", parent: "N/A", parentPhone: "N/A" },
+    { name: "Baldwin Alexander Rodríguez Hernández", phone: "3173886218", code: "225201299", amount: 480, nss: "4027737156", parent: "Iván Rodríguez", parentPhone: "3171210596" },
+    { name: "Marcos Zavalza Medina", phone: "N/A", code: "221431036", amount: 480, nss: "32110697854", parent: "José Salvador Zavalza", parentPhone: "3171041852" },
+    { name: "Camila Anahí Torres Montes", phone: "3171283203", code: "223443252", amount: 480, nss: "10230804048", parent: "Octavio César torres gomez", parentPhone: "3173883500" },
+    { name: "Karol Gabriela Robles Uribe", phone: "3171010251", code: "223443929", amount: 480, nss: "6023083445-3", parent: "Ricardo robles castillo", parentPhone: "3173886055" },
+    { name: "Nahomi Dayan Núñez Sánchez", phone: "3178734986", code: "224427129", amount: 480, nss: "35250950421", parent: "Ana Gabriela Sánchez Sánchez", parentPhone: "3173833784" },
+    { name: "Milton Santiago López Guerrero", phone: "3171070966", code: "223443686", amount: 480, nss: "0401720401-9", parent: "Roberto López Cázares", parentPhone: "3173889949" },
+    { name: "Iliana Valentina Rodríguez", phone: "3173851141", code: "223441608", amount: 480, nss: "25230806066", parent: "Gustavo Rodriguez Gómez", parentPhone: "3171049390" },
+    { name: "Diego Alejandro Mancilla García", phone: "3171128601", code: "225201213", amount: 480, nss: "54927417870", parent: "Alma Delia García torres", parentPhone: "3171079116" },
     { name: "Abner Enríquez Casillas", phone: "+1 8185248474", amount: 300, code: "N/A", nss: "N/A", parent: "N/A", parentPhone: "N/A" },
     { name: "Paola Sánchez Soltero", phone: "3171292143", code: "224430405", amount: 480, nss: "18240947020", parent: "Karla maravilla soltero mata", parentPhone: "3171292144" },
     { name: "Iker Steve Soltero Rodríguez", phone: "3171041444", code: "221003476", amount: 480, nss: "N/A", parent: "N/A", parentPhone: "N/A" }
 ];
 
-const BUSES = [
+// --- CONSTANTE PARA LA DURACIÓN DE LA ANIMACIÓN ---
+const ANIMATION_DURATION = 300; // ms
+
+const App = () => {
+  // --- BUSES DEFINITION INSIDE COMPONENT FOR SCOPE SAFETY ---
+  const BUSES = useMemo(() => [
     { 
         id: 1, 
         label: "Camión 1", 
         color: "from-orange-500 to-orange-700", 
         text: "text-orange-600", 
         bg: "bg-orange-100",
+        primary: "orange", 
         coordinator: { name: "Samuel Méndez Vidrio", phone: "3125950081" },
         list: OFFICIAL_LIST_C1
     },
     { 
         id: 2, 
         label: "Camión 2", 
-        // CAMBIO: Verde/Amarillo compatible con la gama cálida
         color: "from-green-500 to-yellow-600", 
         text: "text-green-700", 
         bg: "bg-green-100",
+        primary: "green",
         coordinator: { name: "Aylin R. Ramos Mejía", phone: "3171282184" },
         list: OFFICIAL_LIST_C2
     },
     { 
         id: 3, 
         label: "Camión 3", 
-        // CAMBIO: Rojo/Rosa (Fucsia) compatible con la gama cálida (Naranja -> Rojo)
         color: "from-red-500 to-pink-600", 
         text: "text-red-700", 
         bg: "bg-red-100",
+        primary: "red",
         coordinator: { name: "Iker S Soltero Rodríguez", phone: "3171041444" },
         list: OFFICIAL_LIST_C3
     }
-];
+  ], []);
 
-const App = () => {
+  // --- LEGS DEFINITION INSIDE COMPONENT FOR SAFETY ---
+  const legs = useMemo(() => [
+    { id: 0, label: "Salida Autlán", sub: "→ FIL", Icon: Bus, short: "Ida" },
+    { id: 1, label: "Salida FIL", sub: "→ Plaza", Icon: MapPin, short: "Inter" },
+    { id: 2, label: "Regreso Plaza", sub: "→ Autlán", Icon: RotateCcw, short: "Regreso" }
+  ], []);
+
   // --- TÍTULO DE LA PESTAÑA ---
   useEffect(() => {
     document.title = "Unión Estudiantil - FIL 2025";
@@ -197,13 +206,11 @@ const App = () => {
     return localStorage.getItem('fil2025_user') || null;
   });
   
-  // Access Level: null (viewer), 1 (Bus1), 2 (Bus2), 3 (Bus3)
   const [userBusAccess, setUserBusAccess] = useState(() => {
       const stored = localStorage.getItem('fil2025_bus_access');
       return stored ? parseInt(stored) : null;
   });
     
-  // Si hay un usuario, es coordinador
   const isCoordinator = !!currentUser;
 
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -223,17 +230,20 @@ const App = () => {
   const [authCodeInput, setAuthCodeInput] = useState('');
   const [authPhoneInput, setAuthPhoneInput] = useState('');
   
-  // NEW STATE: Authentication Error inside Modal
+  // Authentication Error inside Modal
   const [authError, setAuthError] = useState('');
 
-  // DELETE DOCUMENT CONFIRMATION STATE (Reemplaza deleteLetterId)
-  const [documentToDelete, setDocumentToDelete] = useState(null); // { passengerId, docUrl, docName }
+  // DELETE DOCUMENT CONFIRMATION STATE
+  const [documentToDelete, setDocumentToDelete] = useState(null); 
 
   // BUS STATE
   const [currentBus, setCurrentBus] = useState(1);
 
-  // MAP LIST TOGGLE STATE (NEW)
-  const [mapListMode, setMapListMode] = useState('unassigned'); // 'unassigned' | 'assigned'
+  // MAP LIST TOGGLE STATE
+  const [mapListMode, setMapListMode] = useState('unassigned'); 
+  
+  // --- ANIMATION STATES ---
+  const [exitingModal, setExitingModal] = useState(null); 
 
   // Force Bus View on Login
   useEffect(() => {
@@ -241,6 +251,21 @@ const App = () => {
           setCurrentBus(userBusAccess);
       }
   }, [isCoordinator, userBusAccess]);
+  
+  // --- HELPER PARA CERRAR MODALES CON ANIMACIÓN ---
+  const closeAnimated = (modalName, setShowState) => {
+      setExitingModal(modalName);
+      setTimeout(() => {
+          setShowState(false);
+          setExitingModal(null);
+      }, ANIMATION_DURATION);
+  };
+
+  // --- FORM DATA STATE (INITIALIZED SAFELY) ---
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+      name: '', phone: '', code: '', amount: 0, nss: '', parent: '', parent_phone: ''
+  });
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -249,26 +274,21 @@ const App = () => {
     let accessLevel = null;
     let valid = false;
 
-    // Credenciales
-    // Samuel - Bus 1
     if (loginUser === '223440784' && loginPass === 'samumv367') {
         name = "Samuel M.";
         accessLevel = 1;
         valid = true;
     }
-    // Aylin - Bus 2
     else if (loginUser === '221430749' && loginPass === 'Prinsess123') {
         name = "Aylin R.";
         accessLevel = 2;
         valid = true;
     }
-    // Iker - Bus 3
     else if (loginUser === '221003476' && loginPass === 'Iker0202') {
         name = "Iker S.";
         accessLevel = 3;
         valid = true;
     }
-    // Francisco (Legacy/Backup - Bus 1)
     else if (loginUser.toLowerCase() === 'francisco' && loginPass === 'fil2025') {
         name = "Francisco P.";
         accessLevel = 1;
@@ -281,11 +301,10 @@ const App = () => {
       localStorage.setItem('fil2025_user', name);
       localStorage.setItem('fil2025_bus_access', accessLevel);
       
-      setShowLoginModal(false);
+      closeAnimated('login', setShowLoginModal); 
       setLoginError('');
       setLoginUser(''); setLoginPass('');
       
-      // Immediate redirect to assigned bus
       setCurrentBus(accessLevel);
       showNotification(`Bienvenido, ${name}. Acceso al Camión ${accessLevel}`);
     } else {
@@ -305,15 +324,12 @@ const App = () => {
     setLoginError('');
   };
 
-  // Check Permission Helper
-  // Un usuario SÓLO puede editar si es coordinador Y si el bus del pasajero es su bus asignado.
   const canEdit = (targetBusId) => {
       if (!isCoordinator) return false;
       if (userBusAccess && userBusAccess !== (targetBusId || 1)) return false;
       return true;
   };
 
-  // Re-define esta función para que verifique si el bus del pasajero coincide con el bus del coordinador
   const verifyPermissionAction = (targetBusId) => {
       if (!canEdit(targetBusId)) {
           showNotification(`Solo tienes permiso para editar el Camión ${userBusAccess}`, 'error');
@@ -322,26 +338,22 @@ const App = () => {
       return true;
   };
 
-  // --- LÓGICA DE DATOS CON SUPABASE (Script Injection) ---
+  // --- LÓGICA DE DATOS CON SUPABASE ---
   const [supabase, setSupabase] = useState(null);
   const [passengers, setPassengers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
 
-  // Helper para parsear la columna letter_url como un array de documentos
   const parseDocuments = (letterUrl) => {
       if (!letterUrl) return [];
       try {
           const docs = typeof letterUrl === 'string' ? JSON.parse(letterUrl) : letterUrl;
           return Array.isArray(docs) ? docs : [];
       } catch (e) {
-          // Si falla el parseo, probablemente solo era una URL antigua o 'null'
           return typeof letterUrl === 'string' && letterUrl.startsWith('http') ? [{ name: 'Documento Antiguo', url: letterUrl, legacy: true }] : [];
       }
   };
 
-
-  // 1. Cargar el script de Supabase
   useEffect(() => {
     if (window.supabase) {
       const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -359,13 +371,8 @@ const App = () => {
       }
     };
     document.body.appendChild(script);
-
-    return () => {
-      // Cleanup opcional
-    };
   }, []);
 
-  // 2. Usar Supabase cuando esté listo
   useEffect(() => {
     if (!supabase) return;
 
@@ -377,8 +384,6 @@ const App = () => {
         { event: '*', schema: 'public', table: 'passengers' },
         (payload) => {
             let updatedPassenger = payload.new;
-            
-            // Asegurar que el campo documents se actualice desde letter_url
             if (updatedPassenger && updatedPassenger.letter_url !== undefined) {
                 updatedPassenger.documents = parseDocuments(updatedPassenger.letter_url);
             }
@@ -388,7 +393,6 @@ const App = () => {
             } else if (payload.eventType === 'DELETE') {
                 setPassengers((prev) => prev.filter((p) => p.id !== payload.old.id));
             } else if (payload.eventType === 'UPDATE') {
-                // MERGE SEAT DATA FROM LOCAL STORAGE IF PAYLOAD HAS NO SEAT (Safety)
                 const localSeats = JSON.parse(localStorage.getItem('fil2025_local_seats') || '{}');
                 if (updatedPassenger.seat_number === null && localSeats[updatedPassenger.id]) {
                     updatedPassenger.seat_number = localSeats[updatedPassenger.id];
@@ -416,25 +420,22 @@ const App = () => {
       console.error('Error cargando:', error);
       showNotification("Error conectando a Supabase. ¿RLS?", "error");
     } else {
-      // 1. Mapear y parsear documentos para el estado local (documents array)
       const localSeats = JSON.parse(localStorage.getItem('fil2025_local_seats') || '{}');
       const mergedData = data.map(p => ({
           ...p,
           seat_number: p.seat_number !== null ? p.seat_number : (localSeats[p.id] || null),
-          documents: parseDocuments(p.letter_url), // Usar el helper de parseo
+          documents: parseDocuments(p.letter_url),
       }));
       setPassengers(mergedData);
     }
     setLoading(false);
   };
 
-  // --- FUNCIÓN DE EMERGENCIA PARA CARGAR LISTA ---
   const handleRestoreList = async () => {
     if(!isCoordinator) {
         triggerLogin();
         return;
     }
-    // Determine which bus to restore
     const busToRestore = currentBus;
     
     if(!verifyPermissionAction(busToRestore)) return; 
@@ -461,7 +462,6 @@ const App = () => {
       parent_phone: p.parentPhone || 'N/A',
       checks: [false, false, false],
       times: [null, null, null],
-      // Nuevo campo inicial: array de documentos serializado
       letter_url: JSON.stringify([]), 
       ticket_released: false,
       bus_id: busToRestore
@@ -478,11 +478,9 @@ const App = () => {
     setUploading(false);
   };
 
-  // --- HELPER: AUTO-ADD COORDINATOR IF MISSING ---
   const addCoordinatorIfMissing = async () => {
       if (!supabase || !isCoordinator) return;
       
-      // Auto add only to assigned bus
       const targetBus = userBusAccess || 1;
       const meName = currentUser === "Samuel M." ? "Samuel Méndez Vidrio" : (currentUser === "Aylin R." ? "Aylin R. Ramos Mejía" : "Iker S Soltero Rodríguez");
       
@@ -501,7 +499,7 @@ const App = () => {
                   checks: [false, false, false],
                   times: [null, null, null],
                   seat_number: null,
-                  letter_url: JSON.stringify([]), // Nuevo campo inicial
+                  letter_url: JSON.stringify([]), 
                   ticket_released: false,
                   bus_id: targetBus
                 };
@@ -525,20 +523,11 @@ const App = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
-  
-  // Sorting State
-  const [sortMode, setSortMode] = useState('original'); // 'original', 'alpha', 'lastname'
-
-  // MODAL EDIT STATE
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editFormData, setEditFormData] = useState({});
-
-  // BUS MAP STATE
+  const [sortMode, setSortMode] = useState('original'); 
   const [showBusMap, setShowBusMap] = useState(false);
-  const [selectedSeat, setSelectedSeat] = useState(null); // The seat number user clicked on
-  const [seatSearchTerm, setSeatSearchTerm] = useState(''); // NEW: Seat search
+  const [selectedSeat, setSelectedSeat] = useState(null); 
+  const [seatSearchTerm, setSeatSearchTerm] = useState('');
 
-  // NOTIFICATION SYSTEM
   const [notification, setNotification] = useState({ message: '', type: '', visible: false });
 
   const showNotification = (message, type = 'success') => {
@@ -548,13 +537,6 @@ const App = () => {
     }, 3000);
   };
 
-  const legs = [
-    { id: 0, label: "Salida Autlán", sub: "→ FIL", icon: <Bus size={14} />, short: "Ida" },
-    { id: 1, label: "Salida FIL", sub: "→ Plaza", icon: <MapPin size={14} />, short: "Inter" },
-    { id: 2, label: "Regreso Plaza", sub: "→ Autlán", icon: <RotateCcw size={14} />, short: "Regreso" }
-  ];
-
-  // --- HELPERS FOR LOCAL STORAGE ---
   const saveLocalSeat = (passengerId, seatNum) => {
       const localSeats = JSON.parse(localStorage.getItem('fil2025_local_seats') || '{}');
       if (seatNum === null) {
@@ -565,15 +547,10 @@ const App = () => {
       localStorage.setItem('fil2025_local_seats', JSON.stringify(localSeats));
   };
 
-  // --- ACTIONS ---
-
   const addPassenger = async (e) => {
     e.preventDefault();
     if (!isCoordinator) { triggerLogin(); return; }
-    
-    // PERMISSION CHECK
     if (!verifyPermissionAction(currentBus)) return;
-
     if (!supabase) return;
     if (!newName.trim()) {
         showNotification("El nombre del pasajero es obligatorio.", "error");
@@ -590,45 +567,33 @@ const App = () => {
       parent_phone: newParentPhone.trim() || 'N/A',
       checks: [false, false, false],
       times: [null, null, null],
-      // Actualizado para manejar el array serializado
       letter_url: JSON.stringify([]), 
       ticket_released: false,
-      bus_id: currentBus // Asigna al camión actual
+      bus_id: currentBus 
     };
 
     const { error } = await supabase.from('passengers').insert([newPassenger]);
     if (!error) showNotification(`Pasajero agregado al Camión ${currentBus}`);
     
     setNewName(''); setNewPhone(''); setNewCode(''); setNewAmount(''); setNewNss(''); setNewParent(''); setNewParentPhone('');
-    setShowAddForm(false);
+    closeAnimated('add_form', setShowAddForm);
   };
 
-  // Function to reset the form
   const handleCancelAdd = () => {
-    setNewName('');
-    setNewPhone('');
-    setNewCode('');
-    setNewAmount('');
-    setNewNss('');
-    setNewParent('');
-    setNewParentPhone('');
-    setShowAddForm(false);
+    setNewName(''); setNewPhone(''); setNewCode(''); setNewAmount(''); setNewNss(''); setNewParent(''); setNewParentPhone('');
+    closeAnimated('add_form', setShowAddForm); 
   };
 
   const removePassenger = async (id) => {
     if (!isCoordinator) { triggerLogin(); return; }
-    
-    // Get passenger to check permissions
     const passenger = passengers.find(p => p.id === id);
-    // Verificar que el ID del bus coincida con el acceso del coordinador
     if (!passenger || !verifyPermissionAction(passenger.bus_id || 1)) return;
 
     if (!supabase) return;
-    // NOTE: Removed window.confirm due to mandate constraints on modal usage, but using simple confirm for code brevity here.
     if (window.confirm('¿Seguro que quieres eliminar a esta persona?')) {
       await supabase.from('passengers').delete().eq('id', id);
       showNotification("Pasajero eliminado", "error");
-      setShowEditModal(false);
+      closeAnimated('edit', setShowEditModal); 
     }
   };
 
@@ -637,15 +602,9 @@ const App = () => {
         showNotification("Acceso denegado. Solo coordinadores.", "error"); 
         return; 
     }
-    
-    // Si el coordinador no tiene permiso para editar este camión, solo abrimos el modal para verlo,
-    // pero el botón de guardar estará deshabilitado (lógica implementada dentro del modal).
-    // NOTA: Mantenemos la lógica de verificación aquí para la UI en caso de que se intente editar desde un bus equivocado.
     if (!canEdit(passenger.bus_id)) {
       showNotification(`Solo tienes permiso para editar el Camión ${userBusAccess}`, 'error');
     }
-
-    // Crear una copia del pasajero para edición, asegurando que documents se mapee a letter_url para el guardado.
     setEditFormData({ ...passenger, letter_url: JSON.stringify(passenger.documents || []) }); 
     setShowEditModal(true);
   };
@@ -657,15 +616,13 @@ const App = () => {
 
   const handleSaveEdit = async () => {
     if (!supabase) return;
-    
-    // PERMISSION CHECK - ESTRICTO ANTES DE GUARDAR
     const targetBus = editFormData.bus_id || 1;
     if (!verifyPermissionAction(targetBus)) return;
 
-    const { id, seat_number, documents, ...dataToUpdate } = editFormData; // Excluir documents del payload
+    const { id, seat_number, documents, ...dataToUpdate } = editFormData; 
     await supabase.from('passengers').update(dataToUpdate).eq('id', id);
     showNotification("Información actualizada");
-    setShowEditModal(false);
+    closeAnimated('edit', setShowEditModal);
   };
 
   const handleLocalAmountChange = (id, newVal) => {
@@ -674,13 +631,11 @@ const App = () => {
 
   const handleAmountBlur = async (id, newVal) => {
     if (!supabase) return;
-    
     const passenger = passengers.find(p => p.id === id);
     if (!passenger) return;
     
-    // PERMISSION CHECK - ESTRICTO ANTES DE GUARDAR
     if (!verifyPermissionAction(passenger.bus_id || 1)) {
-        fetchPassengers(); // Revert local change
+        fetchPassengers(); 
         return;
     }
 
@@ -692,11 +647,8 @@ const App = () => {
   const toggleCheck = async (id, legIndex) => {
     if (!isCoordinator) { triggerLogin(); return; }
     if (!supabase) return;
-    
     const passenger = passengers.find(p => p.id === id);
     if (!passenger) return;
-
-    // PERMISSION CHECK - ESTRICTO ANTES DE GUARDAR
     if (!verifyPermissionAction(passenger.bus_id || 1)) return;
 
     const isChecking = !passenger.checks[legIndex];
@@ -714,8 +666,6 @@ const App = () => {
     await supabase.from('passengers').update({ checks: newChecks, times: newTimes }).eq('id', id);
   };
 
-  // --- CARTA / TICKET ACTIONS ---
-
   const handleUploadLetter = async (e, passengerId) => {
     const files = e.target.files;
     if (!files || files.length === 0 || !supabase) return;
@@ -724,7 +674,6 @@ const App = () => {
         return;
     }
 
-    // No se requiere permiso de coordinador para subir archivos (esto lo hace el pasajero).
     setLoading(true);
     const passenger = passengers.find(p => p.id === passengerId);
     if (!passenger) {
@@ -737,18 +686,15 @@ const App = () => {
     let uploadedDocuments = [];
 
     for (const file of filesToUpload) {
-        // Validación de tipo (opcional, Supabase storage lo controla)
         if (!file.type.match('image.*|application/pdf')) {
             showNotification(`Archivo ${file.name} no es una imagen o PDF.`, "error");
             continue;
         }
 
         const fileExt = file.name.split('.').pop();
-        // Usar timestamp + random para asegurar nombre único
         const fileName = `${passengerId}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}.${fileExt}`;
         const filePath = `${fileName}`;
 
-        // 1. Upload file to 'letters' bucket
         const { error: uploadError } = await supabase.storage
             .from('letters')
             .upload(filePath, file);
@@ -759,7 +705,6 @@ const App = () => {
             continue; 
         }
 
-        // 2. Get Public URL
         const { data: { publicUrl } } = supabase.storage.from('letters').getPublicUrl(filePath);
 
         uploadedDocuments.push({
@@ -769,14 +714,11 @@ const App = () => {
         });
     }
     
-    // Merge new documents with existing ones
     const newDocuments = [...currentDocuments, ...uploadedDocuments];
     const newDocumentsJson = JSON.stringify(newDocuments);
 
-    // 3. Update Passenger Record
     const { error: dbError } = await supabase
         .from('passengers')
-        // Usar letter_url para el campo en la base de datos, con la data serializada.
         .update({ letter_url: newDocumentsJson }) 
         .eq('id', passengerId);
 
@@ -784,7 +726,6 @@ const App = () => {
         console.error(dbError);
         showNotification("Error guardando enlaces en base de datos", "error");
     } else {
-        // Optimistically update local state immediately (the live channel will also update it)
         setPassengers(prev => prev.map(p => (p.id === passengerId ? { ...p, documents: newDocuments } : p)));
         showNotification(`${uploadedDocuments.length} documento(s) subido(s) correctamente`);
     }
@@ -795,34 +736,29 @@ const App = () => {
     const docInfo = documentToDelete;
     if (!docInfo || !supabase) return;
     
-    setDocumentToDelete(null); // Cerrar modal
+    closeAnimated('delete', () => setDocumentToDelete(null));
 
     const passenger = passengers.find(p => p.id === docInfo.passengerId);
-    // PERMISSION CHECK - ESTRICTO ANTES DE GUARDAR
     if (!passenger || !verifyPermissionAction(passenger.bus_id || 1)) return;
 
-    // Filtrar el documento a eliminar
     const newDocuments = (passenger.documents || []).filter(doc => doc.url !== docInfo.docUrl);
     const newDocumentsJson = JSON.stringify(newDocuments);
 
-    // Actualizar el registro del pasajero
     const { error: dbError } = await supabase
         .from('passengers')
         .update({ 
             letter_url: newDocumentsJson, 
-            // Si no quedan documentos, revocamos el ticket_released (medida de seguridad)
             ticket_released: newDocuments.length > 0 ? passenger.ticket_released : false 
         })
         .eq('id', docInfo.passengerId);
     
     if(dbError) {
         showNotification("Error al eliminar referencia del documento", "error");
-        fetchPassengers(); // Revertir en caso de error
+        fetchPassengers(); 
     } else {
         showNotification(`Documento "${docInfo.docName}" eliminado`, "error");
     }
   };
-
 
   const toggleTicketRelease = async (passengerId, currentStatus) => {
       if(!isCoordinator) return;
@@ -831,10 +767,8 @@ const App = () => {
       const passenger = passengers.find(p => p.id === passengerId);
       if (!passenger) return;
 
-      // PERMISSION CHECK - ESTRICTO ANTES DE GUARDAR
       if (!verifyPermissionAction(passenger.bus_id || 1)) return;
       
-      // Bloquear si intenta liberar sin documentos
       if (!currentStatus && (!passenger.documents || passenger.documents.length === 0)) {
            showNotification("¡No puedes liberar el boleto! No hay documentos subidos.", "error");
            return;
@@ -855,49 +789,33 @@ const App = () => {
       setShowTicketModal(true);
   };
 
-  // --- IDENTITY VERIFICATION (DUAL FACTOR: CODE & PHONE) ---
   const handleVerifyIdentity = (e) => {
       e.preventDefault();
       const target = passengers.find(p => p.id === authTargetId);
       if (!target) return;
 
-      // Determinar si el usuario tiene código
       const hasCode = target.code && target.code !== 'N/A' && target.code !== 'Pendiente';
       let isValid = false;
 
-      // Limpiar inputs
       const phoneInputClean = authPhoneInput.replace(/\D/g, '');
       const targetPhoneClean = (target.phone || '').replace(/\D/g, '');
 
       if (hasCode) {
-          // Requiere AMBOS: Código y Teléfono
           const codeMatch = authCodeInput.trim().toLowerCase() === target.code.trim().toLowerCase();
           const phoneMatch = phoneInputClean.length > 6 && phoneInputClean === targetPhoneClean;
-          
-          if (codeMatch && phoneMatch) {
-              isValid = true;
-          } else {
-              setAuthError("Datos Incorrectos"); // SET ERROR INSIDE MODAL
-              return; 
-          }
+          if (codeMatch && phoneMatch) isValid = true;
+          else { setAuthError("Datos Incorrectos"); return; }
       } else {
-          // Solo Teléfono (Fallback)
-          if (phoneInputClean.length > 6 && phoneInputClean === targetPhoneClean) {
-              isValid = true;
-          } else {
-              setAuthError("Datos Incorrectos"); // SET ERROR INSIDE MODAL
-              return;
-          }
+          if (phoneInputClean.length > 6 && phoneInputClean === targetPhoneClean) isValid = true;
+          else { setAuthError("Datos Incorrectos"); return; }
       }
 
       if (isValid) {
-          setShowAuthModal(false);
+          closeAnimated('auth', setShowAuthModal);
           setTicketData(target);
           setShowTicketModal(true);
           showNotification(`¡Bienvenido ${target.name.split(' ')[0]}!`);
-          setAuthCodeInput('');
-          setAuthPhoneInput('');
-          setAuthError(''); // Clear error
+          setAuthCodeInput(''); setAuthPhoneInput(''); setAuthError('');
       }
   };
 
@@ -905,90 +823,66 @@ const App = () => {
       setAuthTargetId(id);
       setAuthCodeInput('');
       setAuthPhoneInput('');
-      setAuthError(''); // RESET ERROR STATE
+      setAuthError('');
       setShowAuthModal(true);
   };
 
-  // --- SEAT MAP ACTIONS ---
   const handleSeatClick = (seatNum) => {
-    // Only check occupants for CURRENT BUS
     const occupant = passengers.find(p => (p.bus_id || 1) === currentBus && p.seat_number === seatNum);
-
-    // If seat is free and user is NOT coordinator -> Block and login
     if (!occupant && !isCoordinator) {
         showNotification("Solo coordinadores pueden asignar asientos", "error");
         triggerLogin();
         return;
     }
-    
-    // Permission Check for assignment intent
     if (!occupant && !canEdit(currentBus)) {
         showNotification(`Solo el encargado del Camión ${currentBus} puede asignar.`, 'error');
         return;
     }
-
-    // If seat is occupied OR user is coordinator -> Allow selection to view details/assign
     setSelectedSeat(seatNum);
     setSeatSearchTerm(''); 
   };
 
   const assignSeat = async (passengerId, seatNum) => {
     if (!supabase) return;
-    if (!isCoordinator) return; // Safety check
-    if (!verifyPermissionAction(currentBus)) return; // Permiso para el camión actual
+    if (!isCoordinator) return; 
+    if (!verifyPermissionAction(currentBus)) return; 
 
-    const previousPassengers = [...passengers]; // Backup
+    const previousPassengers = [...passengers]; 
 
-    // 1. Optimistic Update (Immediate Feedback)
     setPassengers(prev => {
         return prev.map(p => {
-            // Check only within CURRENT BUS
             if ((p.bus_id || 1) !== currentBus) return p;
-
-            // Clear seat if someone else has it (in this bus)
             if (p.seat_number == seatNum) return { ...p, seat_number: null };
-            // Assign seat to new person
             if (p.id === passengerId) return { ...p, seat_number: seatNum };
             return p;
         });
     });
 
-    // 2. Try DB Update, Fallback to Local
     try {
-        // Clear previous owner if any (in this bus)
         const taken = previousPassengers.find(p => (p.bus_id || 1) === currentBus && p.seat_number == seatNum);
         if (taken) {
              const { error: errorClear } = await supabase.from('passengers').update({ seat_number: null }).eq('id', taken.id);
              if (errorClear) throw errorClear;
         }
-
         const { error: errorAssign } = await supabase.from('passengers').update({ seat_number: seatNum }).eq('id', passengerId);
-        
         if (errorAssign) throw errorAssign;
-
         showNotification(`Asiento ${seatNum} asignado (C${currentBus})`);
-
     } catch (error) {
         console.warn("Fallo guardado en nube, guardando localmente...", error);
-        
-        // Save to LocalStorage
         const taken = previousPassengers.find(p => (p.bus_id || 1) === currentBus && p.seat_number == seatNum);
         if(taken) saveLocalSeat(taken.id, null);
         saveLocalSeat(passengerId, seatNum);
-
         showNotification(`Asiento ${seatNum} guardado localmente`, 'success');
     }
-    
     setSelectedSeat(null);
     setSeatSearchTerm(''); 
   };
 
   const releaseSeat = async (passengerId) => {
     if (!supabase) return;
-    if (!isCoordinator) return; // Safety check
+    if (!isCoordinator) return;
     if (!verifyPermissionAction(currentBus)) return;
 
-    // Optimistic
     setPassengers(prev => prev.map(p => p.id === passengerId ? { ...p, seat_number: null } : p));
     
     try {
@@ -999,47 +893,28 @@ const App = () => {
         saveLocalSeat(passengerId, null);
         showNotification("Asiento liberado (Local)", 'success');
     }
-    
     setSelectedSeat(null);
   };
 
-  // --- SORTING LOGIC ---
   const getSurname = (fullName) => {
-    // Normalizar espacios y manejar casos vacíos
     if (!fullName) return '';
     const parts = fullName.trim().split(/\s+/);
     const len = parts.length;
-
-    // Lógica mejorada para apellidos:
-    // 1. Si son 2 palabras o menos: Tomamos la última como apellido.
-    // 2. Si son más de 2 palabras: Asumimos que las últimas 2 son apellidos (Paterno y Materno),
-    //    por lo tanto el apellido paterno (para ordenar) es el penúltimo.
-    
     if (len <= 2) return parts[len - 1] || '';
-    
-    // Caso especial: Detectar apellidos compuestos comunes si es necesario, 
-    // pero la regla del penúltimo funciona mejor para "3 nombres + 2 apellidos" que la lógica anterior.
     return parts[len - 2];
   };
 
   const formatDisplayName = (name) => {
     if (sortMode !== 'lastname') return name;
     if (!name) return '';
-    
     const parts = name.trim().split(/\s+/);
     const len = parts.length;
-
-    // Si tiene 2 palabras o menos (Ej: Juan Perez) -> Perez Juan
     if (len <= 2) {
         if (len === 2) return `${parts[1]} ${parts[0]}`;
         return name;
     }
-
-    // Heurística estándar MX: Los últimos 2 son apellidos, el resto son nombres.
-    // Ej: "Jose de Jesús Orozco Garcia" -> Apellidos: Orozco Garcia | Nombres: Jose de Jesús
     const surnames = parts.slice(len - 2).join(' ');
     const names = parts.slice(0, len - 2).join(' ');
-    
     return `${surnames} ${names}`;
   };
 
@@ -1060,26 +935,30 @@ const App = () => {
     return parts[0];
   };
 
+  // --- RENDER HELPERS ---
+  const currentBusInfo = BUSES.find(b => b.id === currentBus);
+  const currentBusColorClass = currentBusInfo ? currentBusInfo.color : "from-gray-500 to-gray-600";
+  
+  const getPrimaryButtonClass = (busId) => {
+      const bus = BUSES.find(b => b.id === busId);
+      const baseColor = bus && bus.primary ? bus.primary : 'indigo';
+      return `bg-${baseColor}-600 text-white py-3 rounded-xl font-bold text-lg hover:bg-${baseColor}-700 transition-colors shadow-lg shadow-${baseColor}-500/30 active:scale-95`;
+  };
+
   // --- RENDER ---
-  // FILTER BY CURRENT BUS FIRST
   const currentBusPassengers = passengers.filter(p => (p.bus_id || 1) === currentBus);
 
   const filteredPassengers = currentBusPassengers.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || (p.code && p.code.includes(searchTerm));
     
-    // NEW FILTER LOGIC: 'pending' vs 'reviewed' vs 'seated' vs 'no_docs' vs leg index vs null
     let matchesFilter = true;
     if (filterLeg === 'pending') {
-        // Ahora verifica si hay documentos Y si el ticket NO ha sido liberado
         matchesFilter = (p.documents && p.documents.length > 0) && !p.ticket_released;
     } else if (filterLeg === 'reviewed') {
-        // Verifica si hay documentos Y si el ticket YA fue liberado
         matchesFilter = (p.documents && p.documents.length > 0) && p.ticket_released;
     } else if (filterLeg === 'seated') {
-        // Verifica si tiene asiento asignado
         matchesFilter = p.seat_number !== null;
     } else if (filterLeg === 'no_docs') {
-        // NUEVO: Verifica si NO tiene documentos subidos
         matchesFilter = (!p.documents || p.documents.length === 0);
     } else if (filterLeg !== null) {
         matchesFilter = !p.checks[filterLeg];
@@ -1105,27 +984,24 @@ const App = () => {
 
   const totalPaidFull = currentBusPassengers.filter(p => p.amount >= 480).length;
   const totalAdvance = currentBusPassengers.filter(p => p.amount > 0 && p.amount < 480).length;
-  const totalPending = currentBusPassengers.filter(p => p.amount === 0).length; // Mantenemos para mostrar en la tarjeta si es coordinador
+  const totalPending = currentBusPassengers.filter(p => p.amount === 0).length; 
   const totalMoney = currentBusPassengers.reduce((sum, p) => sum + (p.amount || 0), 0);
   
-  // --- CALCULATE CARD/SEAT FILTER COUNTS BASED ON currentBusPassengers ---
   const countPendingCards = currentBusPassengers.filter(p => p.documents && p.documents.length > 0 && !p.ticket_released).length;
   const countReviewedCards = currentBusPassengers.filter(p => p.documents && p.documents.length > 0 && p.ticket_released).length;
   const countSeated = currentBusPassengers.filter(p => p.seat_number).length;
-  // NUEVO COUNT
   const countNoDocs = currentBusPassengers.filter(p => !p.documents || p.documents.length === 0).length;
 
   const exportToCSV = () => {
     if (!isCoordinator) { triggerLogin(); return; }
     let csvContent = "data:text/csv;charset=utf-8,";
     csvContent += "Camion,Nombre,Monto,Teléfono,Código,NSS,Tutor,Tel. Tutor,Asiento,Documentos URL,Boleto Liberado,Autlan->FIL (Hora),FIL->Plaza (Hora),Plaza->Autlan (Hora)\n";
-    // Export ALL passengers or just current bus? Typically useful to export all, but sorted by bus
     passengers.sort((a,b) => (a.bus_id||1) - (b.bus_id||1)).forEach(p => {
       const c1 = p.checks[0] ? `SI (${p.times[0]})` : 'NO';
       const c2 = p.checks[1] ? `SI (${p.times[1]})` : 'NO';
       const c3 = p.checks[2] ? `SI (${p.times[2]})` : 'NO';
       
-      const docUrls = (p.documents || []).map(d => d.url).join(' | '); // Concatenar URLs
+      const docUrls = (p.documents || []).map(d => d.url).join(' | '); 
       
       const row = `C${p.bus_id||1},${p.name.replace(/,/g, '')},${p.amount||0},${p.phone||'N/A'},${p.code||'N/A'},${p.nss||'N/A'},${p.parent ? p.parent.replace(/,/g, '') : 'N/A'},${p.parent_phone||'N/A'},${p.seat_number || 'N/A'},"${docUrls}",${p.ticket_released ? 'SI' : 'NO'},${c1},${c2},${c3}`;
       csvContent += row + "\n";
@@ -1138,25 +1014,15 @@ const App = () => {
     document.body.removeChild(link);
   };
 
-  const getBusColor = (id) => {
-      const bus = BUSES.find(b => b.id === id);
-      return bus ? bus.color : "from-gray-500 to-gray-600";
-  };
-
-  // --- PANTALLA DE CARGA CORREGIDA ---
-  // Se usa 'fixed inset-0' para asegurar que cubra el 100% de la pantalla sin recortes
   if (loading) {
     return (
       <div className="fixed inset-0 z-[100] bg-orange-50 flex flex-col items-center justify-center w-screen h-screen overflow-hidden">
-        {/* Spinner animado */}
         <div className="relative mb-6">
             <div className="animate-spin rounded-full h-20 w-20 border-4 border-orange-200 border-t-orange-600 shadow-xl"></div>
             <div className="absolute inset-0 flex items-center justify-center">
                 <Bus size={24} className="text-orange-500/50" />
             </div>
         </div>
-        
-        {/* Texto de carga */}
         <div className="text-center animate-in fade-in zoom-in duration-500 px-6">
             <h2 className="text-3xl font-black text-orange-600 mb-1 tracking-tighter">UNIÓN ESTUDIANTIL</h2>
             <p className="text-orange-400 font-bold text-xs uppercase tracking-[0.3em] animate-pulse">Cargando Sistema...</p>
@@ -1165,9 +1031,34 @@ const App = () => {
     );
   }
 
+  const getAnimationClasses = (modalName) => {
+      const baseClass = "fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 ease-out";
+      if (exitingModal === modalName) {
+          return `${baseClass} animate-leave`;
+      }
+      return `${baseClass} animate-enter`;
+  };
+
   return (
     <div className="min-h-screen bg-white font-sans pb-24 text-gray-800 overflow-x-hidden w-full max-w-[100vw]">
       
+      <style>{`
+        @keyframes enter {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes leave {
+          from { opacity: 1; transform: scale(1); }
+          to { opacity: 0; transform: scale(0.95); }
+        }
+        .animate-enter {
+          animation: enter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .animate-leave {
+          animation: leave 0.2s ease-in forwards;
+        }
+      `}</style>
+
       {/* NOTIFICATION TOAST */}
       <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[60] transition-all duration-500 ease-in-out ${notification.visible ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0 pointer-events-none'}`}>
         <div className={`flex items-center gap-3 px-6 py-3 rounded-full shadow-2xl border ${notification.type === 'error' ? 'bg-white border-red-200 text-red-600' : 'bg-white border-green-200 text-green-700'}`}>
@@ -1177,31 +1068,30 @@ const App = () => {
       </div>
 
       {/* DELETE DOCUMENT CONFIRMATION MODAL */}
-      {documentToDelete && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[80] flex items-center justify-center p-4 animate-in fade-in">
+      {(documentToDelete || exitingModal === 'delete') && (
+        <div className={getAnimationClasses('delete')}>
            <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-red-100 text-center">
                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
                    <Trash2 size={32}/>
                </div>
                <h3 className="text-xl font-bold text-gray-800 mb-2">¿Eliminar documento?</h3>
-               <p className="text-sm text-gray-500 mb-3 font-bold truncate">"{documentToDelete.docName}"</p>
+               <p className="text-sm text-gray-500 mb-3 font-bold truncate">"{documentToDelete?.docName || '...'} "</p>
                <p className="text-sm text-gray-500 mb-6">Esta acción no se puede deshacer y puede bloquear el boleto si no quedan documentos.</p>
                <div className="flex gap-3">
-                   <button onClick={() => setDocumentToDelete(null)} className="flex-1 py-3 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">Cancelar</button>
+                   <button onClick={() => closeAnimated('delete', () => setDocumentToDelete(null))} className="flex-1 py-3 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">Cancelar</button>
                    <button onClick={confirmDeleteDocument} className="flex-1 py-3 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 transition-colors shadow-lg shadow-red-500/30">Sí, eliminar</button>
                </div>
            </div>
         </div>
       )}
 
-      {/* AUTH MODAL FOR PASSENGERS (MEJORADO) */}
-      {showAuthModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[80] flex items-center justify-center p-4 animate-in fade-in">
+      {/* AUTH MODAL FOR PASSENGERS */}
+      {(showAuthModal || exitingModal === 'auth') && (
+        <div className={getAnimationClasses('auth')}>
            <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl border border-orange-100 relative overflow-hidden">
-                <button onClick={() => setShowAuthModal(false)} className="absolute top-4 right-4 bg-black/20 hover:bg-black/30 p-2 rounded-full transition-colors text-white z-10"><X size={20}/></button>
+                <button onClick={() => closeAnimated('auth', setShowAuthModal)} className="absolute top-4 right-4 bg-black/20 hover:bg-black/30 p-2 rounded-full transition-colors text-white z-10"><X size={20}/></button>
                
-                {/* HEADER VISUAL */}
-                <div className="bg-gradient-to-r from-orange-500 to-yellow-600 p-8 text-white text-center relative shadow-lg">
+                <div className={`bg-gradient-to-r ${currentBusColorClass} p-8 text-white text-center relative shadow-lg`}>
                     <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
                     <div className="w-16 h-16 bg-white/20 border-2 border-white/50 rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-sm shadow-xl">
                        <ShieldAlert size={32} strokeWidth={2} className="text-white drop-shadow-md" />
@@ -1211,7 +1101,6 @@ const App = () => {
                 </div>
 
                <div className="p-6">
-                   {/* NEW: ERROR MESSAGE INSIDE MODAL */}
                    {authError && (
                        <div className="mb-4 p-3 bg-red-50 text-red-500 border border-red-100 rounded-xl font-bold text-sm animate-in fade-in slide-in-from-top-2 flex items-center justify-center gap-2">
                            <AlertTriangle size={16}/> {authError}
@@ -1220,11 +1109,19 @@ const App = () => {
 
                    {(() => {
                        const target = passengers.find(p => p.id === authTargetId);
-                       // Lógica para decidir qué pedir: Si tiene código válido, pide ambos. Si no, pide teléfono.
                        const hasCode = target && target.code && target.code !== 'N/A' && target.code !== 'Pendiente';
                        
                        return (
                            <>
+                               {target && (
+                                   <div className="text-center mb-6">
+                                       <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Pasajero Verificado</p>
+                                       <h4 className="text-xl font-extrabold text-gray-800 leading-tight">
+                                           {target.name}
+                                       </h4>
+                                   </div>
+                               )}
+                               
                                <p className="text-sm text-gray-500 mb-6 text-center">
                                    {hasCode 
                                    ? "Por seguridad, ingresa tu Código de Estudiante y el Teléfono registrado." 
@@ -1241,7 +1138,7 @@ const App = () => {
                                               value={authCodeInput}
                                               onChange={(e) => {
                                                   setAuthCodeInput(e.target.value);
-                                                  if(authError) setAuthError(''); // Clear error on type
+                                                  if(authError) setAuthError(''); 
                                               }}
                                               className={`w-full p-4 bg-gray-50 border rounded-xl text-left font-bold text-lg focus:ring-2 focus:ring-orange-500 outline-none ${authError ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}
                                               autoFocus
@@ -1257,10 +1154,10 @@ const App = () => {
                                          value={authPhoneInput}
                                          onChange={(e) => {
                                              setAuthPhoneInput(e.target.value);
-                                             if(authError) setAuthError(''); // Clear error on type
+                                             if(authError) setAuthError(''); 
                                          }}
                                          className={`w-full p-4 bg-gray-50 border rounded-xl text-left font-bold text-lg focus:ring-2 focus:ring-orange-500 outline-none ${authError ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}
-                                         autoFocus={!hasCode} // Autofocus en teléfono si no hay código
+                                         autoFocus={!hasCode} 
                                        />
                                    </div>
                                    
@@ -1283,8 +1180,8 @@ const App = () => {
       )}
 
       {/* TICKET MODAL */}
-      {showTicketModal && ticketData && (
-          <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[70] flex items-center justify-center p-4 animate-in zoom-in duration-300">
+      {(showTicketModal || exitingModal === 'ticket') && ticketData && (
+          <div className={getAnimationClasses('ticket')}>
               {(() => {
                   const p = passengers.find(p => p.id === ticketData.id) || ticketData;
                   const busId = p.bus_id || 1;
@@ -1292,19 +1189,18 @@ const App = () => {
                   
                   return (
                     <div className="bg-white w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl relative">
-                        <div className={`bg-gradient-to-br ${busInfo.color} p-6 text-white text-center relative overflow-hidden`}>
+                        <div className={`bg-gradient-to-br ${busInfo?.color} p-6 text-white text-center relative overflow-hidden`}>
                             <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
                             <Ticket size={48} className="mx-auto mb-2 drop-shadow-lg"/>
                             <h2 className="text-2xl font-black uppercase tracking-widest drop-shadow-md">Boleto FIL 2025</h2>
                             <p className="text-xs font-bold opacity-80 uppercase tracking-wide">Pase de Abordar Oficial</p>
                             <div className="mt-2 inline-block bg-white/20 px-3 py-1 rounded-full text-xs font-bold border border-white/20 backdrop-blur-md">
-                                {busInfo.label}
+                                {busInfo?.label}
                             </div>
-                            <button onClick={() => setShowTicketModal(false)} className="absolute top-4 right-4 bg-black/20 hover:bg-black/30 p-2 rounded-full transition-colors"><X size={20}/></button>
+                            <button onClick={() => closeAnimated('ticket', setShowTicketModal)} className="absolute top-4 right-4 bg-black/20 hover:bg-black/30 p-2 rounded-full transition-colors"><X size={20}/></button>
                         </div>
                         
                         <div className="p-8 flex flex-col items-center gap-6 relative">
-                            {/* Perforaciones decorativas */}
                             <div className="absolute -left-3 top-0 bottom-0 my-auto w-6 h-6 bg-black rounded-full"></div>
                             <div className="absolute -right-3 top-0 bottom-0 my-auto w-6 h-6 bg-black rounded-full"></div>
 
@@ -1313,13 +1209,11 @@ const App = () => {
                                 <h3 className="text-xl font-bold text-gray-800 leading-tight">{p.name}</h3>
                                 <div className="flex justify-center gap-2 mt-2">
                                     <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-lg text-xs font-bold">{p.code}</span>
-                                    <span className={`px-3 py-1 rounded-lg text-xs font-bold ${busInfo.bg} ${busInfo.text}`}>Asiento: {p.seat_number || 'N/A'}</span>
+                                    <span className={`px-3 py-1 rounded-lg text-xs font-bold ${busInfo?.bg} ${busInfo?.text}`}>Asiento: {p.seat_number || 'N/A'}</span>
                                 </div>
                             </div>
 
                             <div className="w-full border-t border-dashed border-gray-300"></div>
-
-                            {/* SECCIÓN TUTOR ELIMINADA POR PRIVACIDAD */}
                             
                             <div className="bg-gray-50 p-4 rounded-xl w-full text-center mt-2">
                                 <p className="text-[10px] text-gray-400 uppercase font-bold mb-2">Estado</p>
@@ -1335,30 +1229,26 @@ const App = () => {
       )}
 
       {/* BUS MAP MODAL */}
-      {showBusMap && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+      {(showBusMap || exitingModal === 'map') && (
+        <div className={getAnimationClasses('map')}>
             <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl border border-orange-200 relative max-h-[95vh] flex flex-col overflow-hidden">
                 <div className="p-4 border-b flex justify-between items-center bg-gray-50">
                     <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                        <Bus className="text-orange-500" /> Mapa del {BUSES.find(b => b.id === currentBus).label}
+                        <Bus className="text-orange-500" /> Mapa del {BUSES.find(b => b.id === currentBus)?.label}
                     </h3>
-                    <button onClick={() => setShowBusMap(false)} className="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors"><X size={20}/></button>
+                    <button onClick={() => closeAnimated('map', setShowBusMap)} className="p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors"><X size={20}/></button>
                 </div>
                 
                 <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-gray-100/50">
                     <div className="flex flex-col md:flex-row gap-8">
-                        {/* THE BUS */}
                         <div className="flex-1">
                             <div className="bg-white p-6 rounded-[3rem] shadow-xl border-4 border-gray-200 relative mx-auto max-w-sm">
-                                {/* Driver Area */}
                                 <div className="border-b-4 border-dashed border-gray-200 pb-4 mb-6 flex justify-between px-8 text-gray-300 font-bold uppercase tracking-widest text-xs">
                                     <span>Frente</span>
                                     <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center border-2 border-gray-200"><User size={20}/></div>
                                 </div>
 
-                                {/* Seats Grid */}
                                 <div className="space-y-3">
-                                    {/* Rows 1-10 (Standard 4 seats) */}
                                     {Array.from({ length: 10 }).map((_, rowIndex) => (
                                         <div key={rowIndex} className="flex justify-between items-center gap-2 md:gap-4">
                                             <div className="flex gap-2">
@@ -1395,9 +1285,7 @@ const App = () => {
                                         </div>
                                     ))}
                                     
-                                    {/* Row 11 (41, 42) & WC */}
                                     <div className="flex justify-between items-center gap-2 md:gap-4 border-t-2 border-dashed border-gray-100 pt-3">
-                                        {/* Left: 41, 42 */}
                                         <div className="flex gap-2">
                                             {[41, 42].map(seatNum => {
                                                 const occupant = currentBusPassengers.find(p => p.seat_number == seatNum);
@@ -1413,16 +1301,13 @@ const App = () => {
                                             })}
                                         </div>
                                         
-                                        {/* Aisle & Right Side WC */}
                                         <div className="flex gap-2 items-center justify-end flex-1">
-                                            {/* WC Area (Takes space of seats 43-44 effectively or right side) */}
                                             <div className="w-[104px] h-12 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400">
                                                 <span className="text-xl font-black">WC</span>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* Row 12 (Back Left: 43, 44, 45) - Aligned with left and aisle */}
                                     <div className="flex justify-start gap-2 md:gap-4 mt-1">
                                         <div className="flex gap-2">
                                             {[43, 44].map(seatNum => {
@@ -1438,7 +1323,6 @@ const App = () => {
                                                 );
                                             })}
                                         </div>
-                                        {/* Seat 45 in aisle spot roughly */}
                                         <div className="ml-[10px]"> 
                                              {[45].map(seatNum => {
                                                 const occupant = currentBusPassengers.find(p => p.seat_number == seatNum);
@@ -1458,7 +1342,6 @@ const App = () => {
                             </div>
                         </div>
 
-                        {/* SELECTION PANEL */}
                         <div className="w-full md:w-80 flex-shrink-0">
                             {selectedSeat ? (
                                 <div className="bg-white p-6 rounded-3xl shadow-lg border border-orange-100 animate-in slide-in-from-right">
@@ -1473,7 +1356,6 @@ const App = () => {
                                             <p className="text-sm font-bold text-gray-500 uppercase mb-1">Ocupado por</p>
                                             <p className="text-lg font-bold text-gray-800 mb-4">{currentBusPassengers.find(p => p.seat_number == selectedSeat).name}</p>
                                             
-                                            {/* Only show Release button if Coordinator */}
                                             {isCoordinator && (
                                                 <button onClick={() => releaseSeat(currentBusPassengers.find(p => p.seat_number == selectedSeat).id)} className="bg-red-50 text-red-600 px-6 py-2 rounded-xl font-bold border border-red-200 hover:bg-red-100 w-full">Liberar Asiento</button>
                                             )}
@@ -1482,7 +1364,6 @@ const App = () => {
                                         <div className="space-y-2">
                                             <p className="text-xs font-bold text-gray-400 uppercase mb-2">Asignar a pasajero sin asiento:</p>
                                             
-                                            {/* --- MAP LIST TOGGLE BUTTONS (NEW) --- */}
                                             <div className="flex bg-gray-100 p-1 rounded-xl mb-3">
                                                 <button 
                                                     onClick={() => setMapListMode('unassigned')}
@@ -1498,7 +1379,6 @@ const App = () => {
                                                 </button>
                                             </div>
 
-                                            {/* SEARCH IN SEAT SELECTION */}
                                             <div className="relative mb-2">
                                                 <Search className="absolute left-3 top-2.5 text-gray-400" size={14} />
                                                 <input 
@@ -1511,20 +1391,16 @@ const App = () => {
                                             </div>
 
                                             <div className="max-h-80 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
-                                                {/* Empty state based on mode */}
                                                 {mapListMode === 'unassigned' && currentBusPassengers.filter(p => !p.seat_number).length === 0 && <p className="text-center text-gray-400 text-xs py-4">Todos tienen asiento 🎉</p>}
                                                 {mapListMode === 'assigned' && currentBusPassengers.filter(p => p.seat_number).length === 0 && <p className="text-center text-gray-400 text-xs py-4">Nadie tiene asiento aún</p>}
 
                                                 {currentBusPassengers
-                                                    // FILTERING BY SEAT NUMBER & MODE
                                                     .filter(p => {
                                                         const matchesSearch = p.name.toLowerCase().includes(seatSearchTerm.toLowerCase()) || (p.code && p.code.includes(seatSearchTerm));
-                                                        // Filter only for passengers WITHOUT seat_number if mode is unassigned
                                                         const matchesMode = mapListMode === 'unassigned' ? !p.seat_number : p.seat_number;
                                                         return matchesSearch && matchesMode;
                                                     })
                                                     .sort((a,b) => {
-                                                      // Apply the selected sort mode (LastName or Alpha) to the seat assignment list as well
                                                       if (sortMode === 'lastname') {
                                                           const surnameA = getSurname(a.name);
                                                           const surnameB = getSurname(b.name);
@@ -1567,18 +1443,17 @@ const App = () => {
       )}
 
       {/* EDIT MODAL WINDOW */}
-      {showEditModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+      {(showEditModal || exitingModal === 'edit') && (
+        <div className={getAnimationClasses('edit')}>
           <div className="bg-white rounded-3xl p-6 w-full max-w-lg shadow-2xl border border-orange-200 relative max-h-[90vh] overflow-y-auto">
              <div className="flex justify-between items-center mb-6 border-b pb-4">
                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                  <User className="text-orange-500" /> Ficha del Pasajero
                </h3>
-               <button onClick={() => setShowEditModal(false)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"><X size={20}/></button>
+               <button onClick={() => closeAnimated('edit', setShowEditModal)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"><X size={20}/></button>
              </div>
              
              <div className="space-y-4">
-                {/* General Info Section */}
                 <div className="bg-gray-50 p-4 rounded-xl space-y-3">
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Información General</label>
                     <div>
@@ -1601,7 +1476,6 @@ const App = () => {
                     </div>
                 </div>
 
-                {/* Confidential Info Section */}
                 <div className="bg-red-50/50 p-4 rounded-xl space-y-3 border border-red-100">
                     <label className="text-[10px] font-bold text-red-400 uppercase tracking-wider block mb-1 flex items-center gap-1"><ShieldAlert size={12}/> Información Confidencial</label>
                     <div>
@@ -1634,20 +1508,19 @@ const App = () => {
         </div>
       )}
 
-      {/* LOGIN MODAL (MEJORADO) */}
-      {showLoginModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+      {/* LOGIN MODAL */}
+      {(showLoginModal || exitingModal === 'login') && (
+        <div className={getAnimationClasses('login')}>
           <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl border border-orange-200 relative overflow-hidden">
              
-             {/* HEADER VISUAL */}
-             <div className="bg-gradient-to-r from-orange-600 to-red-500 p-8 text-white text-center relative shadow-lg">
+             <div className={`bg-gradient-to-r ${currentBusColorClass} p-8 text-white text-center relative shadow-lg`}>
                 <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
                 <div className="w-16 h-16 bg-white/20 border-2 border-white/50 rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-sm shadow-xl">
                    <Lock size={32} strokeWidth={2} className="text-white drop-shadow-md" />
                 </div>
                 <h3 className="text-2xl font-black tracking-wider drop-shadow-md">Acceso Coordinador</h3>
                 <p className="text-xs font-medium opacity-80 mt-1">Usa tus credenciales de Camión.</p>
-                <button onClick={() => setShowLoginModal(false)} className="absolute top-4 right-4 bg-black/20 hover:bg-black/30 p-2 rounded-full transition-colors text-white"><X size={20}/></button>
+                <button onClick={() => closeAnimated('login', setShowLoginModal)} className="absolute top-4 right-4 bg-black/20 hover:bg-black/30 p-2 rounded-full transition-colors text-white"><X size={20}/></button>
              </div>
              
              <div className="p-6">
@@ -1679,15 +1552,10 @@ const App = () => {
                    
                    <button 
                       type="submit" 
-                      className="w-full bg-orange-600 text-white py-3 rounded-xl font-bold text-lg hover:bg-orange-700 transition-colors shadow-lg shadow-orange-500/30 active:scale-95 flex items-center justify-center gap-2"
+                      className={`w-full ${getPrimaryButtonClass(currentBus)} flex items-center justify-center gap-2`}
                    >
                       <Unlock size={20}/> Iniciar Sesión
                    </button>
-                   
-                   {/* Mensaje de ayuda */}
-                   <p className="text-center text-[10px] text-gray-400 mt-4">
-                        
-                   </p>
                 </form>
              </div>
           </div>
@@ -1695,8 +1563,7 @@ const App = () => {
       )}
       
       {/* HEADER */}
-      <div className={`bg-gradient-to-br ${BUSES.find(b => b.id === currentBus).color} text-white p-6 pb-12 shadow-2xl shadow-orange-900/50 rounded-b-[2.5rem] relative z-20 transition-all duration-500 overflow-hidden`}>
-        {/* Decorative gloss/shadow for depth */}
+      <div className={`bg-gradient-to-br ${currentBusColorClass} text-white p-6 pb-12 shadow-2xl shadow-orange-900/50 rounded-b-[2.5rem] relative z-20 transition-all duration-500 overflow-hidden`}>
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/5 pointer-events-none"></div>
         <div className="absolute -top-20 -right-20 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -1705,12 +1572,10 @@ const App = () => {
             <div className="flex flex-col">
                 <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-orange-100/90 mb-1 drop-shadow-md">Planilla</span>
                 <div className="flex flex-col">
-                    {/* CAMBIO: UNIÓN ESTUDIANTIL en mayúsculas */}
                     <h1 className="text-2xl md:text-3xl font-black flex items-center gap-2 drop-shadow-xl filter">UNIÓN ESTUDIANTIL</h1>
                     <span className="text-sm font-bold text-orange-100 opacity-90 -mt-1 drop-shadow-md">FIL 2025</span>
                 </div>
                 
-                {/* GREETING OR DEFAULT TEXT */}
                 <div className="flex items-center gap-2 text-xs text-orange-50 font-medium mt-2 flex-nowrap"> 
                     {currentUser ? (
                         <div className="bg-yellow-400/90 text-yellow-900 px-3 py-1 rounded-full font-bold flex items-center gap-1 shadow-lg shadow-yellow-900/20 animate-in fade-in slide-in-from-left-2 backdrop-blur-sm border border-yellow-300/50 whitespace-nowrap"> 
@@ -1718,7 +1583,7 @@ const App = () => {
                         </div>
                     ) : (
                        <div className="bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm border border-white/10 whitespace-nowrap"> 
-                           <Bus size={12} className="text-yellow-300 drop-shadow-sm"/> {BUSES.find(b => b.id === currentBus).label}
+                           <Bus size={12} className="text-yellow-300 drop-shadow-sm"/> {BUSES.find(b => b.id === currentBus)?.label}
                        </div>
                     )}
                     {isCoordinator && (
@@ -1729,7 +1594,6 @@ const App = () => {
                 </div>
             </div>
             
-            {/* CAMBIO: Eliminado el contador de Pax */}
             <div className="flex gap-2">
                 <button onClick={isCoordinator ? handleLogout : triggerLogin} className={`p-2 rounded-2xl backdrop-blur-md border border-white/20 shadow-lg transition-all ${isCoordinator ? 'bg-red-500/80 hover:bg-red-600 shadow-red-900/20' : 'bg-white/20 hover:bg-white/30 shadow-black/10'}`}>
                     {isCoordinator ? <LogOut size={20} className="drop-shadow-sm" /> : <Lock size={20} className="drop-shadow-sm" />}
@@ -1737,7 +1601,6 @@ const App = () => {
             </div>
             </div>
 
-            {/* BUS SELECTOR TABS */}
             <div className="flex justify-between bg-black/20 backdrop-blur-md rounded-2xl p-1 mb-6 border border-white/10 shadow-inner">
                 {BUSES.map((bus) => (
                     <button 
@@ -1750,10 +1613,10 @@ const App = () => {
                 ))}
             </div>
 
-            {/* Resumen Asistencia */}
             <div className="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-6 gap-3 text-center text-xs">
             {legs.map((leg, idx) => {
                 const stats = getStats(idx);
+                const IconComponent = leg.Icon;
                 return (
                 <div key={idx} className="bg-black/20 backdrop-blur-md rounded-2xl p-2.5 flex flex-col items-center border border-white/10 shadow-inner group transition-all hover:bg-black/30">
                     <span className="text-[10px] uppercase tracking-wider font-bold text-orange-100/90 mb-0.5 drop-shadow-sm">{leg.sub.replace('→ ', '')}</span>
@@ -1775,7 +1638,6 @@ const App = () => {
 
       <div className="max-w-7xl mx-auto px-4 -mt-6 relative z-30">
         
-        {/* STATS CARDS */}
         <div className={`grid gap-3 mb-6 grid-cols-2 ${isCoordinator ? 'sm:grid-cols-4' : 'sm:grid-cols-2'}`}>
           <div className="bg-white p-3 rounded-2xl shadow-lg border-b-4 border-green-500 flex flex-col items-center text-center transform hover:-translate-y-1 transition-transform">
              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Pagados</span>
@@ -1786,7 +1648,6 @@ const App = () => {
              <span className="text-xl font-black text-gray-800">{totalAdvance}</span>
           </div>
           
-          {/* Muestra la tarjeta de Pendientes si NO es coordinador (ocupando el 3er lugar) */}
           {!isCoordinator && (
             <div className="bg-white p-3 rounded-2xl shadow-lg border-b-4 border-red-500 flex flex-col items-center text-center transform hover:-translate-y-1 transition-transform">
                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Pendientes</span>
@@ -1794,7 +1655,6 @@ const App = () => {
             </div>
           )}
 
-          {/* Si es coordinador, se muestran Pendientes y Total MXN, por eso el grid-cols-4 */}
           {isCoordinator && (
             <div className="bg-white p-3 rounded-2xl shadow-lg border-b-4 border-red-500 flex flex-col items-center text-center transform hover:-translate-y-1 transition-transform">
                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Pendientes</span>
@@ -1810,33 +1670,30 @@ const App = () => {
           )}
         </div>
 
-        {/* COORDINADOR */}
         <div className="mb-6 bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl shadow-xl overflow-hidden border border-gray-700 max-w-2xl mx-auto">
             <div className="p-4 flex items-center justify-between">
                 <div>
                     <div className="flex items-center gap-2 mb-1">
                         <Crown size={16} className="text-yellow-400 fill-yellow-400 animate-pulse" />
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-yellow-400/90">{BUSES.find(b => b.id === currentBus).label}</span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-yellow-400/90">{BUSES.find(b => b.id === currentBus)?.label}</span>
                     </div>
-                    <h3 className="text-lg font-bold text-white leading-tight">{BUSES.find(b => b.id === currentBus).coordinator.name}</h3>
+                    <h3 className="text-lg font-bold text-white leading-tight">{BUSES.find(b => b.id === currentBus)?.coordinator.name}</h3>
                     <div className="flex flex-row gap-3 mt-1 text-gray-400 text-xs">
-                        <span className="flex items-center gap-1.5"><Phone size={12} /> {BUSES.find(b => b.id === currentBus).coordinator.phone}</span>
+                        <span className="flex items-center gap-1.5"><Phone size={12} /> {BUSES.find(b => b.id === currentBus)?.coordinator.phone}</span>
                     </div>
                 </div>
-                <a href={`tel:${BUSES.find(b => b.id === currentBus).coordinator.phone}`} className="bg-green-600 hover:bg-green-500 text-white p-3 rounded-full shadow-lg shadow-green-900/50 transition-transform active:scale-95">
+                <a href={`tel:${BUSES.find(b => b.id === currentBus)?.coordinator.phone}`} className="bg-green-600 hover:bg-green-500 text-white p-3 rounded-full shadow-lg shadow-green-900/50 transition-transform active:scale-95">
                     <Phone size={20} strokeWidth={2.5} />
                 </a>
             </div>
         </div>
 
-        {/* SEARCH & ACTIONS */}
         <div className="flex flex-col md:flex-row gap-3 mb-4 max-w-4xl mx-auto">
           <div className="relative flex-1 group">
             <Search className="absolute left-4 top-3.5 text-orange-300 transition-colors group-focus-within:text-orange-500" size={18} />
             <input type="text" placeholder="Buscar estudiante (nombre o código)..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-11 pr-4 py-3 bg-white border-none rounded-2xl shadow-md text-sm font-medium focus:ring-4 focus:ring-orange-500/20 transition-all outline-none" />
           </div>
 
-          {/* BOTÓN MAPA (MÁS VISIBLE AHORA) */}
           <button 
             onClick={() => setShowBusMap(true)} 
             className="p-3 bg-white text-orange-600 rounded-2xl shadow-md hover:bg-orange-50 hover:text-orange-700 transition-colors flex items-center justify-center gap-2 border border-orange-100 px-6 group"
@@ -1850,11 +1707,9 @@ const App = () => {
           </button>
         </div>
 
-        {/* FILTERS & SORT */}
         <div className="flex items-center gap-3 mb-6 w-full max-w-full overflow-x-auto pb-2 px-1 no-scrollbar justify-start">
            <div className="flex-shrink-0 bg-white p-2 rounded-full shadow-sm"><ListFilter size={16} className="text-orange-500"/></div>
            
-           {/* 1. TODOS (RESET) */}
            <button 
              onClick={() => setFilterLeg(null)} 
              className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-sm ${filterLeg === null ? 'bg-gray-800 text-white scale-105 shadow-md' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
@@ -1862,18 +1717,15 @@ const App = () => {
              Todos
            </button>
 
-           {/* 2. ORDEN (ORIGINAL/A-Z) */}
            <button onClick={cycleSortMode} className="flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-sm bg-white text-gray-600 hover:bg-gray-50 flex items-center gap-2 border border-gray-100">
               {sortMode === 'original' ? <ArrowUpDown size={14} className="text-gray-400"/> : <ArrowDownAZ size={14} className="text-orange-500"/>}
               {getSortLabel()}
            </button>
 
-           {/* SEPARADORES Y FILTROS SOLO PARA COORDINADOR */}
            {isCoordinator && (
              <>
                <div className="flex-shrink-0 w-px h-6 bg-gray-200 mx-1"></div>
 
-               {/* 3. CARTAS PENDIENTES */}
                <button 
                   onClick={() => setFilterLeg('pending')} 
                   className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 shadow-sm ${filterLeg === 'pending' ? 'bg-yellow-500 text-white scale-105 shadow-yellow-500/30' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
@@ -1882,7 +1734,6 @@ const App = () => {
                   <span className="bg-white/20 px-1.5 py-0.5 rounded-md text-[10px]">{countPendingCards}</span>
                </button>
 
-               {/* 4. CARTAS REVISADAS */}
                <button 
                   onClick={() => setFilterLeg('reviewed')} 
                   className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 shadow-sm ${filterLeg === 'reviewed' ? 'bg-green-500 text-white scale-105 shadow-green-500/30' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
@@ -1891,7 +1742,6 @@ const App = () => {
                   <span className="bg-white/20 px-1.5 py-0.5 rounded-md text-[10px]">{countReviewedCards}</span>
                </button>
 
-               {/* 5. SIN DOCUMENTOS */}
                <button 
                   onClick={() => setFilterLeg('no_docs')} 
                   className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 shadow-sm ${filterLeg === 'no_docs' ? 'bg-red-500 text-white scale-105 shadow-red-500/30' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
@@ -1902,17 +1752,17 @@ const App = () => {
 
                <div className="flex-shrink-0 w-px h-6 bg-gray-200 mx-1"></div>
 
-               {/* 6, 7, 8. ASISTENCIA (Ida, Inter, Regreso) */}
-               {legs.map((leg) => (
+               {legs.map((leg) => {
+                 const LegIcon = leg.Icon;
+                 return (
                  <button key={leg.id} onClick={() => setFilterLeg(leg.id)} className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 shadow-sm ${filterLeg === leg.id ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white scale-105 shadow-orange-500/30' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>
-                    <span className={filterLeg === leg.id ? 'text-white' : 'text-orange-400'}>{leg.icon}</span> {filterLeg === leg.id ? `Faltan ${leg.short}` : leg.short}
+                    <span className={filterLeg === leg.id ? 'text-white' : 'text-orange-400'}><LegIcon size={14} /></span> {filterLeg === leg.id ? `Faltan ${leg.short}` : leg.short}
                  </button>
-               ))}
+               )})}
              </>
            )}
         </div>
 
-        {/* ADD SAMUEL BUTTON (IF MISSING) */}
         {isCoordinator && !passengers.find(p => p.name === "Samuel Méndez Vidrio") && (
            <div className="flex justify-center mb-4 animate-in fade-in">
                <button 
@@ -1924,13 +1774,11 @@ const App = () => {
            </div>
         )}
 
-        {/* FORMULARIO AGREGAR (MEJORADO) */}
-        {showAddForm && isCoordinator && (
-          <div className="mb-6 bg-white p-5 rounded-3xl shadow-xl border border-orange-100 animate-in fade-in slide-in-from-top-4 max-w-2xl mx-auto">
-            <h3 className="font-bold text-gray-800 mb-4 text-sm uppercase tracking-wide flex items-center gap-2"><span className="w-1 h-4 bg-orange-500 rounded-full"></span> Nuevo Pasajero al {BUSES.find(b=>b.id === currentBus).label}</h3>
+        {(showAddForm || exitingModal === 'add_form') && isCoordinator && (
+          <div className={`mb-6 bg-white p-5 rounded-3xl shadow-xl border border-orange-100 max-w-2xl mx-auto ${exitingModal === 'add_form' ? 'animate-leave' : 'animate-enter'}`}>
+            <h3 className="font-bold text-gray-800 mb-4 text-sm uppercase tracking-wide flex items-center gap-2"><span className="w-1 h-4 bg-orange-500 rounded-full"></span> Nuevo Pasajero al {BUSES.find(b=>b.id === currentBus)?.label}</h3>
             <form onSubmit={addPassenger} className="space-y-4">
                 
-                {/* GRUPO INFORMACIÓN GENERAL */}
                 <div className="bg-gray-50 p-4 rounded-xl space-y-3">
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Información Básica</label>
                     <input type="text" placeholder="Nombre completo (Obligatorio)" value={newName} onChange={(e) => setNewName(e.target.value)} className="w-full p-3 bg-white border border-gray-200 rounded-xl font-bold text-gray-800 focus:ring-2 focus:ring-orange-500/50 outline-none"/>
@@ -1945,7 +1793,6 @@ const App = () => {
                     </div>
                 </div>
 
-                {/* GRUPO INFORMACIÓN TUTOR / NSS */}
                 <div className="bg-red-50/50 p-4 rounded-xl space-y-3 border border-red-100">
                     <label className="text-[10px] font-bold text-red-400 uppercase tracking-wider block mb-1 flex items-center gap-1"><ShieldAlert size={12}/> Información Tutor / NSS (Opcional)</label>
                     <input type="text" placeholder="Nombre del Tutor" value={newParent} onChange={(e) => setNewParent(e.target.value)} className="w-full p-3 bg-white border border-red-100 rounded-xl font-medium text-gray-700 focus:ring-2 focus:ring-red-200 outline-none"/>
@@ -1955,8 +1802,6 @@ const App = () => {
                     </div>
                 </div>
 
-
-                {/* BOTONES */}
                 <div className="flex gap-3 pt-2">
                     <button type="button" onClick={handleCancelAdd} className="px-4 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition-colors flex items-center justify-center flex-1">
                         <X size={20}/> Cancelar
@@ -1970,7 +1815,6 @@ const App = () => {
           </div>
         )}
 
-        {/* LISTA DE PASAJEROS (LISTA SIMPLE) */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-20 max-w-7xl mx-auto">
           {filteredPassengers.length === 0 ? (
             <div className="col-span-full text-center py-12 px-6 bg-white/50 rounded-3xl border border-dashed border-gray-300 mt-4">
@@ -1996,16 +1840,15 @@ const App = () => {
             filteredPassengers.map((p) => {
               const busInfo = BUSES.find(b => b.id === (p.bus_id || 1));
               const docCount = p.documents ? p.documents.length : 0;
-              const canModify = canEdit(p.bus_id); // Verifica si el coordinador actual puede modificar este pasajero
+              const canModify = canEdit(p.bus_id); 
 
               return (
               <div key={p.id} className="bg-white rounded-2xl shadow-sm hover:shadow-xl border border-orange-50/50 overflow-hidden transition-all duration-300 group relative flex flex-col w-full mx-auto">
-                <div className={`absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b ${busInfo.color}`}></div>
+                <div className={`absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b ${busInfo?.color}`}></div>
                 
                 <div className="p-3 relative z-10 pl-4 flex-1 flex justify-between items-start">
-                  <div className="flex-1 pr-14 min-w-0"> {/* Aumentado el padding derecho para evitar solapamiento con el dinero */}
+                  <div className="flex-1 pr-14 min-w-0">
                         
-                        {/* EDICIÓN RÁPIDA DE DINERO (Posicionamiento absoluto) */}
                         <div className="absolute top-3 right-3 z-20">
                             {isCoordinator ? (
                                 <div className={`flex items-center gap-1 px-3 py-1 rounded-full border shadow-sm transition-colors ${p.amount >= 480 ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
@@ -2017,7 +1860,7 @@ const App = () => {
                                         onBlur={(e) => handleAmountBlur(p.id, e.target.value)}
                                         onKeyDown={(e) => { if(e.key === 'Enter') e.target.blur(); }}
                                         className={`w-14 text-xs font-extrabold bg-transparent outline-none text-right ${p.amount >= 480 ? 'text-green-700 placeholder-green-300' : 'text-yellow-700 placeholder-yellow-300'}`}
-                                        disabled={!canModify} // Deshabilitar si no es el coordinador de este camión
+                                        disabled={!canModify} 
                                     />
                                 </div>
                             ) : (
@@ -2027,7 +1870,6 @@ const App = () => {
                             )}
                         </div>
 
-                        {/* NOMBRE CLICKABLE (Abre modal o Login) */}
                         <h3 onClick={() => handleEditClick(p)} className={`font-bold text-sm leading-tight mb-2 transition-colors cursor-pointer hover:text-orange-600 text-gray-800 flex items-center gap-2 group-hover:underline select-none truncate pr-2`}>
                             {formatDisplayName(p.name)} 
                             {isCoordinator ? (
@@ -2045,7 +1887,6 @@ const App = () => {
                             <div className="flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-md border border-orange-100/50"><Phone size={10} className="text-orange-500" /><span className="font-medium">{p.phone}</span></div>
                             <div className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-md border border-gray-100/50"><GraduationCap size={12} className="text-gray-400" /><span>{isCoordinator ? p.code : '•••••'}</span></div>
                             
-                            {/* NUEVO: Asiento apartado */}
                             {p.seat_number && (
                                 <div className="flex items-center gap-1 bg-purple-100 px-2 py-1 rounded-md border border-purple-200 text-purple-700 font-bold">
                                     <Armchair size={10} />
@@ -2053,15 +1894,13 @@ const App = () => {
                                 </div>
                             )}
 
-                            <div className={`flex items-center gap-1 px-2 py-1 rounded-md border border-gray-100/50 ${busInfo.bg} ${busInfo.text} font-bold`}>
+                            <div className={`flex items-center gap-1 px-2 py-1 rounded-md border border-gray-100/50 ${busInfo?.bg} ${busInfo?.text} font-bold`}>
                                 <Bus size={10} />
                                 <span>C{p.bus_id || 1}</span>
                             </div>
                         </div>
 
-                        {/* --- CARTA / DOCUMENTO AREA --- */}
                         <div className="mt-3 flex flex-col gap-2">
-                            {/* Documentos subidos (Visible solo para Coordinador) */}
                             {isCoordinator && docCount > 0 && (
                                 <div className="space-y-1">
                                 {p.documents.map((doc, index) => (
@@ -2092,15 +1931,12 @@ const App = () => {
                                 </div>
                             )}
 
-                            {/* Botón de Subir/Gestionar (Pasajero) o Estado (Coordinador) */}
                             {docCount > 0 ? (
                                 isCoordinator ? (
-                                    // COORDINADOR: Muestra documentos subidos y el botón de subir más
                                     <div className="flex items-center gap-1.5 text-xs font-bold bg-green-50 text-green-600 px-3 py-1.5 rounded-lg border border-green-200">
                                         <FileCheck size={14}/> {docCount} Documento(s) Subido(s)
                                     </div>
                                 ) : (
-                                    // PASAJERO: Lógica condicional según estado del boleto
                                     p.ticket_released ? (
                                         <div className="flex items-center justify-center gap-1.5 text-xs font-bold bg-green-50 text-green-600 px-3 py-1.5 rounded-lg border border-green-200">
                                             <FileCheck size={14}/> Documentos Revisados
@@ -2112,14 +1948,12 @@ const App = () => {
                                     )
                                 )
                             ) : (
-                                // Sin documentos subidos: Mostrar botón de subir
                                 <label className="flex items-center justify-center gap-1.5 text-xs font-bold bg-gray-50 text-gray-600 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer active:scale-95">
                                     <Upload size={14}/> Subir Documentos
                                     <input type="file" multiple accept="image/*,application/pdf" className="hidden" onChange={(e) => handleUploadLetter(e, p.id)} />
                                 </label>
                             )}
 
-                            {/* TICKET RELEASE & TOGGLE (Solo Coordinador) */}
                             <div className="flex gap-2 items-center">
                                 {isCoordinator && (
                                     <button 
@@ -2130,22 +1964,19 @@ const App = () => {
                                             : 'bg-red-100 border-red-300 text-red-700 hover:bg-red-200'
                                         }`}
                                         title={p.ticket_released ? "Bloquear Boleto" : "Liberar Boleto"}
-                                        disabled={!canModify || (docCount === 0 && !p.ticket_released)} // Deshabilitar si no tiene permiso O si no hay documentos
+                                        disabled={!canModify || (docCount === 0 && !p.ticket_released)} 
                                     >
                                         {p.ticket_released ? <Unlock size={14} /> : <Lock size={14}/>} {p.ticket_released ? 'Liberado' : 'Bloqueado'}
                                     </button>
                                 )}
 
-                                {/* TICKET BUTTON (Si está liberado) */}
                                 {p.ticket_released && (
                                     <>
                                         {isCoordinator ? (
-                                            // COORDINADOR VE DIRECTAMENTE
                                             <button onClick={() => openTicketModal(p)} className="flex items-center gap-1.5 text-xs font-bold bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1.5 rounded-lg shadow-md hover:shadow-lg transition-all animate-pulse flex-1">
                                                 <Ticket size={14}/> Ver Boleto
                                             </button>
                                         ) : (
-                                            // PASAJERO DEBE VERIFICAR TELEFONO (Ahora con el MISMO diseño que coordinador)
                                             <button onClick={() => openAuthModal(p.id)} className="flex items-center gap-1.5 text-xs font-bold bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1.5 rounded-lg shadow-md hover:shadow-lg transition-all animate-pulse flex-1">
                                                 <Ticket size={14}/> Ver Boleto
                                             </button>
@@ -2157,17 +1988,18 @@ const App = () => {
                   </div>
                 </div>
 
-                {/* --- CHECKBOXES ASISTENCIA --- */}
                 <div className="grid grid-cols-3 divide-x divide-gray-100 bg-gray-50/30 relative z-10 border-t border-gray-100 mt-auto">
-                    {legs.map((leg, idx) => (
+                    {legs.map((leg, idx) => {
+                      const LegIcon = leg.Icon;
+                      return (
                       <button 
                         key={idx} 
                         onClick={() => toggleCheck(p.id, idx)} 
                         className={`relative flex flex-col items-center justify-center py-2 transition-all duration-300 group/btn hover:bg-white ${p.checks && p.checks[idx] ? 'bg-green-500/5 text-green-700' : 'text-gray-400'}`}
-                        disabled={!canModify} // Deshabilitar si no puede modificar
+                        disabled={!canModify} 
                       >
                         <div className={`mb-1 p-1.5 rounded-full transition-all duration-300 shadow-sm ${p.checks && p.checks[idx] ? 'bg-green-500 text-white scale-110 shadow-green-500/40' : 'bg-white text-gray-300 group-hover/btn:text-orange-400 shadow-sm border border-gray-100'}`}>
-                           {p.checks && p.checks[idx] ? <Check size={14} strokeWidth={4} /> : leg.icon}
+                           {p.checks && p.checks[idx] ? <Check size={14} strokeWidth={4} /> : <LegIcon size={14} />}
                         </div>
                         {p.checks && p.checks[idx] ? (
                             <div className="flex flex-col items-center animate-in zoom-in">
@@ -2181,16 +2013,14 @@ const App = () => {
                         )}
                         {p.checks && p.checks[idx] && <div className="absolute bottom-0 left-0 right-0 h-1 bg-green-500 rounded-t-full"></div>}
                       </button>
-                    ))}
+                    )})}
                 </div>
               </div>
             )})
           )}
         </div>
         
-        {/* BOTONES FLOTANTES */}
         <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3">
-            {/* BOTÓN RESTAURAR LISTA (Visible si LA LISTA DEL CAMIÓN ACTUAL está vacía y es Coord) */}
             {isCoordinator && currentBusPassengers.length === 0 && (
                 <button 
                     onClick={handleRestoreList} 
