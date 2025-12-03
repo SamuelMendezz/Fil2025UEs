@@ -244,6 +244,9 @@ const App = () => {
   
   // --- ANIMATION STATES ---
   const [exitingModal, setExitingModal] = useState(null); 
+  
+  // --- LOADER STATE (NEW) ---
+  const [showLoader, setShowLoader] = useState(true);
 
   // Force Bus View on Login
   useEffect(() => {
@@ -344,6 +347,16 @@ const App = () => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
 
+  // EFECTO PARA MANEJAR LA SALIDA DEL LOADER
+  useEffect(() => {
+    if (!loading) {
+      const timer = setTimeout(() => {
+        setShowLoader(false);
+      }, ANIMATION_DURATION);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
+
   const parseDocuments = (letterUrl) => {
       if (!letterUrl) return [];
       try {
@@ -409,8 +422,8 @@ const App = () => {
   }, [supabase]);
 
   const fetchPassengers = async () => {
+    // setLoading(true); // Evitar parpadeo si ya se cargó inicialmente
     if (!supabase) return;
-    setLoading(true);
     const { data, error } = await supabase
       .from('passengers')
       .select('*')
@@ -1014,23 +1027,6 @@ const App = () => {
     document.body.removeChild(link);
   };
 
-  if (loading) {
-    return (
-      <div className="fixed inset-0 z-[100] bg-orange-50 flex flex-col items-center justify-center w-screen h-screen overflow-hidden">
-        <div className="relative mb-6">
-            <div className="animate-spin rounded-full h-20 w-20 border-4 border-orange-200 border-t-orange-600 shadow-xl"></div>
-            <div className="absolute inset-0 flex items-center justify-center">
-                <Bus size={24} className="text-orange-500/50" />
-            </div>
-        </div>
-        <div className="text-center animate-in fade-in zoom-in duration-500 px-6">
-            <h2 className="text-3xl font-black text-orange-600 mb-1 tracking-tighter">UNIÓN ESTUDIANTIL</h2>
-            <p className="text-orange-400 font-bold text-xs uppercase tracking-[0.3em] animate-pulse">Cargando Sistema...</p>
-        </div>
-      </div>
-    );
-  }
-
   const getAnimationClasses = (modalName) => {
       const baseClass = "fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 ease-out";
       if (exitingModal === modalName) {
@@ -1055,9 +1051,26 @@ const App = () => {
           animation: enter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
         .animate-leave {
-          animation: leave 0.2s ease-in forwards;
+          animation: leave 0.3s ease-in forwards;
         }
       `}</style>
+
+      {/* --- LOADER OVERLAY (ALWAYS MOUNTED BUT ANIMATED OUT) --- */}
+      {showLoader && (
+        <div className={`fixed inset-0 z-[100] bg-orange-50 flex flex-col items-center justify-center w-screen h-screen overflow-hidden ${!loading ? 'animate-leave' : ''}`}>
+            <div className="relative mb-6">
+                <div className="animate-spin rounded-full h-20 w-20 border-4 border-orange-200 border-t-orange-600 shadow-xl"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <Bus size={24} className="text-orange-500/50" />
+                </div>
+            </div>
+            
+            <div className="text-center animate-in fade-in zoom-in duration-500 px-6">
+                <h2 className="text-3xl font-black text-orange-600 mb-1 tracking-tighter">UNIÓN ESTUDIANTIL</h2>
+                <p className="text-orange-400 font-bold text-xs uppercase tracking-[0.3em] animate-pulse">Cargando Sistema...</p>
+            </div>
+        </div>
+      )}
 
       {/* NOTIFICATION TOAST */}
       <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[60] transition-all duration-500 ease-in-out ${notification.visible ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0 pointer-events-none'}`}>
