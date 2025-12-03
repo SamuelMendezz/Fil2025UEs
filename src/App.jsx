@@ -1115,7 +1115,7 @@ const App = () => {
                            <>
                                {target && (
                                    <div className="text-center mb-6">
-                                       <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Pasajero Verificado</p>
+                                       <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Pasajero</p>
                                        <h4 className="text-xl font-extrabold text-gray-800 leading-tight">
                                            {target.name}
                                        </h4>
