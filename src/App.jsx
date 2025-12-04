@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone, Edit2, Lock, LogOut, EyeOff, Crown, FileText, Users, GraduationCap, ListFilter, Save, ShieldAlert, CreditCard, Hash, User, Bell, ArrowUpDown, ArrowDownAZ, Armchair, LayoutGrid, UserPlus, Bath, Upload, FileCheck, Ticket, ExternalLink, Unlock, AlertTriangle, Eye, KeyRound, FileWarning, Clock, Zap, Loader2, Calendar, Coffee, ShoppingBag, Milestone, QrCode, ScanLine, Camera, Keyboard } from 'lucide-react';
+import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone, Edit2, Lock, LogOut, EyeOff, Crown, FileText, Users, GraduationCap, ListFilter, Save, ShieldAlert, CreditCard, Hash, User, Bell, ArrowUpDown, ArrowDownAZ, Armchair, LayoutGrid, UserPlus, Bath, Upload, FileCheck, Ticket, ExternalLink, Unlock, AlertTriangle, Eye, KeyRound, FileWarning, Clock, Zap, Loader2, Calendar, Coffee, ShoppingBag, Milestone, QrCode, ScanLine, Camera, Keyboard, AlertCircle } from 'lucide-react';
 
 // --- CONFIGURACIÓN DE SUPABASE ---
 const SUPABASE_URL = 'https://fgzegoflnkwkcztivila.supabase.co';
@@ -193,6 +193,7 @@ const App = () => {
   const [showScanner, setShowScanner] = useState(false);
   const [scannerActive, setScannerActive] = useState(false);
   const [manualScanInput, setManualScanInput] = useState('');
+  const [scanError, setScanError] = useState(''); // NEW STATE FOR ERRORS
   
   // REF para el input de búsqueda
   const searchInputRef = useRef(null);
@@ -380,30 +381,55 @@ const App = () => {
     setShowScanner(true);
     setScannerActive(false);
     setManualScanInput('');
+    setScanError('');
   };
 
   const startCamera = () => {
+    setScanError('');
+    // 1. Verificación básica de que la librería cargó
+    if (!window.Html5Qrcode) {
+        setScanError('Error: La librería de cámara no se cargó correctamente. Recarga la página.');
+        return;
+    }
+
+    // 2. Verificación de existencia del elemento
+    if (!document.getElementById("reader-element")) {
+        setScanError("Error interno: Elemento de video no encontrado en el DOM.");
+        return;
+    }
+
     // Si ya existe una instancia, no hacer nada
     if (html5QrCodeRef.current) return;
     
-    // Crear instancia de Html5Qrcode (No Scanner)
-    const html5QrCode = new window.Html5Qrcode("reader-element");
-    html5QrCodeRef.current = html5QrCode;
+    // Crear instancia de Html5Qrcode
+    try {
+        const html5QrCode = new window.Html5Qrcode("reader-element");
+        html5QrCodeRef.current = html5QrCode;
 
-    const config = { 
-        fps: 10, 
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0 // Intentar forzar ratio cuadrado
-    };
-    
-    html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
-    .then(() => {
-        setScannerActive(true);
-    })
-    .catch(err => {
-        showNotification("Error al iniciar cámara. Permisos denegados.", "error");
-        console.error("Error iniciando cámara", err);
-    });
+        const config = { 
+            fps: 10, 
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0 
+        };
+        
+        // Intentar iniciar con cámara trasera
+        html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
+        .then(() => {
+            setScannerActive(true);
+        })
+        .catch(err => {
+            console.error("Error iniciando cámara", err);
+            // Intentar fallback a cualquier cámara si "environment" falla (común en laptops)
+            html5QrCode.start({ facingMode: "user" }, config, onScanSuccess, onScanFailure)
+            .then(() => setScannerActive(true))
+            .catch(err2 => {
+                 setScanError("No se pudo acceder a la cámara. Verifica permisos o usa entrada manual.");
+                 html5QrCodeRef.current = null;
+            });
+        });
+    } catch (e) {
+        setScanError("Error crítico al inicializar cámara: " + e.message);
+    }
   };
 
   const stopCamera = () => {
@@ -627,7 +653,7 @@ const App = () => {
         </div>
       </div>
 
-      {/* --- SCANNER MODAL (NUEVO & ROBUSTO) --- */}
+      {/* --- SCANNER MODAL (REPARADO: Elemento siempre visible) --- */}
       {showScanner && (
           <div className="fixed inset-0 bg-black/95 z-[70] flex flex-col items-center justify-center p-4 animate-in fade-in duration-300">
               <div className="w-full max-w-sm bg-gray-900 rounded-3xl overflow-hidden shadow-2xl relative border border-gray-800 flex flex-col h-[80vh]">
@@ -638,21 +664,27 @@ const App = () => {
                   
                   {/* ÁREA DE CÁMARA */}
                   <div className="p-4 bg-black relative flex-1 flex items-center justify-center overflow-hidden">
-                      {!scannerActive ? (
-                          <div className="text-center space-y-4">
-                              <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto text-gray-500">
-                                  <Camera size={32} />
+                       {/* IMPORTANTE: Este div DEBE existir siempre para que la librería se monte */}
+                       <div id="reader-element" className="w-full h-full rounded-xl overflow-hidden border-2 border-green-500/50 relative bg-black">
+                           {/* El video se inyecta aquí */}
+                       </div>
+                       
+                       {/* CAPA SUPERIOR: Botón de activar o mensaje de error */}
+                       {!scannerActive && (
+                          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/90 p-6">
+                              <div className="text-center space-y-4">
+                                  <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto text-gray-500">
+                                      <Camera size={32} />
+                                  </div>
+                                  <p className="text-gray-400 text-xs px-2">
+                                      {scanError ? <span className="text-red-400 font-bold flex items-center justify-center gap-1"><AlertCircle size={12}/> {scanError}</span> : "La cámara requiere permiso. Si no funciona, usa el código manual."}
+                                  </p>
+                                  <button onClick={startCamera} className="bg-green-600 text-white px-6 py-3 rounded-full font-bold text-sm hover:bg-green-500 transition-colors shadow-lg shadow-green-900/50 w-full">
+                                      Activar Cámara
+                                  </button>
                               </div>
-                              <p className="text-gray-400 text-xs px-6">La cámara requiere permiso. Si no funciona, usa el código manual.</p>
-                              <button onClick={startCamera} className="bg-green-600 text-white px-6 py-2 rounded-full font-bold text-sm hover:bg-green-500 transition-colors shadow-lg shadow-green-900/50">
-                                  Activar Cámara
-                              </button>
                           </div>
-                      ) : (
-                           <div id="reader-element" className="w-full h-full rounded-xl overflow-hidden border-2 border-green-500/50 relative bg-black">
-                               {/* El video se inyecta aquí y CSS lo forzará a ser full size */}
-                           </div>
-                      )}
+                       )}
                   </div>
 
                   {/* FORMULARIO MANUAL */}
