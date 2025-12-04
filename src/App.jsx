@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone, Edit2, Lock, LogOut, EyeOff, Crown, FileText, Users, GraduationCap, ListFilter, Save, ShieldAlert, CreditCard, Hash, User, Bell, ArrowUpDown, ArrowDownAZ, Armchair, LayoutGrid, UserPlus, Bath, Upload, FileCheck, Ticket, ExternalLink, Unlock, AlertTriangle, Eye, KeyRound, FileWarning, Clock, Zap, Loader2, Calendar, Coffee, ShoppingBag, Milestone } from 'lucide-react';
+import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone, Edit2, Lock, LogOut, EyeOff, Crown, FileText, Users, GraduationCap, ListFilter, Save, ShieldAlert, CreditCard, Hash, User, Bell, ArrowUpDown, ArrowDownAZ, Armchair, LayoutGrid, UserPlus, Bath, Upload, FileCheck, Ticket, ExternalLink, Unlock, AlertTriangle, Eye, KeyRound, FileWarning, Clock, Zap, Loader2, Calendar, Coffee, ShoppingBag, Milestone, QrCode, ScanLine } from 'lucide-react';
 
 // --- CONFIGURACIÓN DE SUPABASE ---
 const SUPABASE_URL = 'https://fgzegoflnkwkcztivila.supabase.co';
@@ -168,6 +168,17 @@ const App = () => {
     };
   }, []);
 
+  // --- CARGAR LIBRERÍA QR ---
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = "https://unpkg.com/html5-qrcode";
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+        // Cleanup if needed
+    };
+  }, []);
+
   // --- AUTH & STATE ---
   const [currentUser, setCurrentUser] = useState(() => localStorage.getItem('fil2025_user') || null);
   const [userBusAccess, setUserBusAccess] = useState(() => { const stored = localStorage.getItem('fil2025_bus_access'); return stored ? parseInt(stored) : null; });
@@ -197,25 +208,24 @@ const App = () => {
   const [showLoader, setShowLoader] = useState(true);
   const [showConfetti, setShowConfetti] = useState(false);
 
-  const [isAdding, setIsAdding] = useState(false); // Nuevo estado para carga de añadir
+  const [isAdding, setIsAdding] = useState(false); 
 
   // --- NEW: ITINERARY MODAL STATE ---
   const [showItinerary, setShowItinerary] = useState(false);
 
-  // REF para el input de búsqueda (Solución definitiva teclado móvil)
+  // --- NEW: SCANNER STATE ---
+  const [showScanner, setShowScanner] = useState(false);
+  const [scannerInstance, setScannerInstance] = useState(null);
+  const [lastScannedCode, setLastScannedCode] = useState(null);
+
+  // REF para el input de búsqueda
   const searchInputRef = useRef(null);
 
   useEffect(() => {
-    // Intento 1: Inmediato al montar
-    if (searchInputRef.current) {
-        searchInputRef.current.blur();
-    }
-    
-    // Intento 2: Retrasado para sobreescribir la restauración de estado del navegador
+    if (searchInputRef.current) searchInputRef.current.blur();
     const timer = setTimeout(() => {
         if (searchInputRef.current) searchInputRef.current.blur();
     }, 800);
-    
     return () => clearTimeout(timer);
   }, []);
 
@@ -336,7 +346,7 @@ const App = () => {
       if (!supabase) return; 
       if (!newName.trim()) { showNotification("El nombre del pasajero es obligatorio.", "error"); return; } 
       
-      setIsAdding(true); // Activar carga
+      setIsAdding(true); 
 
       const newPassenger = { 
           name: newName.trim(), 
@@ -355,7 +365,7 @@ const App = () => {
 
       const { error } = await supabase.from('passengers').insert([newPassenger]); 
       
-      setIsAdding(false); // Desactivar carga
+      setIsAdding(false); 
 
       if (!error) {
           showNotification(`Pasajero agregado al Camión ${currentBus}`); 
@@ -386,7 +396,104 @@ const App = () => {
   const assignSeat = async (passengerId, seatNum) => { if (!supabase) return; if (!isCoordinator) return; if (!verifyPermissionAction(currentBus)) return; const previousPassengers = [...passengers]; setPassengers(prev => { return prev.map(p => { if ((p.bus_id || 1) !== currentBus) return p; if (p.seat_number == seatNum) return { ...p, seat_number: null }; if (p.id === passengerId) return { ...p, seat_number: seatNum }; return p; }); }); try { const taken = previousPassengers.find(p => (p.bus_id || 1) === currentBus && p.seat_number == seatNum); if (taken) { const { error: errorClear } = await supabase.from('passengers').update({ seat_number: null }).eq('id', taken.id); if (errorClear) throw errorClear; } const { error: errorAssign } = await supabase.from('passengers').update({ seat_number: seatNum }).eq('id', passengerId); if (errorAssign) throw errorAssign; showNotification(`Asiento ${seatNum} asignado (C${currentBus})`); } catch (error) { console.warn("Fallo guardado en nube, guardando localmente...", error); const taken = previousPassengers.find(p => (p.bus_id || 1) === currentBus && p.seat_number == seatNum); if(taken) saveLocalSeat(taken.id, null); saveLocalSeat(passengerId, seatNum); showNotification(`Asiento ${seatNum} guardado localmente`, 'success'); } setSelectedSeat(null); setSeatSearchTerm(''); };
   const releaseSeat = async (passengerId) => { if (!supabase) return; if (!isCoordinator) return; if (!verifyPermissionAction(currentBus)) return; setPassengers(prev => prev.map(p => p.id === passengerId ? { ...p, seat_number: null } : p)); try { const { error } = await supabase.from('passengers').update({ seat_number: null }).eq('id', passengerId); if (error) throw error; showNotification("Asiento liberado (Nube)"); } catch(error) { saveLocalSeat(passengerId, null); showNotification("Asiento liberado (Local)", 'success'); } setSelectedSeat(null); };
   const handleRestoreList = async () => { if(!isCoordinator) { triggerLogin(); return; } const busToRestore = currentBus; if(!verifyPermissionAction(busToRestore)) return; if (!supabase) return; if(!window.confirm(`¿ESTÁS SEGURO? Esto subirá la lista oficial del Camión ${busToRestore} a la base de datos.`)) return; const busConfig = BUSES.find(b => b.id === busToRestore); if (!busConfig || busConfig.list.length === 0) { showNotification(`No hay lista oficial definida para el Camión ${busToRestore}`, 'error'); return; } setUploading(true); const records = busConfig.list.map(p => ({ name: p.name, phone: p.phone, code: p.code, amount: p.amount, nss: p.nss || 'N/A', parent: p.parent || 'N/A', parent_phone: p.parentPhone || 'N/A', checks: [false, false, false], times: [null, null, null], letter_url: JSON.stringify([]), ticket_released: false, bus_id: busToRestore })); const { error } = await supabase.from('passengers').insert(records); if (error) { showNotification("Error al restaurar lista: " + error.message, "error"); } else { showNotification("¡Lista restaurada con éxito!", 'success'); fetchPassengers(); } setUploading(false); };
-  const addCoordinatorIfMissing = async () => { if (!supabase || !isCoordinator) return; const targetBus = userBusAccess || 1; const meName = currentUser === "Samuel M." ? "Samuel Méndez Vidrio" : (currentUser === "Aylin R." ? "Aylin R. Ramos Mejía" : "Iker S Soltero Rodríguez"); const exists = passengers.find(p => p.name === meName && (p.bus_id || 1) === targetBus); if (!exists) { if(window.confirm(`Tu usuario (${meName}) no está en la lista del Camión ${targetBus}. ¿Quieres agregarte?`)) { const newPassenger = { name: meName, phone: "N/A", code: "ADMIN", amount: 480, nss: "N/A", parent: "N/A", parent_phone: "N/A", checks: [false, false, false], times: [null, null, null], seat_number: null, letter_url: JSON.stringify([]), ticket_released: false, bus_id: targetBus }; const { error } = await supabase.from('passengers').insert([newPassenger]); if (!error) showNotification("Te has agregado a la lista correctamente"); } } else { showNotification(`Ya estás en la lista del C${targetBus}.`); } };
+
+  // --- LOGICA DE ESCANEO DE QR ---
+  const handleScanClick = () => {
+    setShowScanner(true);
+  };
+
+  useEffect(() => {
+    if (showScanner && window.Html5QrcodeScanner) {
+        // Pequeño delay para asegurar que el DOM del modal se renderizó
+        const timer = setTimeout(() => {
+            if (!scannerInstance) {
+                const scanner = new window.Html5QrcodeScanner(
+                    "reader",
+                    { fps: 10, qrbox: { width: 250, height: 250 } },
+                    /* verbose= */ false
+                );
+                scanner.render(handleScanSuccess, handleScanError);
+                setScannerInstance(scanner);
+            }
+        }, 100);
+        return () => clearTimeout(timer);
+    } else if (!showScanner && scannerInstance) {
+        scannerInstance.clear().catch(console.error);
+        setScannerInstance(null);
+    }
+  }, [showScanner]);
+
+  const handleScanSuccess = async (decodedText) => {
+      // SECURITY CHECK: Solo coordinadores pueden procesar escaneos
+      // Esto previene que alguien llame a esta función si no está logueado
+      if (!isCoordinator) {
+          showNotification("Acceso denegado: Solo coordinadores pueden registrar asistencia.", "error");
+          return;
+      }
+
+      // Formato esperado: FIL2025-CODIGO-ID
+      // Ejemplo: FIL2025-223440784-15
+      
+      // Evitar lecturas múltiples seguidas del mismo código en poco tiempo
+      if (decodedText === lastScannedCode) return;
+      setLastScannedCode(decodedText);
+      setTimeout(() => setLastScannedCode(null), 3000); // 3 seg de cooldown
+
+      const parts = decodedText.split('-');
+      if (parts.length < 3 || parts[0] !== 'FIL2025') {
+          showNotification("Código QR inválido. Formato desconocido.", "error");
+          return;
+      }
+
+      const passengerId = parseInt(parts[2]);
+      const passenger = passengers.find(p => p.id === passengerId);
+
+      if (!passenger) {
+          showNotification("Error: Pasajero no encontrado en la base de datos.", "error");
+          return;
+      }
+
+      // Validar si es del camión correcto
+      if ((passenger.bus_id || 1) !== currentBus) {
+          // Reproducir sonido error?
+          showNotification(`¡ALERTA! Este pasajero es del Camión ${passenger.bus_id || 1}. NO ABORDAR AQUÍ.`, "error");
+          return;
+      }
+
+      // Validar si ya se pasó lista de IDA (Index 0)
+      if (passenger.checks && passenger.checks[0]) {
+          showNotification(`${passenger.name.split(' ')[0]} ya tiene asistencia registrada.`, "error");
+          return;
+      }
+
+      // MARCAR ASISTENCIA (Ida - Index 0)
+      const newChecks = [...(passenger.checks || [false, false, false])];
+      newChecks[0] = true;
+      const newTimes = [...(passenger.times || [null, null, null])];
+      newTimes[0] = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+
+      // Actualizar Estado Local
+      setPassengers(prev => prev.map(p => p.id === passengerId ? { ...p, checks: newChecks, times: newTimes } : p));
+      
+      // Feedback Visual
+      showNotification(`¡Bienvenido/a ${passenger.name.split(' ')[0]}! Asistencia registrada.`);
+      triggerConfetti();
+
+      // Actualizar Base de Datos
+      if (supabase) {
+          await supabase.from('passengers').update({ checks: newChecks, times: newTimes }).eq('id', passengerId);
+      }
+  };
+
+  const handleScanError = (err) => {
+      // Ignorar errores de "no QR code found" para no saturar consola
+      // console.warn(err);
+  };
+
+  const closeScanner = () => {
+      setShowScanner(false);
+      setLastScannedCode(null);
+  };
 
   // ... sorting and formatting helpers remain the same ...
   const getSurname = (fullName) => { if (!fullName) return ''; const parts = fullName.trim().split(/\s+/); const len = parts.length; if (len <= 2) return parts[len - 1] || ''; return parts[len - 2]; };
@@ -462,7 +569,7 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-white font-sans pb-24 text-gray-800 overflow-x-hidden w-full max-w-[100vw]">
-      <style>{`@keyframes enter { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } } @keyframes leave { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.95); } } .animate-enter { animation: enter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; } .animate-leave { animation: leave 0.3s ease-in forwards; }`}</style>
+      <style>{`@keyframes enter { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } } @keyframes leave { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.95); } } .animate-enter { animation: enter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; } .animate-leave { animation: leave 0.3s ease-in forwards; } #reader video { object-fit: cover; border-radius: 1rem; }`}</style>
 
       {/* --- LOADER OVERLAY --- */}
       {showLoader && (
@@ -489,6 +596,25 @@ const App = () => {
             <span className="font-bold text-sm">{notification.message}</span>
         </div>
       </div>
+
+      {/* --- SCANNER MODAL (NUEVO) --- */}
+      {showScanner && (
+          <div className="fixed inset-0 bg-black/90 z-[70] flex flex-col items-center justify-center p-4 animate-in fade-in duration-300">
+              <div className="w-full max-w-sm bg-white rounded-3xl overflow-hidden shadow-2xl relative">
+                  <div className="bg-gray-900 p-4 flex justify-between items-center text-white">
+                      <h3 className="font-bold flex items-center gap-2"><ScanLine className="animate-pulse text-green-400"/> Escanear Boleto</h3>
+                      <button onClick={closeScanner} className="bg-white/20 p-2 rounded-full hover:bg-white/30 transition-colors"><X size={20}/></button>
+                  </div>
+                  <div className="p-4 bg-black">
+                      <div id="reader" className="w-full h-64 bg-gray-800 rounded-xl overflow-hidden border-2 border-gray-700"></div>
+                  </div>
+                  <div className="p-4 bg-gray-900 text-center">
+                      <p className="text-xs text-gray-400 font-medium">Apunta la cámara al código QR del pasajero.</p>
+                      <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-wider">Modo: Asistencia IDA</p>
+                  </div>
+              </div>
+          </div>
+      )}
 
       {/* --- FORMULARIO AGREGAR (CONVERTIDO A MODAL) --- */}
       {(showAddForm || exitingModal === 'add_form') && isCoordinator && (
@@ -867,7 +993,7 @@ const App = () => {
             />
           </div>
 
-          {/* BOTÓN ITINERARIO (NUEVO) */}
+          {/* BOTÓN ITINERARIO */}
           <button 
             onClick={() => setShowItinerary(true)} 
             className="p-3 bg-white text-purple-600 rounded-2xl shadow-md hover:bg-purple-50 hover:text-purple-700 transition-colors flex items-center justify-center gap-2 border border-purple-100 px-6 group"
@@ -875,12 +1001,16 @@ const App = () => {
             <Calendar size={20} strokeWidth={2.5} className="group-hover:scale-110 transition-transform" /> 
             <span className="font-bold text-sm whitespace-nowrap">Ver Itinerario</span>
           </button>
-
+        
+          {/* BOTÓN MAPA */}
           <button onClick={() => setShowBusMap(true)} className="p-3 bg-white text-orange-600 rounded-2xl shadow-md hover:bg-orange-50 hover:text-orange-700 transition-colors flex items-center justify-center gap-2 border border-orange-100 px-6 group"><Armchair size={20} strokeWidth={2.5} className="group-hover:scale-110 transition-transform" /> <span className="font-bold text-sm whitespace-nowrap">Ver Mapa</span></button>
           
           {/* CHANGE HERE: Wrap in isCoordinator check */}
           {isCoordinator && (
+            <>
+            <button onClick={handleScanClick} className="p-3 bg-gray-900 text-white rounded-2xl shadow-md hover:bg-black transition-colors flex items-center justify-center gap-2 px-6 group"><QrCode size={20} strokeWidth={2.5} className="group-hover:scale-110 transition-transform"/> <span className="font-bold text-sm whitespace-nowrap">Escanear</span></button>
             <button onClick={exportToCSV} className="p-3 bg-white text-green-600 rounded-2xl shadow-md hover:bg-green-50 hover:text-green-700 transition-colors flex items-center justify-center gap-2"><Download size={20} strokeWidth={2.5} /> <span className="md:hidden font-bold text-sm">Descargar Excel</span></button>
+            </>
           )}
         </div>
 
