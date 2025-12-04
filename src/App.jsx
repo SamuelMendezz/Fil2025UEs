@@ -193,6 +193,7 @@ const App = () => {
   const [showScanner, setShowScanner] = useState(false);
   const [scannerActive, setScannerActive] = useState(false);
   const [manualScanInput, setManualScanInput] = useState('');
+  const [scannerError, setScannerError] = useState(null);
   
   // REF para el input de búsqueda
   const searchInputRef = useRef(null);
@@ -380,33 +381,46 @@ const App = () => {
     setShowScanner(true);
     setScannerActive(false);
     setManualScanInput('');
+    setScannerError(null);
   };
 
   const startCamera = () => {
-    // Si ya existe una instancia, no hacer nada
-    if (html5QrCodeRef.current) return;
+    // IMPORTANTE: El elemento con id "reader-element" YA DEBE EXISTIR en el DOM
+    // Si ya existe una instancia corriendo, no hacer nada
+    if (html5QrCodeRef.current && scannerActive) return;
     
-    // Crear instancia de Html5Qrcode (No Scanner)
+    // Si la instancia existe pero no está activa, limpiarla por si acaso
+    if (html5QrCodeRef.current) {
+        html5QrCodeRef.current.clear().catch(err => console.error("Limpieza previa falló", err));
+    }
+
     const html5QrCode = new window.Html5Qrcode("reader-element");
     html5QrCodeRef.current = html5QrCode;
 
     const config = { fps: 10, qrbox: { width: 250, height: 250 } };
     
+    // Intentar iniciar la cámara
     html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
     .then(() => {
         setScannerActive(true);
+        setScannerError(null);
     })
     .catch(err => {
-        showNotification("Error al iniciar cámara. Permisos denegados.", "error");
         console.error("Error iniciando cámara", err);
+        let errorMsg = "No se pudo acceder a la cámara.";
+        if (err.name === 'NotAllowedError') errorMsg = "Permiso de cámara denegado. Habilítalo en tu navegador.";
+        if (err.name === 'NotFoundError') errorMsg = "No se encontró ninguna cámara.";
+        if (err.name === 'NotReadableError') errorMsg = "La cámara está siendo usada por otra aplicación.";
+        
+        setScannerError(errorMsg);
+        showNotification(errorMsg, "error");
     });
   };
 
   const stopCamera = () => {
-    if (html5QrCodeRef.current) {
+    if (html5QrCodeRef.current && scannerActive) {
         html5QrCodeRef.current.stop().then(() => {
             html5QrCodeRef.current.clear();
-            html5QrCodeRef.current = null;
             setScannerActive(false);
         }).catch(err => {
             console.error("Error deteniendo cámara", err);
@@ -459,11 +473,6 @@ const App = () => {
       if (supabase) {
           await supabase.from('passengers').update({ checks: newChecks, times: newTimes }).eq('id', passengerId);
       }
-      
-      // Cerrar scanner si fue manual
-      if (!scannerActive) {
-          // closeScanner(); // Opcional: mantener abierto para seguir escaneando
-      }
   };
 
   const onScanSuccess = (decodedText, decodedResult) => {
@@ -478,7 +487,7 @@ const App = () => {
   };
 
   const onScanFailure = (error) => {
-      // Ignorar errores frame por frame
+      // Ignorar errores frame por frame para no saturar consola
   };
 
   const handleManualSubmit = (e) => {
@@ -598,7 +607,7 @@ const App = () => {
         </div>
       </div>
 
-      {/* --- SCANNER MODAL (NUEVO & ROBUSTO) --- */}
+      {/* --- SCANNER MODAL (CORREGIDO) --- */}
       {showScanner && (
           <div className="fixed inset-0 bg-black/95 z-[70] flex flex-col items-center justify-center p-4 animate-in fade-in duration-300">
               <div className="w-full max-w-sm bg-gray-900 rounded-3xl overflow-hidden shadow-2xl relative border border-gray-800">
@@ -608,21 +617,23 @@ const App = () => {
                   </div>
                   
                   {/* ÁREA DE CÁMARA */}
-                  <div className="p-4 bg-black relative min-h-[300px] flex items-center justify-center">
-                      {!scannerActive ? (
-                          <div className="text-center space-y-4">
-                              <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto text-gray-500">
+                  <div className="bg-black relative min-h-[300px] h-[300px] flex items-center justify-center overflow-hidden rounded-b-3xl">
+                      {/* ESTE DIV DEBE EXISTIR SIEMPRE - NO LO BORRES NI LO OCULTES */}
+                      <div id="reader-element" className="w-full h-full absolute inset-0 z-0"></div>
+
+                      {/* CAPA DE CONTROL ENCIMA */}
+                      {!scannerActive && (
+                          <div className="relative z-10 bg-black/80 inset-0 absolute flex flex-col items-center justify-center p-4 text-center">
+                              <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto text-gray-500 mb-4 animate-pulse">
                                   <Camera size={32} />
                               </div>
-                              <p className="text-gray-400 text-xs px-6">La cámara requiere permiso. Si no funciona, usa el código manual.</p>
-                              <button onClick={startCamera} className="bg-green-600 text-white px-6 py-2 rounded-full font-bold text-sm hover:bg-green-500 transition-colors shadow-lg shadow-green-900/50">
-                                  Activar Cámara
+                              <p className="text-gray-400 text-xs px-6 mb-4">
+                                {scannerError ? <span className="text-red-400 font-bold">{scannerError}</span> : "La cámara requiere permiso. Si no funciona, usa el código manual."}
+                              </p>
+                              <button onClick={startCamera} className="bg-green-600 text-white px-6 py-3 rounded-full font-bold text-sm hover:bg-green-500 transition-colors shadow-lg shadow-green-900/50 flex items-center gap-2">
+                                  <Camera size={16}/> Activar Cámara
                               </button>
                           </div>
-                      ) : (
-                           <div id="reader-element" className="w-full h-full rounded-xl overflow-hidden border-2 border-green-500/50 relative">
-                               {/* El video se inyecta aquí */}
-                           </div>
                       )}
                   </div>
 
