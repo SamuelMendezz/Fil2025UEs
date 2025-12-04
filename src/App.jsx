@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone, Edit2, Lock, LogOut, EyeOff, Crown, FileText, Users, GraduationCap, ListFilter, Save, ShieldAlert, CreditCard, Hash, User, Bell, ArrowUpDown, ArrowDownAZ, Armchair, LayoutGrid, UserPlus, Bath, Upload, FileCheck, Ticket, ExternalLink, Unlock, AlertTriangle, Eye, KeyRound, FileWarning, Clock, Zap, Loader2, Calendar, Coffee, ShoppingBag, Milestone, QrCode, ScanLine } from 'lucide-react';
+import { Plus, Trash2, Check, X, MapPin, Bus, Download, RotateCcw, Search, Phone, Edit2, Lock, LogOut, EyeOff, Crown, FileText, Users, GraduationCap, ListFilter, Save, ShieldAlert, CreditCard, Hash, User, Bell, ArrowUpDown, ArrowDownAZ, Armchair, LayoutGrid, UserPlus, Bath, Upload, FileCheck, Ticket, ExternalLink, Unlock, AlertTriangle, Eye, KeyRound, FileWarning, Clock, Zap, Loader2, Calendar, Coffee, ShoppingBag, Milestone, QrCode, ScanLine, Camera, Keyboard } from 'lucide-react';
 
 // --- CONFIGURACIÓN DE SUPABASE ---
 const SUPABASE_URL = 'https://fgzegoflnkwkcztivila.supabase.co';
@@ -130,36 +130,17 @@ const App = () => {
 
   useEffect(() => { document.title = "Unión Estudiantil - FIL 2025"; }, []);
 
-  // --- BLOQUEO DE ZOOM (NUEVO) ---
+  // --- BLOQUEO DE ZOOM ---
   useEffect(() => {
-    // 1. Forzar meta tag para prohibir escalado
     const meta = document.querySelector('meta[name="viewport"]');
     const content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
-    if (meta) {
-        meta.content = content;
-    } else {
-        const newMeta = document.createElement('meta');
-        newMeta.name = 'viewport';
-        newMeta.content = content;
-        document.head.appendChild(newMeta);
-    }
-
-    // 2. Bloquear gestos de trackpad/pantalla (Pinch to zoom) en Safari/iOS
+    if (meta) { meta.content = content; } else { const newMeta = document.createElement('meta'); newMeta.name = 'viewport'; newMeta.content = content; document.head.appendChild(newMeta); }
     const preventDefault = (e) => e.preventDefault();
     document.addEventListener('gesturestart', preventDefault);
     document.addEventListener('gesturechange', preventDefault);
-
-    // 3. Bloquear doble toque y pellizco táctil
-    const handleTouch = (e) => {
-        if (e.touches.length > 1) {
-            e.preventDefault(); // Bloquear si hay más de 1 dedo (zoom)
-        }
-    };
-    
-    // passive: false es crucial para poder usar preventDefault
+    const handleTouch = (e) => { if (e.touches.length > 1) { e.preventDefault(); } };
     document.addEventListener('touchstart', handleTouch, { passive: false });
     document.addEventListener('touchmove', handleTouch, { passive: false });
-
     return () => {
         document.removeEventListener('gesturestart', preventDefault);
         document.removeEventListener('gesturechange', preventDefault);
@@ -174,9 +155,6 @@ const App = () => {
     script.src = "https://unpkg.com/html5-qrcode";
     script.async = true;
     document.body.appendChild(script);
-    return () => {
-        // Cleanup if needed
-    };
   }, []);
 
   // --- AUTH & STATE ---
@@ -209,15 +187,13 @@ const App = () => {
   const [showConfetti, setShowConfetti] = useState(false);
 
   const [isAdding, setIsAdding] = useState(false); 
-
-  // --- NEW: ITINERARY MODAL STATE ---
   const [showItinerary, setShowItinerary] = useState(false);
 
   // --- NEW: SCANNER STATE ---
   const [showScanner, setShowScanner] = useState(false);
-  const [scannerInstance, setScannerInstance] = useState(null);
-  const [lastScannedCode, setLastScannedCode] = useState(null);
-
+  const [scannerActive, setScannerActive] = useState(false);
+  const [manualScanInput, setManualScanInput] = useState('');
+  
   // REF para el input de búsqueda
   const searchInputRef = useRef(null);
 
@@ -397,51 +373,57 @@ const App = () => {
   const releaseSeat = async (passengerId) => { if (!supabase) return; if (!isCoordinator) return; if (!verifyPermissionAction(currentBus)) return; setPassengers(prev => prev.map(p => p.id === passengerId ? { ...p, seat_number: null } : p)); try { const { error } = await supabase.from('passengers').update({ seat_number: null }).eq('id', passengerId); if (error) throw error; showNotification("Asiento liberado (Nube)"); } catch(error) { saveLocalSeat(passengerId, null); showNotification("Asiento liberado (Local)", 'success'); } setSelectedSeat(null); };
   const handleRestoreList = async () => { if(!isCoordinator) { triggerLogin(); return; } const busToRestore = currentBus; if(!verifyPermissionAction(busToRestore)) return; if (!supabase) return; if(!window.confirm(`¿ESTÁS SEGURO? Esto subirá la lista oficial del Camión ${busToRestore} a la base de datos.`)) return; const busConfig = BUSES.find(b => b.id === busToRestore); if (!busConfig || busConfig.list.length === 0) { showNotification(`No hay lista oficial definida para el Camión ${busToRestore}`, 'error'); return; } setUploading(true); const records = busConfig.list.map(p => ({ name: p.name, phone: p.phone, code: p.code, amount: p.amount, nss: p.nss || 'N/A', parent: p.parent || 'N/A', parent_phone: p.parentPhone || 'N/A', checks: [false, false, false], times: [null, null, null], letter_url: JSON.stringify([]), ticket_released: false, bus_id: busToRestore })); const { error } = await supabase.from('passengers').insert(records); if (error) { showNotification("Error al restaurar lista: " + error.message, "error"); } else { showNotification("¡Lista restaurada con éxito!", 'success'); fetchPassengers(); } setUploading(false); };
 
-  // --- LOGICA DE ESCANEO DE QR ---
+  // --- NUEVA LÓGICA DE ESCANEO ROBUSTA ---
+  const html5QrCodeRef = useRef(null);
+  
   const handleScanClick = () => {
     setShowScanner(true);
+    setScannerActive(false);
+    setManualScanInput('');
   };
 
-  useEffect(() => {
-    if (showScanner && window.Html5QrcodeScanner) {
-        // Pequeño delay para asegurar que el DOM del modal se renderizó
-        const timer = setTimeout(() => {
-            if (!scannerInstance) {
-                const scanner = new window.Html5QrcodeScanner(
-                    "reader",
-                    { fps: 10, qrbox: { width: 250, height: 250 } },
-                    /* verbose= */ false
-                );
-                scanner.render(handleScanSuccess, handleScanError);
-                setScannerInstance(scanner);
-            }
-        }, 100);
-        return () => clearTimeout(timer);
-    } else if (!showScanner && scannerInstance) {
-        scannerInstance.clear().catch(console.error);
-        setScannerInstance(null);
+  const startCamera = () => {
+    // Si ya existe una instancia, no hacer nada
+    if (html5QrCodeRef.current) return;
+    
+    // Crear instancia de Html5Qrcode (No Scanner)
+    const html5QrCode = new window.Html5Qrcode("reader-element");
+    html5QrCodeRef.current = html5QrCode;
+
+    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+    
+    html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
+    .then(() => {
+        setScannerActive(true);
+    })
+    .catch(err => {
+        showNotification("Error al iniciar cámara. Permisos denegados.", "error");
+        console.error("Error iniciando cámara", err);
+    });
+  };
+
+  const stopCamera = () => {
+    if (html5QrCodeRef.current) {
+        html5QrCodeRef.current.stop().then(() => {
+            html5QrCodeRef.current.clear();
+            html5QrCodeRef.current = null;
+            setScannerActive(false);
+        }).catch(err => {
+            console.error("Error deteniendo cámara", err);
+        });
     }
-  }, [showScanner]);
+  };
 
-  const handleScanSuccess = async (decodedText) => {
-      // SECURITY CHECK: Solo coordinadores pueden procesar escaneos
-      // Esto previene que alguien llame a esta función si no está logueado
-      if (!isCoordinator) {
-          showNotification("Acceso denegado: Solo coordinadores pueden registrar asistencia.", "error");
-          return;
-      }
+  const closeScanner = () => {
+      stopCamera();
+      setShowScanner(false);
+  };
 
+  const processCode = async (codeStr) => {
       // Formato esperado: FIL2025-CODIGO-ID
-      // Ejemplo: FIL2025-223440784-15
-      
-      // Evitar lecturas múltiples seguidas del mismo código en poco tiempo
-      if (decodedText === lastScannedCode) return;
-      setLastScannedCode(decodedText);
-      setTimeout(() => setLastScannedCode(null), 3000); // 3 seg de cooldown
-
-      const parts = decodedText.split('-');
+      const parts = codeStr.split('-');
       if (parts.length < 3 || parts[0] !== 'FIL2025') {
-          showNotification("Código QR inválido. Formato desconocido.", "error");
+          showNotification("Código inválido", "error");
           return;
       }
 
@@ -449,50 +431,69 @@ const App = () => {
       const passenger = passengers.find(p => p.id === passengerId);
 
       if (!passenger) {
-          showNotification("Error: Pasajero no encontrado en la base de datos.", "error");
+          showNotification("Pasajero no encontrado", "error");
           return;
       }
 
-      // Validar si es del camión correcto
       if ((passenger.bus_id || 1) !== currentBus) {
-          // Reproducir sonido error?
-          showNotification(`¡ALERTA! Este pasajero es del Camión ${passenger.bus_id || 1}. NO ABORDAR AQUÍ.`, "error");
+          showNotification(`¡ALERTA! Pasajero del Camión ${passenger.bus_id || 1}.`, "error");
+          // Beep de error
           return;
       }
 
-      // Validar si ya se pasó lista de IDA (Index 0)
       if (passenger.checks && passenger.checks[0]) {
-          showNotification(`${passenger.name.split(' ')[0]} ya tiene asistencia registrada.`, "error");
+          showNotification(`Ya registrado: ${passenger.name.split(' ')[0]}`, "error");
           return;
       }
 
-      // MARCAR ASISTENCIA (Ida - Index 0)
+      // Marcar Asistencia
       const newChecks = [...(passenger.checks || [false, false, false])];
       newChecks[0] = true;
       const newTimes = [...(passenger.times || [null, null, null])];
       newTimes[0] = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
 
-      // Actualizar Estado Local
       setPassengers(prev => prev.map(p => p.id === passengerId ? { ...p, checks: newChecks, times: newTimes } : p));
-      
-      // Feedback Visual
-      showNotification(`¡Bienvenido/a ${passenger.name.split(' ')[0]}! Asistencia registrada.`);
+      showNotification(`✅ Entrada: ${passenger.name.split(' ')[0]}`);
       triggerConfetti();
 
-      // Actualizar Base de Datos
       if (supabase) {
           await supabase.from('passengers').update({ checks: newChecks, times: newTimes }).eq('id', passengerId);
       }
+      
+      // Cerrar scanner si fue manual
+      if (!scannerActive) {
+          // closeScanner(); // Opcional: mantener abierto para seguir escaneando
+      }
   };
 
-  const handleScanError = (err) => {
-      // Ignorar errores de "no QR code found" para no saturar consola
-      // console.warn(err);
+  const onScanSuccess = (decodedText, decodedResult) => {
+      processCode(decodedText);
+      // Pausa para evitar lecturas dobles muy rápidas
+      if (html5QrCodeRef.current) {
+         html5QrCodeRef.current.pause(true);
+         setTimeout(() => {
+             if(html5QrCodeRef.current) html5QrCodeRef.current.resume();
+         }, 2000);
+      }
   };
 
-  const closeScanner = () => {
-      setShowScanner(false);
-      setLastScannedCode(null);
+  const onScanFailure = (error) => {
+      // Ignorar errores frame por frame
+  };
+
+  const handleManualSubmit = (e) => {
+      e.preventDefault();
+      // Simular formato: FIL2025-MANUAL-ID si el input es solo ID, o parsear completo
+      // Asumimos que el usuario escribe el ID directo o el código completo
+      if (manualScanInput.startsWith('FIL2025')) {
+          processCode(manualScanInput);
+      } else {
+          // Buscar por código UDG o ID
+          const p = passengers.find(p => p.code === manualScanInput || p.id.toString() === manualScanInput);
+          if (p) processCode(`FIL2025-${p.code}-${p.id}`);
+          else showNotification("Código manual no encontrado", "error");
+      }
+      setManualScanInput('');
   };
 
   // ... sorting and formatting helpers remain the same ...
@@ -569,7 +570,7 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-white font-sans pb-24 text-gray-800 overflow-x-hidden w-full max-w-[100vw]">
-      <style>{`@keyframes enter { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } } @keyframes leave { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.95); } } .animate-enter { animation: enter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; } .animate-leave { animation: leave 0.3s ease-in forwards; } #reader video { object-fit: cover; border-radius: 1rem; }`}</style>
+      <style>{`@keyframes enter { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } } @keyframes leave { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.95); } } .animate-enter { animation: enter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; } .animate-leave { animation: leave 0.3s ease-in forwards; } #reader-element video { object-fit: cover; border-radius: 1rem; }`}</style>
 
       {/* --- LOADER OVERLAY --- */}
       {showLoader && (
@@ -597,20 +598,49 @@ const App = () => {
         </div>
       </div>
 
-      {/* --- SCANNER MODAL (NUEVO) --- */}
+      {/* --- SCANNER MODAL (NUEVO & ROBUSTO) --- */}
       {showScanner && (
-          <div className="fixed inset-0 bg-black/90 z-[70] flex flex-col items-center justify-center p-4 animate-in fade-in duration-300">
-              <div className="w-full max-w-sm bg-white rounded-3xl overflow-hidden shadow-2xl relative">
-                  <div className="bg-gray-900 p-4 flex justify-between items-center text-white">
-                      <h3 className="font-bold flex items-center gap-2"><ScanLine className="animate-pulse text-green-400"/> Escanear Boleto</h3>
-                      <button onClick={closeScanner} className="bg-white/20 p-2 rounded-full hover:bg-white/30 transition-colors"><X size={20}/></button>
+          <div className="fixed inset-0 bg-black/95 z-[70] flex flex-col items-center justify-center p-4 animate-in fade-in duration-300">
+              <div className="w-full max-w-sm bg-gray-900 rounded-3xl overflow-hidden shadow-2xl relative border border-gray-800">
+                  <div className="bg-gray-800/50 p-4 flex justify-between items-center text-white border-b border-gray-700">
+                      <h3 className="font-bold flex items-center gap-2 text-sm"><ScanLine className="text-green-400"/> Escanear Boleto</h3>
+                      <button onClick={closeScanner} className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-colors"><X size={18}/></button>
                   </div>
-                  <div className="p-4 bg-black">
-                      <div id="reader" className="w-full h-64 bg-gray-800 rounded-xl overflow-hidden border-2 border-gray-700"></div>
+                  
+                  {/* ÁREA DE CÁMARA */}
+                  <div className="p-4 bg-black relative min-h-[300px] flex items-center justify-center">
+                      {!scannerActive ? (
+                          <div className="text-center space-y-4">
+                              <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto text-gray-500">
+                                  <Camera size={32} />
+                              </div>
+                              <p className="text-gray-400 text-xs px-6">La cámara requiere permiso. Si no funciona, usa el código manual.</p>
+                              <button onClick={startCamera} className="bg-green-600 text-white px-6 py-2 rounded-full font-bold text-sm hover:bg-green-500 transition-colors shadow-lg shadow-green-900/50">
+                                  Activar Cámara
+                              </button>
+                          </div>
+                      ) : (
+                           <div id="reader-element" className="w-full h-full rounded-xl overflow-hidden border-2 border-green-500/50 relative">
+                               {/* El video se inyecta aquí */}
+                           </div>
+                      )}
                   </div>
-                  <div className="p-4 bg-gray-900 text-center">
-                      <p className="text-xs text-gray-400 font-medium">Apunta la cámara al código QR del pasajero.</p>
-                      <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-wider">Modo: Asistencia IDA</p>
+
+                  {/* FORMULARIO MANUAL */}
+                  <div className="p-4 bg-gray-800 border-t border-gray-700">
+                      <p className="text-[10px] text-gray-500 uppercase font-bold mb-2 flex items-center gap-1"><Keyboard size={12}/> Entrada Manual</p>
+                      <form onSubmit={handleManualSubmit} className="flex gap-2">
+                          <input 
+                            type="text" 
+                            placeholder="Escribe ID o Código UDG..." 
+                            value={manualScanInput}
+                            onChange={(e) => setManualScanInput(e.target.value)}
+                            className="flex-1 bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:border-green-500 outline-none font-mono"
+                          />
+                          <button type="submit" className="bg-gray-700 text-white p-2 rounded-xl hover:bg-gray-600">
+                              <Check size={20} />
+                          </button>
+                      </form>
                   </div>
               </div>
           </div>
